@@ -1,0 +1,12 @@
+# Example of a Macro Definition File
+
+replace use           =  import
+replace isnot         =  "!is"
+replace isnt          =  "!is"
+replace aint          =  "!is"
+replace "qwz"         = "1234"
+replace elsif          = "else if"
+
+# transform 'inc foo' into 'foo++'
+regexp inc\s(\w+)     = $1++
+

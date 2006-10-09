@@ -1,0 +1,19 @@
+PREFIX=/usr
+
+all: dsss
+
+dsss: dsss_build/dsss_build
+	./dsss_build/dsss_build -Idsss_build sss/main.d -Tdsss
+
+dsss_build/dsss_build:
+	cd dsss_build && \
+	$(MAKE) -f Makefile.gdc
+
+install: dsss
+	./dsss install --prefix=$(PREFIX)
+
+clean:
+	rm -f *.o
+	rm -f dsss
+	cd dsss_build && \
+	$(MAKE) -f Makefile.gdc clean

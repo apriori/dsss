@@ -1,0 +1,12 @@
+DMD=dmd
+DFLAGS=-op -release -inline
+SOURCES=build.d util/pathex_bn.d util/pathex.d source_bn.d util/str.d build_bn.d util/booltype.d util/fdt_bn.d source.d util/fdt.d util/fileex.d util/fileex_bn.d util/linetoken.d util/macro.d util/file2.d
+
+all: dsss_build
+
+dsss_build: $(SOURCES)
+	$(DMD) $(DFLAGS) -of$@ $(SOURCES)
+
+clean:
+	rm -f *.o dsss_build
+	rm -f util/*.o

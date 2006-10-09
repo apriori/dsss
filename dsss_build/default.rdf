@@ -1,0 +1,26 @@
+-------------------------------------
+Windows Resource File
+-------------------------------------
+rule=Resources
+in=rc
+out=res
+tool=rc {OPT} /r /fo {@OUT} {@IN}
+
+-------------------------------------
+DMD C/C++ linkage
+-------------------------------------
+rule=DMD C/C++
+in=c
+out=obj
+tool=dmc -c {OPT} -o{@OUT} {@IN}
+
+-------------------------------------
+TEST
+-------------------------------------
+rule=test
+in=d
+out=d
+tool=mklines {@IN} {@OUT}
+use_in=compile
+use_out=compile
+

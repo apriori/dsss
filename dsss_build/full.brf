@@ -1,0 +1,4 @@
+# This creates a production / distribution edition of the program.
+build.d         # Starting file
++prod
+# --Derek Parnell-- May 07, 2005 10:43:00 PM

@@ -1,0 +1,19 @@
+PREFIX=C:\\dsss
+
+all: dsss.exe
+
+dsss.exe: dsss_build/dsss_build.exe
+	dsss_build/dsss_build.exe -od. -Idsss_build sss/main.d -Tdsss
+
+dsss_build/dsss_build.exe:
+	cd dsss_build && \
+	$(MAKE) -f Makefile.dos
+
+install: dsss.exe
+	dsss install --prefix=$(PREFIX)
+
+clean:
+	rm -f *.obj
+	rm -f dsss.exe
+	cd dsss_build && \
+	$(MAKE) -f Makefile.dos clean
