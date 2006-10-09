@@ -1273,6 +1273,12 @@ debug(dtor)
                             lPragmaId ~= "." ~ LibExt;
                         }
                     }
+                    } else {
+                        // if it doesn't start with -l, add it
+                        if (lPragmaId.length > 2 &&
+                            lPragmaId[0..2] != "-l") {
+                            lPragmaId = "-l" ~ lPragmaId;
+                        }
                     }
                     // Add link path to compiler switches.
                     if (AddLink != null)

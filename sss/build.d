@@ -121,33 +121,23 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
                     // usname = name_with_underscores
                     char[] usname = replace(build, std.path.sep, "_");
                     
-                    version (GNU_or_Posix) {
-                        if (shLibSupport() &&
-                            ("shared" in settings)) {
-                            std.file.write(file ~ "i", std.file.read(file ~ "i") ~ `
+                    if (shLibSupport() &&
+                        ("shared" in settings)) {
+                          std.file.write(file ~ "i", std.file.read(file ~ "i") ~ `
 version (build) {
     version (DSSS_Static_` ~ usname ~ `) {
-        pragma(link, "-lS` ~ target ~ `");
+        pragma(link, "S` ~ target ~ `");
     } else {
-        pragma(link, "-l` ~ target ~ `");
+        pragma(link, "` ~ target ~ `");
     }
 }
 `);
-                        } else {
-                            std.file.write(file ~ "i", std.file.read(file ~ "i") ~ `
-version (build) {
-    pragma(link, "-lS` ~ target ~ `");
-}
-`);
-                        }
-                    } else version (Windows) {
+                    } else {
                         std.file.write(file ~ "i", std.file.read(file ~ "i") ~ `
 version (build) {
-    pragma(link, "S` ~ target ~ `.lib");
+    pragma(link, "S` ~ target ~ `");
 }
 `);
-                    } else {
-                        static assert(0);
                     }
                 }
             }
