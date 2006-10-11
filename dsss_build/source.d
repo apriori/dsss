@@ -1253,7 +1253,6 @@ debug(dtor)
                             break;
                     }
 
-                    version (Windows) {
                     // If it has no extension, add the 'lib' one.
                     for(int i = lPragmaId.length-1; i >=0 ; i--)
                     {
@@ -1271,13 +1270,6 @@ debug(dtor)
                         {
                             // Not a dot to be seen ;-)
                             lPragmaId ~= "." ~ LibExt;
-                        }
-                    }
-                    } else {
-                        // if it doesn't start with -l, add it
-                        if (lPragmaId.length > 2 &&
-                            lPragmaId[0..2] != "-l") {
-                            lPragmaId = "-l" ~ lPragmaId;
                         }
                     }
                     // Add link path to compiler switches.

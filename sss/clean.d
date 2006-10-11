@@ -135,5 +135,10 @@ int distclean(DSSSConf conf = null)
         writefln("");
     }
     
+    // and the lastbuild file if it exists
+    if (exists(configLBName)) {
+        tryRemove(configLBName);
+    }
+    
     return 0;
 }

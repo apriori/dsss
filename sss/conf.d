@@ -34,6 +34,8 @@ import std.string;
 
 import std.c.stdlib;
 
+import sss.clean;
+
 import hcf.env;
 import hcf.path;
 import hcf.process;
@@ -50,6 +52,9 @@ alias std.string.find find;
 
 /** The default config file name */
 const char[] configFName = "dsss.conf";
+
+/** The lastbuild config file name */
+const char[] configLBName = "dsss.last";
 
 /** The dsss_build line */
 char[] dsss_build;
@@ -197,8 +202,21 @@ class DSSSConf {
 }
 
 /** Generate a DSSSConf from dsss.conf, or generate a dsss.conf from buildElems */
-DSSSConf readConfig(char[][] buildElems, bool genconfig = false)
+DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF = configFName)
 {
+    // before reading the config, distclean if it's changed
+    if (configF == configFName) {
+        if (exists(configLBName)) {
+            if (fileNewer(configFName, configLBName)) {
+                // our config has changed
+                distclean(readConfig(null, false, configLBName));
+            }
+        }
+        
+        // copy in our new dsss.lastbuild
+        std.file.copy(configFName, configLBName);
+    }
+    
     /* config file format: every line is precisely one section, setting, block
      * opener or block closer. The only valid block opener is 'version' */
     
@@ -235,9 +253,9 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false)
                 tok ~= line[(i + 1) .. $];
                 
                 // trim whitespace of the setting
-                while (iswhite(tok[0])) tok = tok[1..$];
+                while (tok.length && iswhite(tok[0])) tok = tok[1..$];
                 
-                addToken();
+                if (tok.length) addToken();
                 break;
             } else {
                 addToken();
@@ -395,7 +413,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false)
                     char[] pkg = canonPath(section);
                     
                     // LNC:
-                    // D<compiler>.<package>
+                    // D<compiler>-<package-with-hyphens>
                     
                     // D
                     char[] lname = "D";
@@ -409,12 +427,12 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false)
                     } else {
                         static assert(0);
                     }
-                    lname ~= ".";
+                    lname ~= "-";
                         
                     // <package>
                     // swap out /'s
                     pkg =
-                        std.string.replace(pkg, std.path.sep, ".");
+                        std.string.replace(pkg, std.path.sep, "-");
                     // name it
                     conf.settings[section]["target"] =
                         lname ~ pkg;

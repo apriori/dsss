@@ -981,11 +981,7 @@ int Build()
         if (lFileName.length > 0)
         {
             lCmdItem = lFileName;
-            if ( lCmdItem[0..2] == "-l")
-            {
-                lLibraryFiles ~= lCmdItem[2..$];
-            }
-            else if ( util.str.ends(lCmdItem, "." ~ vLibExtention) == True)
+            if ( util.str.ends(lCmdItem, "." ~ vLibExtention) == True)
             {
                 // Cut off extention.
                 lCmdItem.length = lCmdItem.length - vLibExtention.length - 1;
