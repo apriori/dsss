@@ -366,8 +366,7 @@ public class Source {
         if (std.path.getExt(pFileName) != "ddoc")
         {
             char[] lAltName;
-            //mNoLink = (std.path.getExt(pFileName) == "di");
-            mNoLink = false;
+            mNoLink = (std.path.getExt(pFileName) == "di");
             mModuleName = FileToModulename(pFileName, lAltName);
             lObjectName = addExt(pFileName,ObjExt);
             mObjectName = util.pathex.AbbreviateFileName(util.pathex.CanonicalPath(lObjectName, false));

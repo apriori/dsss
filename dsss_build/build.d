@@ -150,7 +150,9 @@ private{
             char[] vEtcPath    = "";
             char[] vSymInfoSwitch = "/co";
             char[] vOutFileSwitch = "-of";
-            char[]     vLinkLibSwitch = "";
+            char[] vStartLibsSwitch = "";
+            char[] vLinkLibSwitch = "";
+            char[] vEndLibsSwitch = "";
         }
 
         version(Posix) {
@@ -178,7 +180,9 @@ private{
             char[] vEtcPath    = "/etc/";
             char[] vSymInfoSwitch = "-g";
             char[] vOutFileSwitch = "-o ";
-            char[]     vLinkLibSwitch = "-l";
+            char[] vStartLibsSwitch = "-Wl,--start-group";
+            char[] vLinkLibSwitch = "-l";
+            char[] vEndLibsSwitch = "-Wl,--end-group";
         }
 
         char[]     vVersionSwitch = "-version";
@@ -210,7 +214,9 @@ private{
             char[] vShLibrarian = "";
             char[] vShLibrarianOpts = "";
             char[] vShLibrarianOutFileSwitch = "";
+            char[] vStartLibsSwitch = "-Wl,--start-group";
             char[] vLinkLibSwitch = "-l";
+            char[] vEndLibsSwitch = "-Wl,--end-group";
             char[] vHomePathId = "HOME";
             char[] vEtcPath    = "";
             char[] vOutFileSwitch = "-o ";
@@ -237,7 +243,9 @@ private{
             char[] vShLibrarian = `gcc`;
             char[] vShLibrarianOpts = `-shared`;
             char[] vShLibrarianOutFileSwitch = `-o `;
+            char[] vStartLibsSwitch = "-Wl,--start-group";
             char[] vLinkLibSwitch = "-l";
+            char[] vEndLibsSwitch = "-Wl,--end-group";
             char[] vHomePathId = "HOME";
             char[] vEtcPath    = "/etc/";
             char[] vOutFileSwitch = "-rdynamic -o ";
@@ -1102,11 +1110,13 @@ int Build()
                     lLibraryFiles = vDefaultLibs ~ lLibraryFiles;
                 if (lLibraryFiles.length > 0)
                 {
+                    lCommandLine ~= vStartLibsSwitch ~ "\n";
                     foreach( char[] lLib; lLibraryFiles)
                     {
                         lLib =  std.path.addExt(lLib, vLibExtention);
                         lCommandLine ~= vLinkLibSwitch ~ util.str.enquote(lLib) ~ "\n";
                     }
+                    lCommandLine ~= vEndLibsSwitch ~ "\n";
                 }
                 else
                     lCommandLine ~= "\n";
@@ -1192,12 +1202,14 @@ int Build()
 
                 // (4) Gather the libraries names.
                 // Include the default libraries first.
+                lCommandLine ~= vStartLibsSwitch ~ "\n";
                 if (vLibraryAction != LibOpt.Shared)
                     lLibraryFiles = vDefaultLibs ~ lLibraryFiles;
                 foreach( char[] lLib; lLibraryFiles)
                 {
                     lCommandLine ~= vLinkLibSwitch ~ util.str.enquote(lLib) ~ "\n";
                 }
+                lCommandLine ~= vEndLibsSwitch ~ "\n";
 
                 if (vLibPaths.length > 1)
                 {
@@ -1329,11 +1341,7 @@ int Build()
 
         vExecuteProgram = False;
 
-        if (vLibraryAction == LibOpt.Build) {
-            lOutText = vLibrarianOpts ~ std.path.linesep;
-        } else {
-            lOutText = vShLibrarianOpts ~ std.path.linesep ~ vShLibrarianOutFileSwitch;
-        }
+        lOutText = vLibrarianOpts ~ std.path.linesep;
         lOutText ~= lTargetName ~  std.path.linesep;  // Create a new library
 
         foreach( char[] lFileName; lFilesToLink)
@@ -1378,11 +1386,7 @@ int Build()
                     std.stdio.writefln("Librarian with ..........\n%s\n", lOutText);
             }
 
-            if (vLibraryAction == LibOpt.Build) {
-                lRunResult = util.fileex.RunCommand(vLibrarianPath ~ vLibrarian, lCommand);
-            } else {
-                lRunResult = util.fileex.RunCommand(vShLibrarian, lCommand);
-            }
+            lRunResult = util.fileex.RunCommand(vLibrarianPath ~ vLibrarian, lCommand);
         }
     }
 
@@ -2050,7 +2054,7 @@ char[] GetFullPathname(char[] pFileName, char[][] pScanList = null)
     lFileExtList ~= std.file.getExt(pFileName);
     if (lFileExtList[0] == vSrcExtention)
     {
-        lFileExtList ~= lFileExtList[0];
+        lFileExtList ~= vSrcExtention;
         lFileExtList[0] = vSrcDInterfaceExt;
     }
     lFileBase = std.path.getName(pFileName);

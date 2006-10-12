@@ -197,26 +197,16 @@ void getPrefix(char[] argvz)
 /** DSSS configuration information - simply a list of sections, then an array
  * of settings for those sections */
 class DSSSConf {
+    /// Configurable sections
     char[][] sections;
+    
+    /// Settings per section
     char[][char[]][char[]] settings;
 }
 
 /** Generate a DSSSConf from dsss.conf, or generate a dsss.conf from buildElems */
 DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF = configFName)
 {
-    // before reading the config, distclean if it's changed
-    if (configF == configFName) {
-        if (exists(configLBName)) {
-            if (fileNewer(configFName, configLBName)) {
-                // our config has changed
-                distclean(readConfig(null, false, configLBName));
-            }
-        }
-        
-        // copy in our new dsss.lastbuild
-        std.file.copy(configFName, configLBName);
-    }
-    
     /* config file format: every line is precisely one section, setting, block
      * opener or block closer. The only valid block opener is 'version' */
     
@@ -279,6 +269,19 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
             // this makes no sense
             writefln("Will not generate a config file when a config file already exists.");
             exit(1);
+        }
+        
+        // before reading the config, distclean if it's changed
+        if (configF == configFName) {
+            if (exists(configLBName)) {
+                if (fileNewer(configFName, configLBName)) {
+                    // our config has changed
+                    distclean(readConfig(null, false, configLBName));
+                }
+            }
+        
+            // copy in our new dsss.lastbuild
+            std.file.copy(configFName, configLBName);
         }
         
         // Read the config file
@@ -394,6 +397,9 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
             // need to have some default settings: target and type
             if (section == "*") {
                 // "global" section, no target/type
+            } else if (section == "") {
+                // top-level section, no target/type but a "name" and "version"
+                conf.settings[section]["name"]
             } else if (section.length > 0 &&
                        section[0] == '+') {
                 // special section
@@ -446,20 +452,40 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
             // FIXME: guarantee that sections aren't repeated
                 
         } else if (tokens[0] == "version") {
-            // a version statement, must be of the form version(version) {
-            if (tokens.length != 5 ||
-                tokens[1] != "(" ||
-                tokens[3] != ")" ||
-                tokens[4] != "{") {
+            /* a version statement, must be of one form:
+             *  * version(version) {
+             *  * version(!version) {
+             */
+            
+            if ((tokens.length != 5 ||
+                 tokens[1] != "(" ||
+                 tokens[3] != ")" ||
+                 tokens[4] != "{") &&
+                (tokens.length != 6 ||
+                 tokens[1] != "(" ||
+                 tokens[2] != "!" ||
+                 tokens[4] != ")" ||
+                 tokens[5] != "{")) {
                 writefln("DSSS config error: malformed version line.");
                 exit(1);
             }
             
-            if (!(tokens[2] in versions)) {
+            // whether the comparison is valid
+            bool valid = false;
+            char[] vertok;
+            if (tokens[2] == "!") {
+                // assume valid
+                valid = true;
+                vertok = tokens[3];
+            } else {
+                vertok = tokens[2];
+            }
+            
+            if (!(vertok in versions)) {
                 /* now check if this version is defined by making a .d file and
                  * building it */
                 std.file.write("dsss_tmp.d", cast(void[])
-                               ("version (" ~ tokens[2] ~ ") {\n" ~
+                               ("version (" ~ vertok ~ ") {\n" ~
                                 "pragma(msg, \"y\");\n" ~
                                 "} else {\n" ~
                                 "pragma(msg, \"n\");\n" ~
@@ -473,14 +499,15 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
                 
                 if (yn == 'y') {
                     // true version
-                    versions[tokens[2]] = true;
+                    versions[vertok] = true;
                 } else {
-                    versions[tokens[2]] = false;
+                    versions[vertok] = false;
                 }
             }
             
             // now choose our path
-            if (!versions[tokens[2]]) {
+            if (versions[vertok]) valid = !valid;
+            if (!valid) {
                 // false, find the end to this block
                 closeScope();
             }
@@ -499,7 +526,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
         } else if (tokens.length == 3 &&
                    tokens[1] == "=") {
             // a setting
-            conf.settings[section][std.string.tolower(tokens[0])] = tokens[2];
+            conf.settings[section][std.string.tolower(tokens[0])] = expandEnvVars(tokens[2]);
                 
         } else if (tokens.length == 1 &&
                    isalnum(tokens[0][0])) {
@@ -512,9 +539,9 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
             // append to a setting
             char[] setting = std.string.tolower(tokens[0]);
             if (setting in conf.settings[section]) {
-                conf.settings[section][setting] ~= " " ~ tokens[3];
+                conf.settings[section][setting] ~= " " ~ expandEnvVars(tokens[3]);
             } else {
-                conf.settings[section][setting] = tokens[3];
+                conf.settings[section][setting] = expandEnvVars(tokens[3]);
             }
                 
         } else if ((tokens.length == 1 &&
@@ -628,24 +655,6 @@ body {
 void dsssScriptedStep(char[] step)
 {
     char[] cmd;
-    
-    // expand environment variables
-    for (int i = 0; i < step.length; i++) {
-        if (step[i] == '$') {
-            // find the end
-            int j;
-            for (j = i + 1; j < step.length &&
-                 (isalnum(step[j]) || step[j] == '_');
-                 j++) {}
-                    
-            // expand
-            char[] envvar;
-            envvar = getEnvVar(step[(i + 1) .. j]);
-            step = step[0 .. i] ~
-            envvar ~
-            step[j .. $];
-        }
-    }
     
     char[] ext = std.string.tolower(getExt(step));
     if (ext == "d") {
@@ -842,4 +851,30 @@ void copyInFile(char[] file, char[] prefix, char[] from = "")
     } else {
         copy(from ~ file, prefix ~ std.path.sep ~ file);
     }
+}
+
+/** Expand environment variables in the provided string */
+char[] expandEnvVars(char[] from)
+{
+    char[] ret = from ~ "";
+    
+    // now expand
+    for (int i = 0; i < ret.length; i++) {
+        if (ret[i] == '$') {
+            // find the end
+            int j;
+            for (j = i + 1; j < ret.length &&
+                 (isalnum(ret[j]) || ret[j] == '_');
+                 j++) {}
+                    
+            // expand
+            char[] envvar;
+            envvar = getEnvVar(ret[(i + 1) .. j]);
+            ret = ret[0 .. i] ~
+            envvar ~
+            ret[j .. $];
+        }
+    }
+    
+    return ret;
 }
