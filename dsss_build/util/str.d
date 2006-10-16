@@ -512,8 +512,9 @@ body {
     {
         if (pPattern[lPX] == kZeroOrMore)
         {
-            // Skip over adjacent '*'
-            while( lPX < pPattern.length && pPattern[lPX] == kZeroOrMore)
+            // Skip over any adjacent '*'
+            while( lPX < pPattern.length &&
+                   pPattern[lPX] == kZeroOrMore)
             {
                 lPMark = lPX;
                 lPX++;
@@ -532,7 +533,8 @@ body {
                 if (pPattern[lPX] == kEscape && lPX < pPattern.length - 1)
                     lPX++;
 
-                if (pPattern[lPX] == pText[lTX] || pPattern[lPX] == kExactlyOne)
+                if (pPattern[lPX] == pText[lTX] ||
+                    pPattern[lPX] == kExactlyOne)
                 {
                     // We found the start of a potentially matching sequence.
                     // so increment over the matching char in preparation
@@ -599,44 +601,9 @@ body {
     return False;
 }
 
-Bool IsLike(char[] pText, dchar[] pPattern )
-{
-    return IsLike( std.utf.toUTF32(pText), pPattern);
-}
-
-Bool IsLike(wchar[] pText, dchar[] pPattern )
-{
-    return IsLike( std.utf.toUTF32(pText), pPattern);
-}
-
 Bool IsLike(char[] pText, char[] pPattern )
 {
     return IsLike( std.utf.toUTF32(pText), std.utf.toUTF32(pPattern));
-}
-
-Bool IsLike(wchar[] pText, char[] pPattern )
-{
-    return IsLike( std.utf.toUTF32(pText), std.utf.toUTF32(pPattern));
-}
-
-Bool IsLike(dchar[] pText, char[] pPattern )
-{
-    return IsLike( pText, std.utf.toUTF32(pPattern));
-}
-
-Bool IsLike(char[] pText, wchar[] pPattern )
-{
-    return IsLike( std.utf.toUTF32(pText), std.utf.toUTF32(pPattern));
-}
-
-Bool IsLike(wchar[] pText, wchar[] pPattern )
-{
-    return IsLike( std.utf.toUTF32(pText), std.utf.toUTF32(pPattern));
-}
-
-Bool IsLike(dchar[] pText, wchar[] pPattern )
-{
-    return IsLike( pText, std.utf.toUTF32(pPattern));
 }
 
 }
@@ -754,95 +721,95 @@ dchar[] enquote(dchar[] pString, dchar pTrigger = ' ', dchar[] pPrefix = `"`, dc
 unittest
 { // IsLike
      debug(str)  std.stdio.writefln("str.IsLike.UT00");
-     assert( IsLike( cast(dchar[])"foobar", cast(wchar[])"foo?*") == True);
+     assert( IsLike( "foobar"c, "foo?*"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT01");
-     assert( IsLike( cast(char[])"foobar", cast(wchar[])"foo*") == True);
+     assert( IsLike( "foobar"c, "foo*"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT02");
-     assert( IsLike( cast(char[])"foobar", cast(wchar[])"*bar") == True);
+     assert( IsLike( "foobar"c, "*bar"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT03");
-     assert( IsLike( cast(char[])"", cast(wchar[])"foo*") == False);
+     assert( IsLike( ""c, "foo*"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT04");
-     assert( IsLike( cast(char[])"", cast(wchar[])"*bar") == False);
+     assert( IsLike( ""c, "*bar"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT05");
-     assert( IsLike( cast(char[])"", cast(wchar[])"?") == False);
+     assert( IsLike( ""c, "?"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT06");
-     assert( IsLike( cast(char[])"", cast(wchar[])"*") == True);
+     assert( IsLike( ""c, "*"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT06a");
-     assert( IsLike( cast(char[])"", cast(wchar[])"x") == False);
+     assert( IsLike( ""c, "x"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT06b");
-     assert( IsLike( cast(char[])"x", cast(wchar[])"") == False);
+     assert( IsLike( "x"c, ""c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT07");
-     assert( IsLike( cast(char[])"f", cast(wchar[])"?") == True);
+     assert( IsLike( "f"c, "?"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT08");
-     assert( IsLike( cast(char[])"f", cast(wchar[])"*") == True);
+     assert( IsLike( "f"c, "*"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT09");
-     assert( IsLike( cast(char[])"foo", cast(wchar[])"?oo") == True);
+     assert( IsLike( "foo"c, "?oo"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT10");
-     assert( IsLike( cast(char[])"foobar", cast(wchar[])"?oo") == False);
+     assert( IsLike( "foobar"c, "?oo"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT11");
-     assert( IsLike( cast(char[])"foobar", cast(wchar[])"?oo*") == True);
+     assert( IsLike( "foobar"c, "?oo*"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT12");
-     assert( IsLike( cast(char[])"foobar", cast(wchar[])"*oo*b*") == True);
+     assert( IsLike( "foobar"c, "*oo*b*"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT13");
-     assert( IsLike( cast(char[])"foobar", cast(wchar[])"*oo*ar") == True);
+     assert( IsLike( "foobar"c, "*oo*ar"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT14");
-     assert( IsLike( cast(char[])"terrainformatica.com", cast(wchar[])"*.com") == True);
+     assert( IsLike( "terrainformatica.com"c, "*.com"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT15");
-     assert( IsLike( cast(char[])"12abcdef", cast(wchar[])"*abc?e*") == True);
+     assert( IsLike( "12abcdef"c, "*abc?e*"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT16");
-     assert( IsLike( cast(char[])"12abcdef", cast(wchar[])"**abc?e**") == True);
+     assert( IsLike( "12abcdef"c, "**abc?e**"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT17");
-     assert( IsLike( cast(char[])"12abcdef", cast(wchar[])"*") == True);
+     assert( IsLike( "12abcdef"c, "*"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT18");
-     assert( IsLike( cast(char[])"12abcdef", cast(wchar[])"?*") == True);
+     assert( IsLike( "12abcdef"c, "?*"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT19");
-     assert( IsLike( cast(char[])"12abcdef", cast(wchar[])"*?") == False);
+     assert( IsLike( "12abcdef"c, "*?"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT20");
-     assert( IsLike( cast(char[])"12abcdef", cast(wchar[])"?*?") == False);
+     assert( IsLike( "12abcdef"c, "?*?"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT21");
-     assert( IsLike( cast(char[])"12abcdef", cast(wchar[])"*?*") == True);
+     assert( IsLike( "12abcdef"c, "*?*"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT22");
-     assert( IsLike( cast(char[])"12", cast(wchar[])"??") == True);
+     assert( IsLike( "12"c, "??"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT23");
-     assert( IsLike( cast(char[])"123", cast(wchar[])"??") == False);
+     assert( IsLike( "123"c, "??"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT24");
-     assert( IsLike( cast(char[])"12", cast(wchar[])"??3") == False);
+     assert( IsLike( "12"c, "??3"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT25");
-     assert( IsLike( cast(char[])"12", cast(wchar[])"???") == False);
+     assert( IsLike( "12"c, "???"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT25a");
-     assert( IsLike( cast(char[])"123", cast(wchar[])"?2?") == True);
+     assert( IsLike( "123"c, "?2?"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT25b");
-     assert( IsLike( cast(char[])"abc123def", cast(wchar[])"*?2?*") == True);
+     assert( IsLike( "abc123def"c, "*?2?*"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT25c");
-     assert( IsLike( cast(char[])"2", cast(wchar[])"2?*") == False);
+     assert( IsLike( "2"c, "2?*"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT26");
-     assert( IsLike( cast(char[])"", cast(wchar[])"") == True);
+     assert( IsLike( ""c, ""c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT27");
-     assert( IsLike( cast(char[])"abc", cast(wchar[])"abc") == True);
+     assert( IsLike( "abc"c, "abc"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT28");
-     assert( IsLike( cast(char[])"abc", cast(wchar[])"") == False);
+     assert( IsLike( "abc"c, ""c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT29");
-     assert( IsLike( cast(char[])"abc*d", cast(wchar[])"abc\\*d") == True);
+     assert( IsLike( "abc*d"c, "abc\\*d"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT30");
-     assert( IsLike( cast(char[])"abc?d", cast(wchar[])"abc\\?d") == True);
+     assert( IsLike( "abc?d"c, "abc\\?d"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT31");
-     assert( IsLike( cast(char[])"abc\\d", cast(wchar[])"abc\\\\d") == True);
+     assert( IsLike( "abc\\d"c, "abc\\\\d"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT31a");
-     assert( IsLike( cast(char[])"abc*d", cast(wchar[])"abc\\*d") == True);
+     assert( IsLike( "abc*d"c, "abc\\*d"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT31b");
-     assert( IsLike( cast(char[])"abc\\d", cast(wchar[])"abc\\*d") == False);
+     assert( IsLike( "abc\\d"c, "abc\\*d"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT31c");
-     assert( IsLike( cast(char[])"abc\\d", cast(wchar[])"abc\\*d") == False);
+     assert( IsLike( "abc\\d"c, "abc\\*d"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT31d");
-     assert( IsLike( cast(char[])"abc\\d", cast(wchar[])"*\\*d") == False);
+     assert( IsLike( "abc\\d"c, "*\\*d"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT31e");
-     assert( IsLike( cast(char[])"abc\\d", cast(wchar[])"*\\\\d") == True);
+     assert( IsLike( "abc\\d"c, "*\\\\d"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT32");
-     assert( IsLike( cast(dchar[])"foobar", cast(wchar[])"foo???") == True);
+     assert( IsLike( "foobar"c, "foo???"c) == True);
      debug(str)  std.stdio.writefln("str.IsLike.UT33");
-     assert(  IsLike( cast(dchar[])"foobar", cast(wchar[])"foo????") == False);
+     assert(  IsLike( "foobar"c, "foo????"c) == False);
      debug(str)  std.stdio.writefln("str.IsLike.UT34");
-     assert(  IsLike( cast(dchar[])"c:\\dindx_a\\index_000.html", cast(wchar[])"*index_???.html") == True);
+     assert(  IsLike( "c:\\dindx_a\\index_000.html"c, "*index_???.html"c) == True);
 }
 
 
@@ -1101,158 +1068,12 @@ char[] toASCII(char[] pUTF8)
  * The delimiter is not included in the line.
  */
 
-dchar[][] splitlines(dchar[] pText)
-{
-    uint lLineStart;
-    uint lLineCount;
-    dchar[][] lLines;
-    dchar lPrevChar;
-
-    // 1st pass : Count the number of lines.
-    lLineCount = 0;
-    lPrevChar = 0;
-    foreach (uint i, dchar c; pText)
-    {
-    	if (c == '\r')
-    	{
-    	    lLineCount++;
-    	    lLineStart = i + 1;
-	    }
-	    else if (c == '\n')
-	    {
-    	    if (lPrevChar != '\r' )
-    	    {
-        	    lLineCount++;
-    	    }
-      	    lLineStart = i + 1;
-	    }
-      	lPrevChar = c;
-    }
-    // Cater for a final line without a terminator.
-    if (lLineStart != pText.length)
-    {
-	    lLineCount++;
-    }
-
-    lLines.length = lLineCount;
-    // pass 2: 'copy' the lines from the text.
-    lLineCount = 0;
-    lPrevChar = 0;
-    lLineStart = 0;
-    foreach (uint i, dchar c; pText)
-    {
-    	if (c == '\r')
-    	{
-        	lLines[lLineCount] = pText[lLineStart .. i];
-    	    lLineCount++;
-    	    lLineStart = i + 1;
-	    }
-	    else if (c == '\n')
-	    {
-    	    if (lPrevChar != '\r' )
-    	    {
-            	lLines[lLineCount] = pText[lLineStart .. i];
-        	    lLineCount++;
-    	    }
-      	    lLineStart = i + 1;
-	    }
-      	lPrevChar = c;
-    }
-    // Cater for a final line without a terminator.
-    if (lLineStart != pText.length)
-    {
-     	lLines[lLineCount] = pText[lLineStart .. pText.length];
-	    lLineCount++;
-    }
-
-
-    assert(lLineCount == lLines.length);
-    return lLines;
-}
-
-wchar[][] splitlines(wchar[] s)
-{
-    dchar[][] temp32;
-    wchar[][] temp16;
-
-    temp32 =  splitlines(std.utf.toUTF32(s));
-    temp16.length = temp32.length;
-    foreach( int i, dchar[] lLine; temp32)
-    {
-        temp16[i] = std.utf.toUTF16(lLine);
-    }
-
-    return temp16;
-}
-
-char[][] splitlines(char[] s)
-{
-    dchar[][] temp32;
-    char[][] temp8;
-
-    temp32 =  splitlines(std.utf.toUTF32(s));
-    temp8.length = temp32.length;
-    foreach( int i, dchar[] lLine; temp32)
-    {
-        temp8[i] = std.utf.toUTF8(lLine);
-    }
-
-    return temp8;
-}
-
-unittest
-{
-    {  // utf32
-        dchar[] s = "\rpeter\n\rpaul\r\njerry\nmichael"d;
-        dchar[][] lines;
-        int i;
-
-        lines = splitlines(s);
-        assert(lines.length == 6);
-        assert(lines[0].length == 0);
-        assert(lines[1] == "peter"d);
-        assert(lines[2].length == 0);
-        assert(lines[3] == "paul"d);
-        assert(lines[4] == "jerry"d);
-        assert(lines[5] == "michael"d);
-    }
-
-    { // utf16
-        wchar[] s = "\rpeter\n\rpaul\r\njerry\nmichael"w;
-        wchar[][] lines;
-        int i;
-
-        lines = splitlines(s);
-        assert(lines.length == 6);
-        assert(lines[0].length == 0);
-        assert(lines[1] == "peter"w);
-        assert(lines[2].length == 0);
-        assert(lines[3] == "paul"w);
-        assert(lines[4] == "jerry"w);
-        assert(lines[5] == "michael"w);
-    }
-    { // utf8
-        char[] s = "\rpeter\n\rpaul\r\njerry\nmichael"c;
-        char[][] lines;
-        int i;
-
-        lines = splitlines(s);
-        assert(lines.length == 6);
-        assert(lines[0].length == 0);
-        assert(lines[1] == "peter"c);
-        assert(lines[2].length == 0);
-        assert(lines[3] == "paul"c);
-        assert(lines[4] == "jerry"c);
-        assert(lines[5] == "michael"c);
-
-    }
-}
 
 private static dchar[] Unicode_WhiteSpace =
     "\u0009\u000A\u000B\u000C\u000D"  // TAB, NL, , NP, CR
     // "\u0020"  // SPACE
     "\u0085" // <control-0085>
-    "\u00A0" // NO-BREAK SPACE
+    // "\u00A0" // NO-BREAK SPACE
     "\u1680" // OGHAM SPACE MARK
     "\u180E" // MONGOLIAN VOWEL SEPARATOR
     "\u2000\u2001\u2002\u2003\u2004"
@@ -1260,10 +1081,10 @@ private static dchar[] Unicode_WhiteSpace =
     "\u2009\u200A" // EN QUAD..HAIR SPACE
     "\u2028" // LINE SEPARATOR
     "\u2029" // PARAGRAPH SEPARATOR
-    "\u202F" // NARROW NO-BREAK SPACE
+    // "\u202F" // NARROW NO-BREAK SPACE
     "\u205F" // MEDIUM MATHEMATICAL SPACE
     "\u3000" // IDEOGRAPHIC SPACE
-    "\x10FFFF" // Stop
+    "\ufffd" // Stop
     ;
 
 bool UC_IsSpace(dchar pChar)
@@ -1278,13 +1099,20 @@ bool UC_IsSpace(dchar pChar)
 }
 
 // Returns a slice up to the first whitespace (if any)
-dchar[] findws(dchar[] pText)
+char[] findws(char[] pText)
 {
-    int lPos;
-    while (lPos < pText.length && !UC_IsSpace(pText[lPos]))
-        lPos++;
-
-    return pText[0..lPos];
+    foreach(int lPos, dchar c; pText)
+    {
+        if (UC_IsSpace(c))
+            return pText[0..lPos];
+    }
+    return pText;
+}
+unittest
+{
+    assert(findws("abc def") == "abc");
+    assert(findws("\u3056\u2123 def") == "\u3056\u2123");
+    assert(findws("\u3056\u2123\u2028def") == "\u3056\u2123");
 }
 
 // Returns a slice from the last whitespace (if any) to the end

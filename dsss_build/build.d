@@ -9,8 +9,8 @@
    Derek Parnell, Melbourne
    Gregor Richards
  Initial Creation: January 2005
- Version: 3.03+DSSS
- Date: September 2006
+ Version: 3.04+DSSS
+ Date: October 2006
  License:
         This software is provided 'as-is', without any express or implied
         warranty. In no event will the authors be held liable for damages
@@ -43,12 +43,13 @@ version(build)
 {
     version(Windows) {
         // OptLink Definition File
-        pragma (build_def, "VERSION 3.03");
+        pragma (build_def, "VERSION 3.04");
     }
 }
 
 
 private{
+    alias char[] string;
     // --------- imports ----------------
     static import source;          // Source File class
 
@@ -75,12 +76,12 @@ private{
         static import std.c.windows.windows;
     }
 
-    version(linux)
+    else version(linux)
     {
         static import std.c.linux.linux;
     }
 
-    version(darwin)
+    else version(darwin)
     {
         static import std.c.darwin.darwin;
     }
@@ -93,7 +94,7 @@ private{
 
     class BuildException : Error
     {
-        this(char[] pMsg)
+        this(string pMsg)
         {
             super (vAppName ~ ":" ~ pMsg);
         }
@@ -104,187 +105,189 @@ private{
 
     // --------- internal strings ----------------
     version(Windows) {
-        char[] vExeExtention=`exe`;
-        char[] vLibExtention=`lib`;
-        char[] vObjExtention=`obj`;
-        char[] vShrLibExtention=`dll`;
-        char[] vLinkerStdOut = ">nul";
+        string vExeExtension=`exe`;
+        string vLibExtension=`lib`;
+        string vObjExtension=`obj`;
+        string vShrLibExtension=`dll`;
+        string vLinkerStdOut = ">nul";
     }
 
     version(Posix) {
-        char[] vExeExtention=``;
-        char[] vLibExtention=`a`;
-        char[] vObjExtention=`o`;
-        char[] vShrLibExtention=`so`;
-        char[] vLinkerStdOut = ">/dev/null";
+        string vExeExtension=``;
+        string vLibExtension=`a`;
+        string vObjExtension=`o`;
+        string vShrLibExtension=`so`;
+        string vLinkerStdOut = ">/dev/null";
     }
-    char[] vSrcExtention=`d`;
-    char[] vSrcDInterfaceExt = `di`;
-    char[] vMacroExtention=`mac`;
-    char[] vDdocExtention=`ddoc`;
+    string vSrcExtension=`d`;
+    string vSrcDInterfaceExt = `di`;
+    string vMacroExtension=`mac`;
+    string vDdocExtension=`ddoc`;
 
     // ---------- Module scoped globals -----------
     version(DigitalMars) {
         version(Windows) {
-            char[] vCompilerExe=`dmd.exe`;
-            char[] vCompileOnly = `-c`;
-            char[] vLinkerExe=`link.exe`;
+            string vCompilerExe=`dmd.exe`;
+            string vCompileOnly = `-c`;
+            string vLinkerExe=`link.exe`;
             bool   vPostSwitches = true;
             bool   vAppendLinkSwitches = true;
-            char[] vArgDelim = ",";
-            char[] vArgFileDelim = "+";
-            char[] vConfigFile=`sc.ini`;
-            char[] vCompilerPath=``;
-            char[] vLinkerPath=``;
-            char[] vLinkerDefs=`/noi/map`;
-            char[] vConfigPath=``;
-            char[] vLibPaths = ``;
-            char[] vConfigSep = ";";
-            char[] vLibrarian = `lib.exe`;
-            char[] vLibrarianOpts = `-c -p256`;
+            string vArgDelim = ",";
+            string vArgFileDelim = "+";
+            string vConfigFile=`sc.ini`;
+            string vCompilerPath=``;
+            string vLinkerPath=``;
+            string vLinkerDefs=`/noi/map`;
+            string vConfigPath=``;
+            string vLibPaths = ``;
+            string vConfigSep = ";";
+            string vLibrarian = `lib.exe`;
+            string vLibrarianOpts = `-c -p256`;
             bool   vShLibraries = false;
-            char[] vShLibrarian = "";
-            char[] vShLibrarianOpts = "";
-            char[] vShLibrarianOutFileSwitch = "";
-            char[] vHomePathId = "HOME";
-            char[] vEtcPath    = "";
-            char[] vSymInfoSwitch = "/co";
-            char[] vOutFileSwitch = "-of";
-            char[] vStartLibsSwitch = "";
-            char[] vLinkLibSwitch = "";
-            char[] vEndLibsSwitch = "";
+            string vShLibrarian = "";
+            string vShLibrarianOpts = "";
+            string vShLibrarianOutFileSwitch = "";
+            string vHomePathId = "HOME";
+            string vEtcPath    = "";
+            string vSymInfoSwitch = "/co";
+            string vOutFileSwitch = "-of";
+            string vLinkLibSwitch = "";
+            string vStartLibsSwitch = "";
+            string vEndLibsSwitch = "";
         }
 
         version(Posix) {
-            char[] vCompilerExe=`dmd`;
-            char[] vCompileOnly= `-c`;
-            char[] vLinkerExe=`gcc`;
+            string vCompilerExe=`dmd`;
+            string vCompileOnly= `-c`;
+            string vLinkerExe=`gcc`;
             bool   vPostSwitches = false;
             bool   vAppendLinkSwitches = false;
-            char[] vArgDelim = " ";
-            char[] vArgFileDelim = " ";
-            char[] vConfigFile=`dmd.conf`;
-            char[] vCompilerPath=``;
-            char[] vLinkerPath=``;
-            char[] vLinkerDefs=``;
-            char[] vConfigPath=`/etc/`;
-            char[] vLibPaths = ``;
-            char[] vConfigSep = ":";
-            char[] vLibrarian = `ar`;
-            char[] vLibrarianOpts = `-r`;
+            string vArgDelim = " ";
+            string vArgFileDelim = " ";
+            string vConfigFile=`dmd.conf`;
+            string vCompilerPath=``;
+            string vLinkerPath=``;
+            string vLinkerDefs=``;
+            string vConfigPath=`/etc/`;
+            string vLibPaths = ``;
+            string vConfigSep = ":";
+            string vLibrarian = `ar`;
+            string vLibrarianOpts = `-r`;
             bool   vShLibraries = false;
-            char[] vShLibrarian = "";
-            char[] vShLibrarianOpts = "";
-            char[] vShLibrarianOutFileSwitch = "";
-            char[] vHomePathId = "HOME";
-            char[] vEtcPath    = "/etc/";
-            char[] vSymInfoSwitch = "-g";
-            char[] vOutFileSwitch = "-o ";
-            char[] vStartLibsSwitch = "-Wl,--start-group";
-            char[] vLinkLibSwitch = "-l";
-            char[] vEndLibsSwitch = "-Wl,--end-group";
+            string vShLibrarian = "";
+            string vShLibrarianOpts = "";
+            string vShLibrarianOutFileSwitch = "";
+            string vHomePathId = "HOME";
+            string vEtcPath    = "/etc/";
+            string vSymInfoSwitch = "-g";
+            string vOutFileSwitch = "-o ";
+            string vLinkLibSwitch = "-l";
+            string vStartLibsSwitch = "-Wl,--start-group";
+            string vEndLibsSwitch = "-Wl,--end-group";
         }
 
-        char[]     vVersionSwitch = "-version";
-        char[]     vDebugSwitch = "-debug";
-        char[][]   vCompilerDefs;
-        char[]     vImportPath = "-I";
+        string     vVersionSwitch = "-version";
+        string     vDebugSwitch = "-debug";
+        string[]   vCompilerDefs;
+        string     vImportPath = "-I";
         bool       vUseModBaseName = false;
     }
 
     version(GNU) {
         version(Windows) {
-            char[] vCompilerExe=`gdc.exe`;
-            char[] vCompileOnly= `-c`;
-            char[] vLinkerExe=`gdc.exe`;
+            string vCompilerExe=`gdc.exe`;
+            string vCompileOnly= `-c`;
+            string vLinkerExe=`gdc.exe`;
             bool   vPostSwitches = false;
             bool   vAppendLinkSwitches = false;
-            char[] vArgDelim = " ";
-            char[] vArgFileDelim = " ";
-            char[] vConfigFile=null;
-            char[] vCompilerPath=``;
-            char[] vLinkerPath=``;
-            char[] vLinkerDefs=``;
-            char[] vConfigPath=null;
-            char[] vLibPaths = ``;
-            char[] vConfigSep = ";";
-            char[] vLibrarian = `ar.exe`;
-            char[] vLibrarianOpts = `-c`;
+            string vArgDelim = " ";
+            string vArgFileDelim = " ";
+            string vConfigFile=null;
+            string vCompilerPath=``;
+            string vLinkerPath=``;
+            string vLinkerDefs=``;
+            string vConfigPath=null;
+            string vLibPaths = ``;
+            string vConfigSep = ";";
+            string vLibrarian = `ar.exe`;
+            string vLibrarianOpts = `-c`;
             bool   vShLibraries = false;
-            char[] vShLibrarian = "";
-            char[] vShLibrarianOpts = "";
-            char[] vShLibrarianOutFileSwitch = "";
-            char[] vStartLibsSwitch = "-Wl,--start-group";
-            char[] vLinkLibSwitch = "-l";
-            char[] vEndLibsSwitch = "-Wl,--end-group";
-            char[] vHomePathId = "HOME";
-            char[] vEtcPath    = "";
-            char[] vOutFileSwitch = "-o ";
+            string vShLibrarian = "";
+            string vShLibrarianOpts = "";
+            string vShLibrarianOutFileSwitch = "";
+            string vStartLibsSwitch = "-Wl,--start-group";
+            string vLinkLibSwitch = "-l";
+            string vEndLibsSwitch = "-Wl,--end-group";
+            string vHomePathId = "HOME";
+            string vEtcPath    = "";
+            string vOutFileSwitch = "-o ";
         }
 
         version(Posix) {
-            char[] vCompilerExe=`gdc`;
-            char[] vCompileOnly= `-c`;
-            char[] vLinkerExe=`gdc`;
+            string vCompilerExe=`gdc`;
+            string vCompileOnly= `-c`;
+            string vLinkerExe=`gdc`;
             bool   vPostSwitches = false;
             bool   vAppendLinkSwitches = false;
-            char[] vArgDelim = " ";
-            char[] vArgFileDelim = " ";
-            char[] vConfigFile=null;
-            char[] vCompilerPath=``;
-            char[] vLinkerPath=``;
-            char[] vLinkerDefs=``;
-            char[] vConfigPath=null;
-            char[] vLibPaths = ``;
-            char[] vConfigSep = ":";
-            char[] vLibrarian = `ar`;
-            char[] vLibrarianOpts = `-r`;
+            string vArgDelim = " ";
+            string vArgFileDelim = " ";
+            string vConfigFile=null;
+            string vCompilerPath=``;
+            string vLinkerPath=``;
+            string vLinkerDefs=``;
+            string vConfigPath=null;
+            string vLibPaths = ``;
+            string vConfigSep = ":";
+            string vLibrarian = `ar`;
+            string vLibrarianOpts = `-r`;
             bool   vShLibraries = true;
-            char[] vShLibrarian = `gcc`;
-            char[] vShLibrarianOpts = `-shared`;
-            char[] vShLibrarianOutFileSwitch = `-o `;
-            char[] vStartLibsSwitch = "-Wl,--start-group";
-            char[] vLinkLibSwitch = "-l";
-            char[] vEndLibsSwitch = "-Wl,--end-group";
-            char[] vHomePathId = "HOME";
-            char[] vEtcPath    = "/etc/";
-            char[] vOutFileSwitch = "-rdynamic -o ";
+            string vShLibrarian = `gcc`;
+            string vShLibrarianOpts = `-shared`;
+            string vShLibrarianOutFileSwitch = `-o `;
+            string vStartLibsSwitch = "-Wl,--start-group";
+            string vLinkLibSwitch = "-l";
+            string vEndLibsSwitch = "-Wl,--end-group";
+            string vHomePathId = "HOME";
+            string vEtcPath    = "/etc/";
+            string vOutFileSwitch = "-rdynamic -o ";
         }
-        char[]     vVersionSwitch = "-fversion";
-        char[]     vDebugSwitch = "-fdebug";
-        char[][]   vCompilerDefs;
-        char[]     vImportPath = "-I ";
-        char[]     vSymInfoSwitch = "-g";
+        string     vVersionSwitch = "-fversion";
+        string     vDebugSwitch = "-fdebug";
+        string[]   vCompilerDefs;
+        string     vImportPath = "-I ";
+        string     vSymInfoSwitch = "-g";
         /* GDC places object files in the directory from which it is called */
         bool       vUseModBaseName = true;
     }
 
-    char[]       vOverrideConfigPath = "";
-    char[]       vBuildImportPath = "-I";
-    char[]       vImportPathDelim = ";";
-    char[]       vOutputPath = "-od";
-    char[]       vRunSwitch = "-exec";
-    char[]       vLibrarianPath = "";
-    char[]*      vDelayedValue = null;
-    char[]       vTemporaryPath = "";
-    char[]       vLibPathSwitch = "-L";
-    char[]       vMapSwitch = "-M";
-    char[]       vGenDebugInfo = "-g";
-    char[]       vResponseExt = "brf";
-    char[]       vDefResponseFile = "build.brf";
-    char[]       vDefMacroDefFile = "build.mdf";
-    char[]       vUtilsConfigFile = "build.cfg";
-    char[]       vPathId = "PATH";   // Used to locate the environment symbol
+    string       vCFGPath = ``;
+    string       vOverrideConfigPath = "";
+    string       vBuildImportPath = "-I";
+    string       vImportPathDelim = ";";
+    string       vOutputPath = "-od";
+    string       vRunSwitch = "-exec";
+    string       vLibrarianPath = "";
+    string*      vDelayedValue = null;
+    string       vTemporaryPath = "";
+    string       vLibPathSwitch = "-L";
+    string       vMapSwitch = "-M";
+    string       vGenDebugInfo = "-g";
+    string       vResponseExt = "brf";
+    string       vDefResponseFile = "build.brf";
+    string       vDefMacroDefFile = "build.mdf";
+    string       vUtilsConfigFile = "build.cfg";
+    string       vPathId = "PATH";   // Used to locate the environment symbol
 
-    char[]       vModOutPrefix = "MODULES = \n";
-    char[]       vModOutSuffix = "";
-    char[]       vModOutBody   = "    $(MODULE {mod})\n";
-    char[]       vModOutDelim  = "";
-    char[]       vModOutFile   = "_modules.ddoc";
+    string       vModOutPrefix = "MODULES = \n";
+    string       vModOutSuffix = "";
+    string       vModOutBody   = "    $(MODULE {mod})\n";
+    string       vModOutDelim  = "";
+    string       vModOutFile   = "_modules.ddoc";
 
-    char[][]     vFinalProc;
+    string[]     vFinalProc;
 
     Bool         vTestRun;
+    Bool         vExplicit;
     Bool         vScanImports;
     Bool         vNoLink;
     Bool         vForceCompile;
@@ -301,36 +304,38 @@ private{
     Bool         vExecuteProgram;
     Bool         vUseResponseFile;
     Bool         vConsoleApp;
+    Bool         vUseFinal;
+    Bool         vEmptyArgs;
 
-    char[]       vUsesOutput;
-    char[]       vSymbolOutName;
-    char[]       vRunParms;
-    char[]       vTargetExe;
-    char[][]     vImportRoots;
-    char[][]     vModulesToIgnore;
-    char[][]     vModulesToNotice;
-    char[][]     vBuildDef;
-    char[][]     vDefaultLibs;
+    string       vUsesOutput;
+    string       vSymbolOutName;
+    string       vRunParms;
+    string       vTargetExe;
+    string[]     vImportRoots;
+    string[]     vModulesToIgnore;
+    string[]     vModulesToNotice;
+    string[]     vBuildDef;
+    string[]     vDefaultLibs;
     LibOpt       vLibraryAction = LibOpt.Implicit;
-    char[]       vAppPath;
-    char[]       vAppName;
-    char[]       vAppVersion = "3.03";
-    char[]       vTargetName;           // Output name from first file name.
-    char[]       vPragmaTargetName;     // Output name from pragma.
-    char[]       vCommandTargetName;    // Output name from switches.
-    char[][]     vCmdLineSourceFiles;   // List of source files from command line
-    bool[char[]] vLinkFiles;            // List of non-source files from command line
-    char[][]     vCombinedArgs;         // All the args are gathered here prior to processing.
-    char[][]     vBuildArgs;            // Arguments passed to build
-    char[][]     vCompilerArgs;         // Arguments passed to compiler
-    char[][]     vSourceScanList;       // The list of places to find source files.
-    bool[char[]] vResourceFileTypes;
-    char[][]     vUDResTypes;
+    string       vAppPath;
+    string       vAppName;
+    string       vAppVersion = "3.04";
+    string       vTargetName;           // Output name from first file name.
+    string       vPragmaTargetName;     // Output name from pragma.
+    string       vCommandTargetName;    // Output name from switches.
+    string[]     vCmdLineSourceFiles;   // List of source files from command line
+    bool[string] vLinkFiles;            // List of non-source files from command line
+    string[]     vCombinedArgs;         // All the args are gathered here prior to processing.
+    string[]     vBuildArgs;            // Arguments passed to build
+    string[]     vCompilerArgs;         // Arguments passed to compiler
+    string[]     vSourceScanList;       // The list of places to find source files.
+    bool[string] vResourceFileTypes;
+    string[]     vUDResTypes;
 
 
     version(Windows)
     {
-        char[]       vWinVer = "";
+        string       vWinVer = "";
         ubyte        vWinVerNum;
         bool         vAutoWinLibs = true;
     }
@@ -348,7 +353,10 @@ static this()
     vSourceScanList ~= "." ~ std.path.sep;
     vNoLink = False;
     vTestRun = False;
+    vExplicit = False;
     vScanImports = False;
+    vUseFinal = True;
+    vEmptyArgs = True;
     vForceCompile = False;
     vSilent = False;
     vCleanup = False;
@@ -409,6 +417,7 @@ void DisplayUsage(bool pFull = true)
     std.stdio.writefln("             PATH list. Used if you are testing an alternate");
     std.stdio.writefln("             version of the compiler.");
     std.stdio.writefln("  -CFPATH<path> <path> is where the D config file has been installed.");
+    std.stdio.writefln("  -BCFPATH<path> <path> is where the Build config file has been installed.");
     std.stdio.writefln("  -full      Causes all source files, except ignored modules,");
     std.stdio.writefln("              to be compiled.");
     std.stdio.writefln("  -link      Forces the linker to be called instead of the librarian.");
@@ -447,6 +456,8 @@ void DisplayUsage(bool pFull = true)
     std.stdio.writefln("              (Only needed if DllMain is not found in the source files.)");
    }
 
+    std.stdio.writefln("  -explicit  Only compile files explicitly named on the command line.");
+    std.stdio.writefln("             All other files, such as imported ones, are not compiled.");
     std.stdio.writefln("  -LIBOPT<opt> Allows you to pass <opt> to the librarian.");
     std.stdio.writefln("  -SHLIBOPT<opt> Allows you to pass <opt> to the shared-librarian.");
     std.stdio.writefln("  -LIBPATH=<pathlist> Used to add a semi-colon delimited list");
@@ -461,6 +472,10 @@ void DisplayUsage(bool pFull = true)
     std.stdio.writefln("               -R=No will cause command line arguments to be used.");
     std.stdio.writefln("               -R will reverse the current usage.");
     std.stdio.writefln("  -PP<path>  Add a path to the Source Search List");
+    std.stdio.writefln("  -usefinal=<Yes|No> Indicates whether to use any FINAL processes");
+    std.stdio.writefln("              defined in the configuration file.");
+    std.stdio.writefln("               -usefinal=Yes will cause the FINAL to be used. This is the default");
+    std.stdio.writefln("               -usefinal=No will prevent the FINAL from being used.");
 
   version(UseResponseFile)
     std.stdio.writefln("               ** The default is to use a response file");
@@ -567,7 +582,7 @@ util.fdt.FileDateTime GetNewestDateTime()
     );
 
     // Examine any link file dependancies too.
-    foreach(int idx, char[] lFileName; vLinkFiles.keys)
+    foreach(int idx, string lFileName; vLinkFiles.keys)
     {
         util.fdt.FileDateTime lLinkTime = new util.fdt.FileDateTime(lFileName);
 
@@ -614,24 +629,24 @@ int Build()
     Bool        lCompiling;
     Bool        lLinking;
     Bool        lBuildRequired;
-    char[][]    lFilesToLink;
-    char[][]    lFilesToCompile;
+    string[]    lFilesToLink;
+    string[]    lFilesToCompile;
     int         lRunResult;
-    char[]      lTargetName;
-    char[]      lTargetDir;
+    string      lTargetName;
+    string      lTargetDir;
     util.fdt.FileDateTime lTargetTime;
     util.fdt.FileDateTime lMostRecentTime;
     auto source.Source[]    lNonLinkingSources;
-    char[]      lDResponseFileName;
-    char[]      lLinkResponseFileName;
-    char[]      lLResponseFileName;
-    char[]      lDefName;
-    char[]      lOutText;
-    char[]      lCompilerOpts;
-    char[]      lSourcesToCompile;
-    char[]      lCommand;
-    char[][]    lObjectFiles;
-    char[][]    lLibraryFiles;
+    string      lDResponseFileName;
+    string      lLinkResponseFileName;
+    string      lLResponseFileName;
+    string      lDefName;
+    string      lOutText;
+    string      lCompilerOpts;
+    string      lSourcesToCompile;
+    string      lCommand;
+    string[]    lObjectFiles;
+    string[]    lLibraryFiles;
 
 
     lCompiling = False;
@@ -639,10 +654,10 @@ int Build()
     lBuildRequired = False;
 
     // Examine each supplied source file.
-    foreach( char[] lFile; vCmdLineSourceFiles)
+    foreach( string lFile; vCmdLineSourceFiles)
     {
         lFile = GetFullPathname(lFile, vSourceScanList);
-        if (std.path.getExt(lFile) == vMacroExtention)
+        if (std.path.getExt(lFile) == vMacroExtension)
         {
             version(BuildVerbose)
             {
@@ -650,7 +665,7 @@ int Build()
                     std.stdio.writefln("Macro file '%s' being processed.", lFile);
             }
 
-            char[] lAltFile = std.path.addExt( lFile, vSrcExtention); // Make it a D source file.
+            string lAltFile = std.path.addExt( lFile, vSrcExtension); // Make it a D source file.
             if (util.macro.ConvertFile(lFile, "build", lAltFile))
                 lFile = lAltFile;
             else
@@ -724,21 +739,22 @@ int Build()
     // Ensure that the path to the target's location will exist.
     util.pathex.MakePath(vTargetName);
 
+
     if (vLibraryAction == LibOpt.Build ||
         vLibraryAction == LibOpt.Shared)
         // CHANGE: don't mess around with the specified extension
         lTargetName = vTargetName;
-
+    
     else if (vNoLink == False)
     {
         if (source.Source.WasMainFound)
             if (source.Source.WasMainDLL)
                 // Target is a shared library.
-                lTargetName = util.pathex.ReplaceExtention(vTargetName, vShrLibExtention);
+                lTargetName = util.pathex.ReplaceExtension(vTargetName, vShrLibExtension);
             else
             {
                 // Target is an executable
-                lTargetName = util.pathex.ReplaceExtention(vTargetName, vExeExtention);
+                lTargetName = util.pathex.ReplaceExtension(vTargetName, vExeExtension);
                 vTargetExe = lTargetName;
             }
         else
@@ -746,7 +762,7 @@ int Build()
             // Possible error. The user wants to link but no 'main' detected
             // so assume they know what they are doing and also assume an
             // executable is required.
-            lTargetName = util.pathex.ReplaceExtention(vTargetName, vExeExtention);
+            lTargetName = util.pathex.ReplaceExtension(vTargetName, vExeExtension);
             vTargetExe = lTargetName;
         }
     }
@@ -808,10 +824,10 @@ int Build()
 
         // No files to compile, just link files, so collect
         // all the object files to link in.
-        foreach( char[] lFileName; vLinkFiles.keys)
+        foreach( string lFileName; vLinkFiles.keys)
         {
             // Only include OBJECT files.
-            if (util.str.ends(lFileName , vObjExtention) == True)
+            if (util.str.ends(lFileName , vObjExtension) == True)
                 lFilesToLink ~= lFileName;
         }
     }
@@ -839,8 +855,8 @@ int Build()
             {
                 // Check each source to see if we need to recompile it.
                 Bool lNeedsCompiling;
-                char[] lShortFileName;
-                char[] lFileType;
+                string lShortFileName;
+                string lFileType;
 
                 lNeedsCompiling = vForceCompile;
 
@@ -849,11 +865,11 @@ int Build()
 
                 lShortFileName = util.pathex.AbbreviateFileName(lCurrentSource.FileName);
                 lFileType = std.path.getExt(lShortFileName);
-                if (lFileType != vSrcExtention && lFileType != vDdocExtention)
+                if (lFileType != vSrcExtension && lFileType != vDdocExtension)
                     return 0;
 
                 // Only source files are examined from here on.
-                if (lCurrentSource.NoLink || lFileType == vDdocExtention)
+                if (lCurrentSource.NoLink || lFileType == vDdocExtension)
                 {
                     lNonLinkingSources ~= lCurrentSource;
                 }
@@ -883,7 +899,9 @@ int Build()
                 {
                     lBuildRequired = True;
                     lCompiling = True;
-                    lFilesToCompile ~= lShortFileName;
+
+                    if (lCurrentSource.NoCompile == false)
+                        lFilesToCompile ~= lShortFileName;
 
                     // Check to see if I'm allowed to link this file.
                     if (lCurrentSource.NoLink == false)
@@ -920,7 +938,7 @@ int Build()
         return 0;
     }
 
-    foreach(char[] lFileName; lFilesToCompile)
+    foreach(string lFileName; lFilesToCompile)
     {
         lSourcesToCompile ~= util.str.enquote(lFileName) ~ "\n";
     }
@@ -969,7 +987,7 @@ int Build()
 
         if ((vNoDef == False) && (vBuildDef.length > 0))
         {
-            lDefName = util.pathex.ReplaceExtention(lTargetName, "def");
+            lDefName = util.pathex.ReplaceExtension(lTargetName, "def");
             if (vTemporaryPath.length != 0)
             {
                 lDefName = vTemporaryPath ~ std.path.getBaseName(lDefName);
@@ -982,17 +1000,17 @@ int Build()
 
     // Add any library and any external object files required.
     lLibraryFiles.length = 0;
-    foreach (char[] lFileName; vLinkFiles.keys)
+    foreach (string lFileName; vLinkFiles.keys)
     {
-        char[] lCmdItem;
+        string lCmdItem;
 
         if (lFileName.length > 0)
         {
             lCmdItem = lFileName;
-            if ( util.str.ends(lCmdItem, "." ~ vLibExtention) == True)
+            if ( util.str.ends(lCmdItem, "." ~ vLibExtension) == True)
             {
-                // Cut off extention.
-                lCmdItem.length = lCmdItem.length - vLibExtention.length - 1;
+                // Cut off extension.
+                lCmdItem.length = lCmdItem.length - vLibExtension.length - 1;
                 lLibraryFiles ~= lCmdItem;
             }
             else
@@ -1008,13 +1026,13 @@ int Build()
         if (lSourcesToCompile.length > 0)
         {
             // Ok, I have some compiling to do!
-            char[] lCommandLine;
+            string lCommandLine;
 
             lCommandLine = GatherCompilerArgs(lLinking) ~ lSourcesToCompile;
 
             if (vUseResponseFile == True)
             {
-                lDResponseFileName = util.pathex.ReplaceExtention(lTargetName, "rsp");
+                lDResponseFileName = util.pathex.ReplaceExtension(lTargetName, "rsp");
                 if (vTemporaryPath.length != 0)
                 {
                     lDResponseFileName = vTemporaryPath ~ std.path.getBaseName(lDResponseFileName);
@@ -1044,8 +1062,8 @@ int Build()
         // LINK phase ...
         if ( (lRunResult == 0) && (lFilesToLink.length > 0) && (lLinking == True))
         {
-            char[] lCommandLine;
-            char[] lLinkerSwitches;
+            string lCommandLine;
+            string lLinkerSwitches;
             Bool IsMapping = False;
 
             // Prepare list of known resource file types.
@@ -1055,7 +1073,7 @@ int Build()
                 {
                     vUDResTypes ~= "res";
                 }
-                foreach( char[] lResType; vUDResTypes)
+                foreach( string lResType; vUDResTypes)
                 {
                     vResourceFileTypes[lResType] = true;
                 }
@@ -1066,14 +1084,14 @@ int Build()
             version(Windows)
             {
                 // Transfer linker switches from Compiler switches.
-                foreach (char[] lCompileArg; vCompilerArgs)
+                foreach (string lCompileArg; vCompilerArgs)
                 {
                     if (util.str.begins(lCompileArg, "-L") == True)
                     {
                         lLinkerSwitches ~= lCompileArg[2..$] ~ vArgDelim;
                     }
                 }
-                foreach( char[] lSwitch; std.string.split(vLinkerDefs ~ lLinkerSwitches, "/"))
+                foreach( string lSwitch; std.string.split(vLinkerDefs ~ lLinkerSwitches, "/"))
                 {
                     if (lSwitch == "nomap")
                     {
@@ -1086,21 +1104,28 @@ int Build()
                 }
 
                 // (1) Gather the object file names
-                foreach(char[] lFile; lFilesToLink)
                 {
-                    // Only include OBJECT files.
-                    if (std.path.getExt(lFile) == vObjExtention)
-                        lCommandLine ~= lFile ~ vArgFileDelim;
+                    int lCnt = 0;
+                    foreach(string lFile; lFilesToLink)
+                    {
+                        // Only include OBJECT files.
+                        if (std.path.getExt(lFile) == vObjExtension)
+                        {
+                            if (lCnt > 0)
+                                lCommandLine ~= vArgFileDelim;
+                            lCommandLine ~= lFile;
+                            lCnt++;
+                        }
+                    }
+                    lCommandLine ~= "\n";
                 }
-                if (lCommandLine.length > 0)
-                    lCommandLine[$-1] = '\n';
 
                 // (2) Set the output file name
                 lCommandLine ~= util.str.enquote(util.pathex.AbbreviateFileName(lTargetName)) ~ "\n";
 
                 // (3) Set the map name
                 if (IsMapping == True)
-                    lCommandLine ~= util.pathex.ReplaceExtention(lTargetName, "map");
+                    lCommandLine ~= util.pathex.ReplaceExtension(lTargetName, "map");
 
                 lCommandLine ~= "\n";
 
@@ -1111,15 +1136,17 @@ int Build()
                 if (lLibraryFiles.length > 0)
                 {
                     lCommandLine ~= vStartLibsSwitch ~ "\n";
-                    foreach( char[] lLib; lLibraryFiles)
+                    foreach( int i, string lLib; lLibraryFiles)
                     {
-                        lLib =  std.path.addExt(lLib, vLibExtention);
-                        lCommandLine ~= vLinkLibSwitch ~ util.str.enquote(lLib) ~ "\n";
+                        lLib =  std.path.addExt(lLib, vLibExtension);
+                        if (i > 0)
+                            lCommandLine ~= vArgFileDelim;
+                        lCommandLine ~= vLinkLibSwitch ~
+                                        util.str.enquote(lLib);
                     }
                     lCommandLine ~= vEndLibsSwitch ~ "\n";
                 }
-                else
-                    lCommandLine ~= "\n";
+                lCommandLine ~= "\n";
 
                 // Include the explictly named libraries.
                 if (vLibPaths.length > 1)
@@ -1144,27 +1171,23 @@ int Build()
 
                 // (6) Gather the resource file names
                 {
-                    int lCnt;
+                    int lCnt = 0;
 
-                    foreach(char[] lFile; lFilesToLink)
+                    foreach(string lFile; lFilesToLink)
                     {
-                        char[] lExt;
+                        string lExt;
 
                         lExt = std.path.getExt(lFile);
-                        lCnt = 0;
-                        // Only include fiels with the correct extention type.
+                        // Only include fiels with the correct extension type.
                         if (lExt in vResourceFileTypes)
                         {
+                            if (lCnt > 0)
+                                lCommandLine ~= vArgFileDelim;
                             lCommandLine ~= lFile;
                             lCnt++;
                         }
-                        if (lCnt > 0)
-                            lCommandLine ~= vArgFileDelim;
                     }
-                    if (lCnt > 0)
-                        lCommandLine[$-1] = '\n';
-                    else
-                        lCommandLine ~= "\n";
+                    lCommandLine ~= "\n";
                 }
 
                 // (7) Gather then switches
@@ -1174,7 +1197,7 @@ int Build()
             version(Posix)
             {
                 // Transfer linker switches from Compiler switches.
-                foreach (char[] lCompileArg; vCompilerArgs)
+                foreach (string lCompileArg; vCompilerArgs)
                 {
                     if (util.str.begins(lCompileArg, "-L") == True)
                     {
@@ -1183,7 +1206,7 @@ int Build()
                 }
 
                 // (1) Gather the object and resource file names
-                foreach(char[] lFile; lFilesToLink)
+                foreach(string lFile; lFilesToLink)
                 {
                     lCommandLine ~= lFile ~ "\n";
                 }
@@ -1205,7 +1228,7 @@ int Build()
                 lCommandLine ~= vStartLibsSwitch ~ "\n";
                 if (vLibraryAction != LibOpt.Shared)
                     lLibraryFiles = vDefaultLibs ~ lLibraryFiles;
-                foreach( char[] lLib; lLibraryFiles)
+                foreach( string lLib; lLibraryFiles)
                 {
                     lCommandLine ~= vLinkLibSwitch ~ util.str.enquote(lLib) ~ "\n";
                 }
@@ -1223,9 +1246,9 @@ int Build()
                             std.stdio.writefln("Setting LIB=%s", vLibPaths);
                     }
 
-                    char[][] lLibPaths;
+                    string[] lLibPaths;
                     lLibPaths = std.string.split(vLibPaths, vConfigSep);
-                    foreach(char[] lLib; lLibPaths)
+                    foreach(string lLib; lLibPaths)
                     {
                         if (lLib.length > 0)
                             lCommandLine ~= vLibPathSwitch ~ util.str.enquote(lLib) ~ "\n";
@@ -1238,7 +1261,7 @@ int Build()
 
             if (vUseResponseFile == True)
             {
-                lLinkResponseFileName = util.pathex.ReplaceExtention(lTargetName, "ksp");
+                lLinkResponseFileName = util.pathex.ReplaceExtension(lTargetName, "ksp");
                 if (vTemporaryPath.length != 0)
                 {
                     lLinkResponseFileName = vTemporaryPath ~ std.path.getBaseName(lLinkResponseFileName);
@@ -1313,9 +1336,9 @@ int Build()
     // Now build a library if requested to.
     if ( (source.Source.WasMainDLL)  && (lRunResult == 0) )
     {
-        char[] lTargetFileName;
-        char[] lImpLibPath;
-        char[] lImpLibArgs;
+        string lTargetFileName;
+        string lImpLibPath;
+        string lImpLibArgs;
         ulong[] lImpManf;
 
         vExecuteProgram = False;
@@ -1344,18 +1367,18 @@ int Build()
         lOutText = vLibrarianOpts ~ std.path.linesep;
         lOutText ~= lTargetName ~  std.path.linesep;  // Create a new library
 
-        foreach( char[] lFileName; lFilesToLink)
+        foreach( string lFileName; lFilesToLink)
         {
-            char[] lFileDir;
+            string lFileDir;
 
             lFileDir = std.path.getDirName(lFileName);
             if ((vAllObjects == True) || lFileDir == "" || lFileDir == lTargetDir)
             {
-                if (lFileName.length > 1 + vSrcExtention.length)
+                if (lFileName.length > 1 + vSrcExtension.length)
                 {
-                    if (lFileName[$-vSrcExtention.length .. $] == vSrcExtention)
+                    if (lFileName[$-vSrcExtension.length .. $] == vSrcExtension)
                     {
-                        lFileName = lFileName[0..$-vSrcExtention.length] ~ vObjExtention;
+                        lFileName = lFileName[0..$-vSrcExtension.length] ~ vObjExtension;
                     }
                 }
                 lFileCount++;
@@ -1366,7 +1389,7 @@ int Build()
         if (lFileCount > 0)
         {
             if (vUseResponseFile == True) {
-                lLResponseFileName = util.pathex.ReplaceExtention(lTargetName, "lsp");
+                lLResponseFileName = util.pathex.ReplaceExtension(lTargetName, "lsp");
                 if (vTemporaryPath.length != 0)
                 {
                     lLResponseFileName = vTemporaryPath ~ std.path.getBaseName(lLResponseFileName);
@@ -1393,7 +1416,7 @@ int Build()
     // Optional clean up.
     if (vCleanup == True)
     {
-        char[][] lHitList;
+        string[] lHitList;
 
         version(BuildVerbose)
         {
@@ -1421,11 +1444,11 @@ int Build()
         lHitList ~= lDefName;
 
         // Possible ones created by compiler, linker, and librarian.
-        lHitList ~= util.pathex.ReplaceExtention(lTargetName, "map");
-        lHitList ~= util.pathex.ReplaceExtention(lTargetName, "bak");
-        lHitList ~= util.pathex.ReplaceExtention(lTargetName, "lst");
+        lHitList ~= util.pathex.ReplaceExtension(lTargetName, "map");
+        lHitList ~= util.pathex.ReplaceExtension(lTargetName, "bak");
+        lHitList ~= util.pathex.ReplaceExtension(lTargetName, "lst");
 
-        foreach(char[] lFilename; lHitList)
+        foreach(string lFilename; lHitList)
         {
             if (lFilename.length > 0)
             {
@@ -1443,19 +1466,24 @@ int Build()
 
     }
 
-    foreach(char[] lFinal; vFinalProc)
+    if (lRunResult == 0 && (vUseFinal == True))
     {
-        char[] lCommandLine;
-
-        lCommandLine = util.str.Expand(lFinal, "Target=" ~ lTargetName ~
-                                               ",TargetPath=" ~ std.path.getDirName(lTargetName) ~
-                                               ",TargetBase=" ~ std.path.getBaseName(lTargetName)
-                         );
-        if (lCommandLine.length > 0)
+        foreach(string lFinal; vFinalProc)
         {
-            util.fileex.RunCommand(lCommandLine);
+            string lCommandLine;
+            lCommandLine = util.str.Expand(lFinal, "Target=" ~ lTargetName ~
+                                                   ",TargetPath=" ~ std.path.getDirName(lTargetName) ~
+                                                   ",TargetBase=" ~ std.path.getBaseName(lTargetName)
+                             );
+            if (lCommandLine.length > 0)
+            {
+                lRunResult = util.fileex.RunCommand(lCommandLine);
+                if (lRunResult != 0)
+                    break;
+            }
         }
     }
+
     return lRunResult;
 
 }
@@ -1464,7 +1492,7 @@ int Build()
 char [] GatherCompilerArgs(Bool pLinking)
 // -------------------------------------------
 {
-    char[] lOutText;
+    string lOutText;
 
     foreach(char [] lRoot; vImportRoots)
     {
@@ -1475,7 +1503,7 @@ char [] GatherCompilerArgs(Bool pLinking)
     }
 
     // Build command files for compilation.
-    foreach (char[] lCompileArg; vCompilerArgs)
+    foreach (string lCompileArg; vCompilerArgs)
     {
         // Ignore empty args
         if (lCompileArg.length > 0)
@@ -1520,7 +1548,7 @@ char [] GatherCompilerArgs(Bool pLinking)
 
 
 // -------------------------------------------
-char[][] ModulesToIgnore()
+string[] ModulesToIgnore()
 // -------------------------------------------
 {
     return vModulesToIgnore;
@@ -1528,7 +1556,7 @@ char[][] ModulesToIgnore()
 
 
 // -------------------------------------------
-void AddLink(char[] pPath)
+void AddLink(string pPath)
 // -------------------------------------------
 {
     if (pPath.length == 0)
@@ -1538,7 +1566,7 @@ void AddLink(char[] pPath)
 }
 
 // -------------------------------------------
-void AddTarget(char[] pPath)
+void AddTarget(string pPath)
 // -------------------------------------------
 {
     if (pPath.length == 0)
@@ -1562,12 +1590,12 @@ void AddTarget(char[] pPath)
 }
 
 // -------------------------------------------
-void AddBuildDef(char[] pText, bool pReplace = false)
+void AddBuildDef(string pText, bool pReplace = false)
 // -------------------------------------------
 {
     int lPos;
-    char[] lLowerText;
-    static uint[ char[] ] lElementIdx;
+    string lLowerText;
+    static uint[ string ] lElementIdx;
 
     if (vNoDef == True)
         return;
@@ -1591,7 +1619,7 @@ void AddBuildDef(char[] pText, bool pReplace = false)
 }
 
 // -------------------------------------------
-void AddCompilerArg(char[] pArg)
+void AddCompilerArg(string pArg)
 // -------------------------------------------
 {
     bool lFound;
@@ -1606,7 +1634,7 @@ void AddCompilerArg(char[] pArg)
         }
 
         lFound = false;
-        foreach(char[] lArg; vCompilerArgs)
+        foreach(string lArg; vCompilerArgs)
         {
             if (lArg == pArg)
             {
@@ -1620,12 +1648,12 @@ void AddCompilerArg(char[] pArg)
 }
 
 // -------------------------------------------
-char[] AddRoot(char[] pRootName)
+string AddRoot(string pRootName)
 // -------------------------------------------
 {
-    static bool [char[]] lRootHash;
-    char[] lFullName;
-    char[] lSearchName;
+    static bool [string] lRootHash;
+    string lFullName;
+    string lSearchName;
 
     if(pRootName.length == 0)
         return pRootName;
@@ -1649,18 +1677,18 @@ Bool AutoImports()
     return vAutoImports;
 }
 
-char[][] GetImportRoots()
+string[] GetImportRoots()
 {
     return vImportRoots;
 }
 
-void Process_DFLAGS(char[] pText)
+void Process_DFLAGS(string pText)
 {
     int      lPos;
     int      lEndPos;
-    char[]   lRootName;
-    char[][] lRoots;
-    char[][] lArgs;
+    string   lRootName;
+    string[] lRoots;
+    string[] lArgs;
     int      lArg;
     bool     lInArg;
     char     lQuote;
@@ -1704,7 +1732,7 @@ void Process_DFLAGS(char[] pText)
 
     }
 
-    foreach(char[] lSwitch; lArgs)
+    foreach(string lSwitch; lArgs)
     {
         if ((lSwitch.length > 0) && (lSwitch[0] == '-'))
         {
@@ -1726,7 +1754,7 @@ void Process_DFLAGS(char[] pText)
             if (lSwitch[1] == 'I')
             {
                 lRoots = std.string.split(lSwitch[2..length], vConfigSep);
-                foreach(char[] lRoot; lRoots)
+                foreach(string lRoot; lRoots)
                 {
                     lRootName = AddRoot(lRoot);
                     version(BuildVerbose)
@@ -1758,9 +1786,9 @@ void Process_DFLAGS(char[] pText)
                     }
                 }
 
-                if (util.str.IsLike(lSwitch,  std.utf.toUTF32(vOutputPath ~ "*")) == True)
+                if (util.str.IsLike(lSwitch,  vOutputPath ~ "*") == True)
                 {
-                    char[] lbRoot;
+                    string lbRoot;
 
                     vTemporaryPath = lSwitch[vOutputPath.length .. $];
 
@@ -1797,7 +1825,7 @@ void Process_DFLAGS(char[] pText)
 void ReadEnviron()
 // -------------------------------------------
 {
-    char[]   lSymValue;
+    string   lSymValue;
 
     // Check for a environment flag before config file.
     lSymValue = util.str.GetEnv("DFLAGS");
@@ -1817,8 +1845,8 @@ void ReadEnviron()
 void ReadCompilerConfigFile()
 // -------------------------------------------
 {
-    char[]   lConfigPath;
-    char[][] lTextLines;
+    string   lConfigPath;
+    string[] lTextLines;
     int      lPos;
 
     if (vConfigFile.length == 0)
@@ -1836,10 +1864,10 @@ void ReadCompilerConfigFile()
         if (vVerbose == True)
             std.stdio.writefln("Reading from config: %s", lConfigPath);
     }
-    util.fileex.GetTextLines(lConfigPath, lTextLines, util.fileex.GetOpt.Exists);
+    lTextLines = util.fileex.GetTextLines(lConfigPath, util.fileex.GetOpt.Exists);
 
 
-    foreach(int i, char[] lLine; lTextLines)
+    foreach(int i, string lLine; lTextLines)
     {
         // Strip off trailing whitespace.
         lLine = util.str.stripr(lLine);
@@ -1864,7 +1892,7 @@ void ReadCompilerConfigFile()
         lPos = std.string.find(lLine, "LIB=");
         if(lPos == 0)
         {
-            char[][] lPaths;
+            string[] lPaths;
             lLine = lLine[lPos+4 .. length];
             lPaths.length = 1;
             foreach(char lChar; lLine)
@@ -1883,7 +1911,7 @@ void ReadCompilerConfigFile()
                 lPaths[j] = std.string.strip(lPaths[j]);
             }
 
-            foreach( char[] lPath; lPaths)
+            foreach( string lPath; lPaths)
             {
                 if (lPath.length > 0)
                 {
@@ -1925,9 +1953,9 @@ void ReadCompilerConfigFile()
 }
 
 
-void SetFileLocation(char[] pCmdValue, inout char[] pFilePath, inout char[] pFileExe, char[] pType)
+void SetFileLocation(string pCmdValue, inout string pFilePath, inout string pFileExe, string pType)
 {
-    char[] lCmdValue;
+    string lCmdValue;
     int lPos;
 
     lCmdValue = pCmdValue.dup;
@@ -1938,10 +1966,10 @@ void SetFileLocation(char[] pCmdValue, inout char[] pFilePath, inout char[] pFil
         lCmdValue = lCmdValue[0..lPos] ~ lCmdValue[lPos+1 .. $];
     }
 
-    if (vExeExtention.length > 0)
+    if (vExeExtension.length > 0)
     {
         if (std.path.getExt(lCmdValue).length == 0)
-            lCmdValue ~= "." ~ vExeExtention;
+            lCmdValue ~= "." ~ vExeExtension;
     }
 
     if (util.pathex.IsRelativePath(lCmdValue) == True)
@@ -1971,21 +1999,21 @@ void SetFileLocation(char[] pCmdValue, inout char[] pFilePath, inout char[] pFil
 
 // Display each entry in the supplied list.
 // -------------------------------------------
-void DisplayItems(char[][] pList, char[] pTitle = "")
+void DisplayItems(string[] pList, string pTitle = "")
 // -------------------------------------------
 {
     if (pList.length > 0) {
         if (pTitle.length > 0)
             std.stdio.writefln("\n%s",pTitle);
 
-        foreach(int lIndex, char[] lListEntry; pList) {
+        foreach(int lIndex, string lListEntry; pList) {
             std.stdio.writefln(" [%2d]: %s",lIndex,lListEntry);
         }
     }
 }
 
 // -------------------------------------------
-void DisplayItems(source.ExternRef[] pList, char[] pTitle = "")
+void DisplayItems(source.ExternRef[] pList, string pTitle = "")
 // -------------------------------------------
 {
     if (pList.length > 0) {
@@ -1996,7 +2024,7 @@ void DisplayItems(source.ExternRef[] pList, char[] pTitle = "")
         {
             std.stdio.writef(" [%2d]: %s",lIndex,lListEntry.FilePath);
             if (lListEntry.ToolOpts.length > 0)
-                foreach(char[] lOpt; lListEntry.ToolOpts)
+                foreach(string lOpt; lListEntry.ToolOpts)
                     std.stdio.writef(" [%s]",lOpt);
             std.stdio.writefln("");
         }
@@ -2004,7 +2032,7 @@ void DisplayItems(source.ExternRef[] pList, char[] pTitle = "")
 }
 
 // -------------------------------------------
-void DisplayItems(CmdLineArg[] pList, char[] pTitle = "")
+void DisplayItems(CmdLineArg[] pList, string pTitle = "")
 // -------------------------------------------
 {
     if (pList.length > 0) {
@@ -2027,13 +2055,13 @@ void DisplayItems(CmdLineArg[] pList, char[] pTitle = "")
 }
 
 // ------------------------------------------------
-char[] GetAppPath()
+string GetAppPath()
 {
     return vAppPath.dup;
 }
 
 // ------------------------------------------------
-char[] GetFullPathnameScan(char[] pFileName, int pScanList)
+string GetFullPathnameScan(string pFileName, int pScanList)
 // -------------------------------------------
 {
     if (pScanList == 0)
@@ -2043,30 +2071,30 @@ char[] GetFullPathnameScan(char[] pFileName, int pScanList)
 }
 
 // ------------------------------------------------
-char[] GetFullPathname(char[] pFileName, char[][] pScanList = null)
+string GetFullPathname(string pFileName, string[] pScanList = null)
 // -------------------------------------------
 {
-    char[] lPossiblePath;
-    char[] lLocalPath;
-    char[] lFileBase;
-    char[][] lFileExtList;
+    string lPossiblePath;
+    string lLocalPath;
+    string lFileBase;
+    string[] lFileExtList;
 
     lFileExtList ~= std.file.getExt(pFileName);
-    if (lFileExtList[0] == vSrcExtention)
+    if (lFileExtList[0] == vSrcExtension)
     {
-        lFileExtList ~= vSrcExtention;
+        lFileExtList ~= vSrcExtension;
         lFileExtList[0] = vSrcDInterfaceExt;
     }
     lFileBase = std.path.getName(pFileName);
-    foreach (char[] lExt; lFileExtList)
+    foreach (string lExt; lFileExtList)
     {
-        char[] lTestFileName;
+        string lTestFileName;
 
         lTestFileName = lFileBase ~ "." ~ lExt;
         if (util.pathex.IsRelativePath(lTestFileName) == True && pScanList.length > 0)
         {
             // Do explicit scanning of supplied paths.
-            foreach(char[] lNextRoot; pScanList) {
+            foreach(string lNextRoot; pScanList) {
                 lPossiblePath = ( lNextRoot ~ lTestFileName );
                 if(util.file2.FileExists(lPossiblePath)) {
                     return util.pathex.AbbreviateFileName(lPossiblePath);
@@ -2084,7 +2112,7 @@ char[] GetFullPathname(char[] pFileName, char[][] pScanList = null)
         }
 
         // Examine each known import root to see if the file lives there.
-        foreach(char[] lNextRoot; vImportRoots)
+        foreach(string lNextRoot; vImportRoots)
         {
             lPossiblePath = ( lNextRoot ~ lTestFileName );
             if(util.file2.FileExists(lPossiblePath))
@@ -2097,7 +2125,7 @@ char[] GetFullPathname(char[] pFileName, char[][] pScanList = null)
     return util.pathex.AbbreviateFileName(lLocalPath);
 }
 
-void RemoveRecdArg(char[] pArg)
+void RemoveRecdArg(string pArg)
 {
     // Remove all matching received args.
     for(int i = vReceivedArgs.length - 1; i >= 0; i--)
@@ -2119,7 +2147,7 @@ void RemoveRecdArg(char[] pArg)
 }
 
 // -------------------------------
-void ExamineArgs(char[][] pArgGroup)
+void ExamineArgs(string[] pArgGroup)
 // -------------------------------
 {
     // Remove any explicitly-requested args.
@@ -2128,7 +2156,7 @@ void ExamineArgs(char[][] pArgGroup)
         if (pArgGroup[j].length > 2 &&
             pArgGroup[j][0..2] == "--")
         {
-            char[] lArg;
+            string lArg;
             lArg = pArgGroup[j][1..$];
             for(int i = j-1; i >= 0; i--)
             {
@@ -2150,7 +2178,7 @@ void ExamineArgs(char[][] pArgGroup)
         }
     }
 
-    foreach(char[] lArg; pArgGroup)
+    foreach(string lArg; pArgGroup)
     {
         if (lArg.length > 0)
             ProcessCmdLineArg( lArg );
@@ -2166,11 +2194,11 @@ void ExamineArgs(char[][] pArgGroup)
 
 
 // -------------------------------------------
-int main(char[][] pArgs)
+int main(string[] pArgs)
 // -------------------------------------------
 {
     int lBuildResult;
-    char[] lCompPath;
+    string lCompPath;
     bool lSetPath = false;
 
     /* Set routine addresses in the Source module. This allows
@@ -2190,24 +2218,7 @@ int main(char[][] pArgs)
     source.GetAppPath       = &GetAppPath;
     source.vPathId          = vPathId;
     util.fileex.vPathId     = vPathId;
-    util.fileex.vExeExtention = vExeExtention;
-
-
-    // Scan the PATH env symbol to locate the D compiler.
-    lCompPath = util.pathex.FindFileInPathList(vPathId, vCompilerExe);
-    if (lCompPath.length > 0){
-        if (lCompPath[length-1] != std.path.sep[0])
-            lCompPath ~= std.path.sep;
-        vCompilerPath = lCompPath.dup;
-        util.str.SetEnv("@D", std.path.getDirName(vCompilerPath));
-    }
-
-    if (vCompilerPath.length == 0)
-    {
-        vCompilerPath = util.pathex.GetInitCurDir;
-        util.str.SetEnv("@D", std.path.getDirName(vCompilerPath));
-        lSetPath = true;
-    }
+    util.fileex.vExeExtension = vExeExtension;
 
     // Strip off application's path from arglist.
     vAppPath = pArgs[0];
@@ -2238,6 +2249,7 @@ int main(char[][] pArgs)
     }
 
 
+    vCFGPath = util.str.GetEnv("BCFPATH");
     GatherArgs( pArgs );
     version(BuildVerbose)
     {
@@ -2251,10 +2263,31 @@ int main(char[][] pArgs)
 
     ExamineArgs( vCombinedArgs );
 
+    // Scan the PATH env symbol to locate the D compiler.
+    if (vExeExtension.length > 0 && std.path.getExt(vCompilerExe).length == 0)
+    {
+        vCompilerExe = std.path.addExt(vCompilerExe, vExeExtension);
+    }
+    lCompPath = util.pathex.FindFileInPathList(vPathId, vCompilerExe);
+    if (lCompPath.length > 0){
+        if (lCompPath[length-1] != std.path.sep[0])
+            lCompPath ~= std.path.sep;
+        vCompilerPath = lCompPath.dup;
+        util.str.SetEnv("@D", std.path.getDirName(vCompilerPath));
+    }
+
+    if (vCompilerPath.length == 0)
+    {
+        vCompilerPath = util.pathex.GetInitCurDir;
+        util.str.SetEnv("@D", std.path.getDirName(vCompilerPath));
+        lSetPath = true;
+    }
+
     util.fileex.vTestRun = vTestRun;
     source.mCollectUses  = vCollectUses;
     source.vForceCompile = vForceCompile;
     source.ObjWritePath  = vTemporaryPath;
+    source.vExplicit     = vExplicit;
 
     // Grab the external macro definitions unless otherwise told not to.
     source.mMacroInput = vMacroInput;
@@ -2298,24 +2331,26 @@ int main(char[][] pArgs)
 
     if (vConfigFile.length > 0)
     {
-        char[][] lPotentialPaths;
+        string[] lPotentialPaths;
 
         lPotentialPaths ~= "." ~ std.path.sep;
         lPotentialPaths ~= util.str.GetEnv(vHomePathId);
         version(Windows)
         {
-            char[] lTemp;
+            string lTemp;
             lTemp = util.str.GetEnv("HOMEDRIVE");
             if (lTemp.length > 0)
             {
                 lPotentialPaths ~= lTemp ~ util.str.GetEnv("HOMEPATH");
             }
         }
+        if (vOverrideConfigPath.length > 0)
+            lPotentialPaths ~= vOverrideConfigPath;
         lPotentialPaths ~= vCompilerPath;
         if (vEtcPath.length > 0)
             lPotentialPaths ~= vEtcPath;
 
-        foreach( char[] p; lPotentialPaths)
+        foreach( int lCnt, string p; lPotentialPaths)
         {
             if (p.length > 0)
             {
@@ -2328,13 +2363,19 @@ int main(char[][] pArgs)
                     break;
                 }
             }
+            if (lCnt+1 == lPotentialPaths.length)
+            {
+                // Scan all paths for config file but couldn't find one.
+                throw new BuildException( std.string.format("Unable to find Config File '%s' in \n%s",
+                         vConfigFile, lPotentialPaths));
+            }
         }
     }
 
-    if (vExeExtention.length > 0)
+    if (vExeExtension.length > 0)
     {
         if (std.path.getExt(vCompilerExe).length == 0)
-            vCompilerExe ~= "." ~ vExeExtention;
+            vCompilerExe ~= "." ~ vExeExtension;
     }
     if (util.file2.FileExists(vCompilerPath ~ vCompilerExe) == false)
     {
@@ -2379,7 +2420,7 @@ int main(char[][] pArgs)
         vModulesToIgnore ~= "phobos";
 
     // Rationalize the ignored modules list.
-    foreach(char[] m; vModulesToNotice) {
+    foreach(string m; vModulesToNotice) {
         for (int i=0; i < vModulesToIgnore.length; i++) {
             if (vModulesToIgnore[i] == m) {
                 // Must remove from ignored list.
@@ -2396,7 +2437,7 @@ int main(char[][] pArgs)
     bool lAllExist = true;
 
     // List all missing files (if any).
-    foreach( char[] lFile; vCmdLineSourceFiles)
+    foreach( string lFile; vCmdLineSourceFiles)
     {
         if (! util.file2.FileExists( GetFullPathname(lFile, vSourceScanList)) )
         {
@@ -2435,9 +2476,9 @@ int main(char[][] pArgs)
     // Output list of modules if it was requested.
     if(vSymbols == True)
     {
-        char[] lSymbolData;
+        string lSymbolData;
         int lModuleCount;
-        char[] lSymbolOutName;
+        string lSymbolOutName;
 
         source.Source.AllFiles(
             delegate int (inout int i, inout source.Source lSource)
@@ -2490,12 +2531,12 @@ int main(char[][] pArgs)
 
     if (vCollectUses == True)
     {
-        char[] lPrevLine;
-        char[] lFile;
+        string lPrevLine;
+        string lFile;
 
         lPrevLine.length = 0;
         lFile ~= "[USES]\n";
-        foreach(char[] lLine; source.Source.Uses.sort)
+        foreach(string lLine; source.Source.Uses.sort)
         {
             if (lLine != lPrevLine)
             {
@@ -2506,7 +2547,7 @@ int main(char[][] pArgs)
 
         lPrevLine.length = 0;
         lFile ~= "[USEDBY]\n";
-        foreach(char[] lLine; source.Source.UsedBy.sort)
+        foreach(string lLine; source.Source.UsedBy.sort)
         {
             if (lLine != lPrevLine)
             {
@@ -2549,11 +2590,11 @@ int main(char[][] pArgs)
 
 }
 
-void ProcessResponseFile(char[] pArg, Bool pVerbose)
+void ProcessResponseFile(string pArg, Bool pVerbose)
 {
     // A response file is being used.
-    char[] lRespFileName;
-    char[][] lRespLines;
+    string lRespFileName;
+    string[] lRespLines;
 
     if (pArg.length == 0)
         return;
@@ -2576,7 +2617,7 @@ void ProcessResponseFile(char[] pArg, Bool pVerbose)
     }
 
     lRespLines = util.fileex.GetTextLines(lRespFileName, util.fileex.GetOpt.Exists);
-    foreach(char[] lArg; lRespLines)
+    foreach(string lArg; lRespLines)
     {
         // Locate any comment text in the line.
         int lPos = std.string.find(lArg, "#");
@@ -2601,20 +2642,20 @@ void ProcessResponseFile(char[] pArg, Bool pVerbose)
 
 struct CmdLineArg
 {
-    char[] ArgText;
+    string ArgText;
     Bool   CompilerArg;
     Bool   DFlag;
 }
 CmdLineArg[] vReceivedArgs;
 
-void ProcessCmdLineArg( char[] pArg )
+void ProcessCmdLineArg( string pArg )
 {
-    static char[] lImportSwitch;
+    static string lImportSwitch;
 
     // Handle a version switch on the command line by
     if(util.str.begins(pArg, vVersionSwitch) == True)
     {
-        char[] lVersionString;
+        string lVersionString;
 
         lVersionString=pArg [vVersionSwitch.length .. $];
         if (lVersionString.length > 0 && lVersionString[0] == '=')
@@ -2630,7 +2671,7 @@ void ProcessCmdLineArg( char[] pArg )
     }
     else if(util.str.begins(pArg, vDebugSwitch) == True)
     {
-        char[] lDebugString;
+        string lDebugString;
 
         lDebugString = pArg [vDebugSwitch.length .. $];
         if (lDebugString.length > 0 && lDebugString[0] == '=')
@@ -2746,6 +2787,11 @@ void ProcessCmdLineArg( char[] pArg )
             // Not passed thru.
             break;
 
+        case "-explicit":
+            vExplicit = True;
+            // Not passed thru.
+            break;
+
         case "-cleanup":
             // drop through ...
         case "-clean":
@@ -2775,13 +2821,13 @@ void ProcessCmdLineArg( char[] pArg )
                 }
 
                 // Test for Librarian options.
-                if (util.str.IsLike(pArg, "-LIBOPT*"d) == True)
+                if (util.str.IsLike(pArg, "-LIBOPT*"c) == True)
                 {
                     vLibrarianOpts ~= " " ~ pArg[7..$].dup;
                     break;
 
                 }
-                if (util.str.IsLike(pArg, "-SHLIBOPT*"d) == True)
+                if (util.str.IsLike(pArg, "-SHLIBOPT*"c) == True)
                 {
                     vShLibrarianOpts ~= " " ~ pArg[9..$].dup;
                     break;
@@ -2796,9 +2842,9 @@ void ProcessCmdLineArg( char[] pArg )
 
                 if (util.str.begins(pArg, "-CFG=") == True)
                 {
-                    char[] lFile;
-                    char[] lSubSection;
-                    char[][] lLocalArgs;
+                    string lFile;
+                    string lSubSection;
+                    string[] lLocalArgs;
                     lFile = pArg[5..$];
                     lSubSection = "";
                     if (auto m = std.regexp.search(lFile, "(.*)\\[(.*)\\]") )
@@ -2817,7 +2863,7 @@ void ProcessCmdLineArg( char[] pArg )
                 }
 
                 // Check if a list of modules has been requested.
-                if (util.str.IsLike(pArg, "-modules*"d) == True)
+                if (util.str.IsLike(pArg, "-modules*"c) == True)
                 {
                     vSymbols = True;
                     if (pArg.length > 8)
@@ -2837,9 +2883,9 @@ void ProcessCmdLineArg( char[] pArg )
                 }
 
                 // Test for alternate install locations.
-                if (util.str.IsLike(pArg, "-DCPATH?*"d) == True)
+                if (util.str.IsLike(pArg, "-DCPATH?*"c) == True)
                 {
-                    char[] lNewPath = pArg[7..length].dup;
+                    string lNewPath = pArg[7..length].dup;
                     if (util.str.ends(lNewPath, std.path.sep) == False)
                         lNewPath ~= std.path.sep;
                     version(BuildVerbose)
@@ -2853,9 +2899,9 @@ void ProcessCmdLineArg( char[] pArg )
 
                 }
 
-                if (util.str.IsLike(pArg,  "-CFPATH?*"d) == True)
+                if (util.str.IsLike(pArg,  "-CFPATH?*"c) == True)
                 {
-                    char[] lNewPath = pArg[7..length].dup;
+                    string lNewPath = pArg[7..length].dup;
                     if (util.str.ends(lNewPath, std.path.sep) == False)
                         lNewPath ~= std.path.sep;
                     version(BuildVerbose)
@@ -2869,9 +2915,24 @@ void ProcessCmdLineArg( char[] pArg )
 
                 }
 
-                if (util.str.IsLike(pArg,  "-PP?*"d) == True)
+                if (util.str.IsLike(pArg,  "-BCFPATH?*"c) == True)
                 {
-                    char[] lNewPath = pArg[3..length].dup;
+                    string lNewPath = pArg[8..length].dup;
+                    if (util.str.ends(lNewPath, std.path.sep) == False)
+                        lNewPath ~= std.path.sep;
+                    version(BuildVerbose)
+                    {
+                        if (vVerbose == True)
+                            std.stdio.writefln("BCFPATH was '%s' now '%s'", vCFGPath, lNewPath);
+                    }
+                    vCFGPath = lNewPath;
+                    break;
+
+                }
+
+                if (util.str.IsLike(pArg,  "-PP?*"c) == True)
+                {
+                    string lNewPath = pArg[3..length].dup;
                     version(BuildVerbose)
                     {
                         if (vVerbose == True)
@@ -2885,7 +2946,7 @@ void ProcessCmdLineArg( char[] pArg )
 
                 }
 
-                if (util.str.IsLike(pArg,  "-RDF?*"d) == True)
+                if (util.str.IsLike(pArg,  "-RDF?*"c) == True)
                 {
                     version(BuildVerbose)
                     {
@@ -2898,7 +2959,7 @@ void ProcessCmdLineArg( char[] pArg )
 
                 }
 
-                if (util.str.IsLike(pArg,  "-MDF?*"d) == True)
+                if (util.str.IsLike(pArg,  "-MDF?*"c) == True)
                 {
                     version(BuildVerbose)
                     {
@@ -2919,7 +2980,7 @@ void ProcessCmdLineArg( char[] pArg )
                 else if ( util.str.begins(pArg, vBuildImportPath) == True)
                 {
                     char [] lRoot;
-                    foreach(char[] lCmdRoot; std.string.split(pArg[vBuildImportPath.length .. $],
+                    foreach(string lCmdRoot; std.string.split(pArg[vBuildImportPath.length .. $],
                                                         vImportPathDelim))
                     {
                         lRoot = AddRoot(lCmdRoot);
@@ -2935,14 +2996,14 @@ void ProcessCmdLineArg( char[] pArg )
                     break;
                 }
 
-                if (util.str.IsLike(pArg,  std.utf.toUTF32(vRunSwitch ~ "*")) == True)
+                if (util.str.IsLike(pArg,  vRunSwitch ~ "*") == True)
                 {
                     vRunParms ~= pArg[vRunSwitch.length .. $] ~ " ";
                     vExecuteProgram = True;
                     break;
                 }
 
-                if (util.str.IsLike(pArg, "-uses*"d) == True)
+                if (util.str.IsLike(pArg, "-uses*"c) == True)
                 {
 
                     vCollectUses = True;
@@ -2956,7 +3017,7 @@ void ProcessCmdLineArg( char[] pArg )
                     break;
                 }
 
-                if (util.str.IsLike(pArg, "-UMB*"d) == True)
+                if (util.str.IsLike(pArg, "-UMB*"c) == True)
                 {
 
                     vUseModBaseName = util.str.YesNo(pArg, true);
@@ -2965,19 +3026,35 @@ void ProcessCmdLineArg( char[] pArg )
                 }
                 version(Windows)
                 {
-                if (util.str.IsLike(pArg, "-AutoWinLibs*"d) == True)
+                if (util.str.IsLike(pArg, "-AutoWinLibs*"c) == True)
                 {
 
                     vAutoWinLibs = util.str.YesNo(pArg, true);
                     break;
                 }
                 }
+
+                if (util.str.IsLike(pArg, "-usefinal*"c) == True)
+                {
+
+                    vUseFinal = new Bool(util.str.YesNo(pArg, true));
+                    break;
+                }
+
+                if (util.str.IsLike(pArg, "-emptyargs*"c) == True)
+                {
+
+                    vEmptyArgs = new Bool(util.str.YesNo(pArg, true));
+                    break;
+                }
+
+
                 // Special check for Object Write Path
                 version(DigitalMars)
                 {
-                if (util.str.IsLike(pArg,  std.utf.toUTF32(vOutputPath ~ "*")) == True)
+                if (util.str.IsLike(pArg,  vOutputPath ~ "*") == True)
                 {
-                    char[] lRoot;
+                    string lRoot;
 
                     vTemporaryPath = pArg[vOutputPath.length .. $];
                     if (vTemporaryPath.length > 0 && vTemporaryPath[$-1..$] != std.path.sep)
@@ -3003,27 +3080,33 @@ void ProcessCmdLineArg( char[] pArg )
                 }
                 }
 
-                if (util.str.IsLike(pArg,  "-X?*"d) == True)
+                if (util.str.IsLike(pArg,  "-X?*"c) == True)
                 {
                     // Modules to ignore (eg. -Xmylib)
                     vModulesToIgnore ~= pArg[2..$];
                     break;
                 }
 
-                if (util.str.IsLike(pArg,  "-M?*"d) == True)
+                if (util.str.IsLike(pArg,  "-M?*"c) == True)
                 {
                     // Modules to notice (eg. -Mphobos)
                     vModulesToNotice ~= pArg[2..$];
                     break;
                 }
 
-                if (util.str.IsLike(pArg,  "-T?*"d) == True)
+                if (util.str.IsLike(pArg,  "-T?*"c) == True)
                 {
                     // Target name (eg. -Ttestapp)
 
-                    vCommandTargetName = util.str.Expand(pArg[2..$],
+                    if (vCommandTargetName.length > 0)
+                    {
+                        vCommandTargetName = util.str.Expand(pArg[2..$],
                                                          "Target=" ~
                                                  util.pathex.GetBaseName(vCommandTargetName));
+                    }
+                    else
+                        vCommandTargetName = pArg[2..$].dup;
+
                     break;
                 }
 
@@ -3047,7 +3130,7 @@ void ProcessCmdLineArg( char[] pArg )
                 }
                 }
 
-                if (util.str.IsLike(pArg,  "-R*"d) == True)
+                if (util.str.IsLike(pArg,  "-R*"c) == True)
                 {
                     char lValue;
                     // Response file usage (eg. -R=Yes)
@@ -3059,7 +3142,7 @@ void ProcessCmdLineArg( char[] pArg )
                 }
 
                 version(Windows) {
-                    if (util.str.IsLike(pArg,  "-gui*"d) == True)
+                    if (util.str.IsLike(pArg,  "-gui*"c) == True)
                     {
                         source.Source.WasMainGUI = true;
                         if (pArg.length == 4)
@@ -3089,7 +3172,7 @@ void ProcessCmdLineArg( char[] pArg )
                     if ( vDelayedValue == &lImportSwitch)
                     {
                         char [] lRoot;
-                        foreach(char[] lCmdRoot; std.string.split(pArg, ";"))
+                        foreach(string lCmdRoot; std.string.split(pArg, ";"))
                         {
                             lRoot = AddRoot(lCmdRoot);
                             if (lRoot.length > 0){
@@ -3120,12 +3203,12 @@ void ProcessCmdLineArg( char[] pArg )
                 auto lArgExt = std.path.getExt(pArg);
                 if (lArgExt == "")
                 {
-                       pArg ~= "." ~ vSrcExtention;
+                       pArg ~= "." ~ vSrcExtension;
                        vCmdLineSourceFiles ~= pArg;
                 }
-                else if (lArgExt == vSrcExtention ||
-                           lArgExt == vMacroExtention ||
-                           lArgExt == vDdocExtention)
+                else if (lArgExt == vSrcExtension ||
+                           lArgExt == vMacroExtension ||
+                           lArgExt == vDdocExtension)
                 {
                        vCmdLineSourceFiles ~= pArg;
                 }
@@ -3138,16 +3221,16 @@ void ProcessCmdLineArg( char[] pArg )
                 }
 
                 if(vTargetName is null &&
-                    ((std.path.getExt(pArg) == vSrcExtention) ||
-                     (std.path.getExt(pArg) == vMacroExtention)
+                    ((std.path.getExt(pArg) == vSrcExtension) ||
+                     (std.path.getExt(pArg) == vMacroExtension)
                     )
                   )
                 {
-                   vTargetName = pArg;
+                   vTargetName = std.path.getName(pArg.dup);
                     version(BuildVerbose)
                     {
                         if(vVerbose == True)
-                            std.stdio.writefln("Default target is '%s'", std.path.getName(vTargetName));
+                            std.stdio.writefln("Default target is '%s'", vTargetName);
                     }
                 }
             }
@@ -3156,13 +3239,18 @@ void ProcessCmdLineArg( char[] pArg )
     }
 }
 
-void GatherOneArg( char[] pArg, inout char[][] pArgGroup )
+void GatherOneArg( string pArg, inout string[] pArgGroup )
 {
-    static bool[char[]] lKnownArgs;
+    static bool[string] lKnownArgs;
 
     pArg = std.string.strip(pArg);
     if (pArg.length == 0)
-        return;
+    {
+        if (vEmptyArgs == False)
+            throw new BuildException("Empty arguments are not allowed");
+        else
+            return;
+    }
 
     version(BuildVerbose)
     {
@@ -3212,7 +3300,7 @@ void GatherOneArg( char[] pArg, inout char[][] pArgGroup )
 
 }
 
-void GatherArgs( char[][] pArgs )
+void GatherArgs( string[] pArgs )
 {
     /* This collects together all the original command line arguments,
        any command line arguments in any configuration files, and
@@ -3279,9 +3367,15 @@ void GatherArgs( char[][] pArgs )
     }
 
     // Collect from original command line.
-    foreach( char[] lArg; vCompilerDefs ~ pArgs)
+    foreach( string lArg; vCompilerDefs ~ pArgs)
     {
-        GatherOneArg( lArg, vCombinedArgs );
+        string[] lSplitArgs;
+
+        lSplitArgs = std.string.split(lArg);
+        foreach(string lOneArg; lSplitArgs)
+        {
+            GatherOneArg( lOneArg, vCombinedArgs );
+        }
     }
 
 
@@ -3299,13 +3393,13 @@ void ProcessMacroDefs(Bool pVerbose)
     ProcessOneMacroDef(pVerbose, util.pathex.GetInitCurDir());
 }
 
-void ProcessOneMacroDef(Bool pVerbose, char[] pPath)
+void ProcessOneMacroDef(Bool pVerbose, string pPath)
 {
-    char[] lMacroDefFileName;
-    char[][] lMacroDefLines;
-    char[][] lMessages;
+    string lMacroDefFileName;
+    string[] lMacroDefLines;
+    string[] lMessages;
 
-    static bool[ char[] ] lUsedPaths;
+    static bool[ string ] lUsedPaths;
 
     lMacroDefFileName = pPath.dup;
 
@@ -3332,7 +3426,7 @@ void ProcessOneMacroDef(Bool pVerbose, char[] pPath)
     {
         if (pVerbose == True)
         {
-            foreach(char[] lMsg; lMessages)
+            foreach(string lMsg; lMessages)
             {
                 std.stdio.writefln("%s", lMsg);
             }
@@ -3341,12 +3435,16 @@ void ProcessOneMacroDef(Bool pVerbose, char[] pPath)
 
 }
 
-void ProcessBuildConfig(char[] pArg, Bool pVerbose, inout char[][] pArgGroup)
+void ProcessBuildConfig(string pArg, Bool pVerbose, inout string[] pArgGroup)
 {
     // From build.exe location
     ProcessOneBuildConfig(pArg, pVerbose, std.path.getDirName(vAppPath), pArgGroup);
 
-    // From compiler location
+    // From alternate location
+    if (vCFGPath.length > 0)
+        ProcessOneBuildConfig(pArg, pVerbose, vCFGPath, pArgGroup);
+
+    // compiler path
     ProcessOneBuildConfig(pArg, pVerbose, vCompilerPath, pArgGroup);
 
     // From current location
@@ -3354,12 +3452,12 @@ void ProcessBuildConfig(char[] pArg, Bool pVerbose, inout char[][] pArgGroup)
 
 }
 
-void ProcessOneBuildConfig(char[] pArg, Bool pVerbose, char[] pPath, inout char[][] pArgGroup)
+void ProcessOneBuildConfig(string pArg, Bool pVerbose, string pPath, inout string[] pArgGroup)
 {
-    char[] lConfigFileName;
-    char[][] lConfigLines;
+    string lConfigFileName;
+    string[] lConfigLines;
     bool lFoundGroup;
-    static bool[ char[] ] lUsedPaths;
+    static bool[ string ] lUsedPaths;
 
     version(BuildVerbose)
     {
@@ -3378,6 +3476,7 @@ void ProcessOneBuildConfig(char[] pArg, Bool pVerbose, char[] pPath, inout char[
         lConfigFileName ~= vUtilsConfigFile;
     }
 
+    lConfigFileName = util.pathex.CanonicalPath(lConfigFileName, false);
     if (pArg.length == 0)
         pArg = "+";
 
@@ -3397,7 +3496,7 @@ void ProcessOneBuildConfig(char[] pArg, Bool pVerbose, char[] pPath, inout char[
         pArg = util.str.ExpandEnvVar(pArg[1..$]);
     }
 
-    foreach(char[] lArg; lConfigLines)
+    foreach(string lArg; lConfigLines)
     {
         if (lArg.length == 0)
             continue;
@@ -3511,10 +3610,10 @@ void ProcessOneBuildConfig(char[] pArg, Bool pVerbose, char[] pPath, inout char[
     }
 }
 
-void SetInternalString(char[] pCommand)
+void SetInternalString(string pCommand)
 {
-    char[] lName;
-    char[] lValue;
+    string lName;
+    string lValue;
     int lPos;
 
     lPos = std.string.find(pCommand, "=");
@@ -3540,27 +3639,37 @@ void SetInternalString(char[] pCommand)
 
     switch(lName)
     {
-        case "ExeExtention"    : { vExeExtention     = lValue.dup;
-                                   util.fileex.vExeExtention = vExeExtention;
+        case "ExeExtension"    : { vExeExtension     = lValue.dup;
+                                   util.fileex.vExeExtension = vExeExtension;
                                    break;
                                  }
-        case "LibExtention"    : { vLibExtention     = lValue.dup; break; }
-        case "ObjExtention"    : { vObjExtention     = lValue.dup; break; }
-        case "ShrLibExtention" : { vShrLibExtention  = lValue.dup; break; }
-        case "SrcExtention"    : { vSrcExtention     = lValue.dup; break; }
-        case "MacroExtention"  : { vMacroExtention   = lValue.dup; break; }
-        case "DdocExtention"   : { vDdocExtention    = lValue.dup; break; }
+        case "LibExtension"    : { vLibExtension     = lValue.dup; break; }
+        case "ObjExtension"    : { vObjExtension     = lValue.dup; break; }
+        case "ShrLibExtension" : { vShrLibExtension  = lValue.dup; break; }
+        case "SrcExtension"    : { vSrcExtension     = lValue.dup; break; }
+        case "MacroExtension"  : { vMacroExtension   = lValue.dup; break; }
+        case "DdocExtension"   : { vDdocExtension    = lValue.dup; break; }
         case "CompilerExe"     : { vCompilerExe      = lValue.dup; break; }
         case "CompileOnly"     : { vCompileOnly      = lValue.dup; break; }
         case "LinkerExe"       : { vLinkerExe        = lValue.dup; break; }
         case "ConfigFile"      : { vConfigFile       = lValue.dup; break; }
         case "CompilerPath"    : { vCompilerPath     = lValue.dup;
-                                   util.str.SetEnv("@D", std.path.getDirName(vCompilerPath));
+                                   if (vCompilerPath.length > 0)
+                                   {
+                                    if (util.str.ends(vCompilerPath, std.path.sep) == False)
+                                        vCompilerPath ~= std.path.sep;
+                                    util.str.SetEnv("@D", std.path.getDirName(vCompilerPath));
+                                   }
                                    break; }
         case "LinkerPath"      : { vLinkerPath       = lValue.dup; break; }
         case "LinkerDefs"      : { vLinkerDefs       = lValue.dup; break; }
         case "ConfigPath"      : { vOverrideConfigPath       = lValue.dup;
-                                   util.str.SetEnv("@P", std.path.getDirName(vOverrideConfigPath));
+                                   if (vOverrideConfigPath.length > 0)
+                                   {
+                                    if (util.str.ends(vOverrideConfigPath, std.path.sep) == False)
+                                        vOverrideConfigPath ~= std.path.sep;
+                                    util.str.SetEnv("@P", std.path.getDirName(vOverrideConfigPath));
+                                   }
                                    break; }
         case "LibPaths"        : { vLibPaths         = lValue.dup; break; }
         case "ConfigSep"       : { vConfigSep        = lValue.dup; break; }
@@ -3609,6 +3718,17 @@ void SetInternalString(char[] pCommand)
         case "AppendLinkSwitches" : { util.str.YesNo(lValue, vAppendLinkSwitches, false); break; }
         case "ArgDelim"        : { vArgDelim         = lValue.dup; break; }
         case "ArgFileDelim"    : { vArgFileDelim     = lValue.dup; break; }
+        // These cater for spelling mistakes used in an earlier version.
+        case "ExeExtention"    : { vExeExtension     = lValue.dup;
+                                   util.fileex.vExeExtension = vExeExtension;
+                                   break;
+                                 }
+        case "LibExtention"    : { vLibExtension     = lValue.dup; break; }
+        case "ObjExtention"    : { vObjExtension     = lValue.dup; break; }
+        case "ShrLibExtention" : { vShrLibExtension  = lValue.dup; break; }
+        case "SrcExtention"    : { vSrcExtension     = lValue.dup; break; }
+        case "MacroExtention"  : { vMacroExtension   = lValue.dup; break; }
+        case "DdocExtention"   : { vDdocExtension    = lValue.dup; break; }
         default:
             std.stdio.writefln("Set Internal String '%s' ignored ... unknown name.", pCommand);
     }

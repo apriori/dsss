@@ -46,6 +46,8 @@ version(darwin) version = Posix;
 
 private
 {
+    alias char[] string;
+
     static import util.str;
     static import util.fdt;
     static import util.pathex;
@@ -71,25 +73,26 @@ public
         Compile,
         Link
     }
-    char[] function(char[] pPath) AddRoot;
-    void function(char[] pArg) AddCompilerArg;
-    char[][] function () GetImportRoots;
+    string function(string pPath) AddRoot;
+    void function(string pArg) AddCompilerArg;
+    string[] function () GetImportRoots;
     Bool function() AutoImports;
-    void function(char[] pPath) AddTarget;
-    void function(char[] pPath) AddLink;
-    void function(char[] pText, bool pReplace=false) AddBuildDef;
-    char[][] function( ) ModulesToIgnore;
-    char[] function(char[] pFile, char[][] pScanList = null) GetFullPathname;
-    char[] function(char[] pFile, int pScanList) GetFullPathnameScan;
-    char[] function() GetAppPath;
+    void function(string pPath) AddTarget;
+    void function(string pPath) AddLink;
+    void function(string pText, bool pReplace=false) AddBuildDef;
+    string[] function( ) ModulesToIgnore;
+    string function(string pFile, string[] pScanList = null) GetFullPathname;
+    string function(string pFile, int pScanList) GetFullPathnameScan;
+    string function() GetAppPath;
 
     version(BuildVerbose) Bool vVerboseMode;
     Bool    mMacroInput;
     Bool    mCollectUses;
     Bool    vForceCompile;
-    char[]  ObjWritePath;
-    char[]  vRDFName = "default.rdf";
-    char[]  vPathId;
+    Bool    vExplicit;
+    string  ObjWritePath;
+    string  vRDFName = "default.rdf";
+    string  vPathId;
 
 }
 
@@ -110,40 +113,40 @@ private
 
     const {
         version(Windows) {
-            char[] ExeExt=`exe`;
-            char[] LibExt=`lib`;
-            char[] ObjExt=`obj`;
+            string ExeExt=`exe`;
+            string LibExt=`lib`;
+            string ObjExt=`obj`;
         }
 
         version(Posix) {
-            char[] ExeExt=``;
-            char[] LibExt=`a`;
-            char[] ObjExt=`o`;
+            string ExeExt=``;
+            string LibExt=`a`;
+            string ObjExt=`o`;
         }
 
         // Using these as the literals confuse my text editor's
         // 'bracket matching' algorithm.
-        static char[] kOpenBrace = "\x7B";
-        static char[] kCloseBrace = "\x7D";
-        static char[] kOpenParen = "\x28";
-        static char[] kCloseParen = "\x29";
+        static string kOpenBrace = "\x7B";
+        static string kCloseBrace = "\x7D";
+        static string kOpenParen = "\x28";
+        static string kCloseParen = "\x29";
 
     }
 
-    bool [char[]] AttributeBlocks;
+    bool [string] AttributeBlocks;
     bool mainFound;
     bool mainGUI;
     bool mainDLL;
-    bool[char[]] vActiveVersions;
+    bool[string] vActiveVersions;
     long         vVersionLevel = 0;
-    bool[char[]] vActiveDebugs;
+    bool[string] vActiveDebugs;
     long         vDebugLevel = 0;
-    char[][eRuleUsage] vUseNames;
+    string[eRuleUsage] vUseNames;
 
 
     class SourceException : Error
     {
-        this(char[] pMsg)
+        this(string pMsg)
         {
             super (Source.classinfo.name ~ ":" ~ pMsg);
         }
@@ -188,11 +191,11 @@ public class Source {
     static {
         private
         {
-            Source[char[]] smSourceIndex;
-            char[][] smScanOrder;
+            Source[string] smSourceIndex;
+            string[] smScanOrder;
             bool smUseModBaseName;
-            bool[char[]] smUses;
-            bool[char[]] smUsedBy;
+            bool[string] smUses;
+            bool[string] smUsedBy;
         }
         public
         {
@@ -203,7 +206,7 @@ public class Source {
             }
             int FileCount() { return smSourceIndex.length; }
 
-            Source opIndex(char[] pFileName)
+            Source opIndex(string pFileName)
             {
                 Source* lObject;
                 if ((lObject = (pFileName in smSourceIndex)) !is null)
@@ -218,7 +221,7 @@ public class Source {
                 int result = 0;
                 int lCnt = 0;
 
-                foreach (char[] lFileName; smScanOrder)
+                foreach (string lFileName; smScanOrder)
                 {
                     result = dg(lCnt, smSourceIndex[lFileName]);
                     if (result != 0)
@@ -232,7 +235,7 @@ public class Source {
             {
                 int result = 0;
 
-                foreach (char[] lFileName; smScanOrder)
+                foreach (string lFileName; smScanOrder)
                 {
                     result = dg(smSourceIndex[lFileName]);
                     if (result != 0)
@@ -241,41 +244,42 @@ public class Source {
                 return result;
             }
 */
-            char[][] AllFiles()
+            string[] AllFiles()
             {
                 return smScanOrder;
             }
 
             bool UseModBaseName() { return smUseModBaseName; }
             void UseModBaseName(bool pNewValue) { smUseModBaseName = pNewValue; }
-            char[][] Uses() { return smUses.keys; }
-            char[][] UsedBy() { return smUsedBy.keys; }
+            string[] Uses() { return smUses.keys; }
+            string[] UsedBy() { return smUsedBy.keys; }
 
         }
     }
 
     private {
-    char[] mFileName;
-    char[] mModuleName;
-    char[] mObjectName;
+    string mFileName;
+    string mModuleName;
+    string mObjectName;
     FileDateTime mObjectTime;     /* time of object file, must be newest, otherwise compile */
     FileDateTime mDependantsTime;   /* time of newest of all dependencies */
     FileDateTime mFileTime;
     bool mHasBeenSearched;
     bool mNoLink;
+    bool mNoCompile;
     bool mIgnore;
     int mBuildNumber;
-    char[][] mReferencedImports;
-    bool[char[]] mActiveVersions;
+    string[] mReferencedImports;
+    bool[string] mActiveVersions;
     long         mVersionLevel = 0;
-    bool[char[]] mActiveDebugs;
+    bool[string] mActiveDebugs;
     long         mDebugLevel = 0;
-    char[]  mLocalArgs;
+    string  mLocalArgs;
     }
 
     public {
     // FileName (read only)
-    char[] FileName () { return mFileName.dup; }
+    string FileName () { return mFileName.dup; }
 
     // DependantsTime (read only)
     FileDateTime DependantsTime() { return mDependantsTime; }
@@ -287,13 +291,16 @@ public class Source {
     FileDateTime FilesTime() { return mFileTime; }
 
     // ModuleName (read only)
-    char[] ModuleName() { return mModuleName.dup; }
+    string ModuleName() { return mModuleName.dup; }
 
     // ObjectName (read only)
-    char[] ObjectName() { return mObjectName.dup; }
+    string ObjectName() { return mObjectName.dup; }
 
     // NoLink (read only)
     bool NoLink() { return mNoLink; }
+
+    // NoCompile (read only)
+    bool NoCompile() { return mNoCompile; }
 
     // Ignore
     bool Ignore() { return mIgnore; }
@@ -303,7 +310,7 @@ public class Source {
     int BuildNumber() { return mBuildNumber; }
 
     // LocalArgs (read only)
-    char[] LocalArgs () { return mLocalArgs.dup; }
+    string LocalArgs () { return mLocalArgs.dup; }
 
     // HasBeenScanned (read only)
     bool HasBeenScanned () { return mHasBeenSearched; }
@@ -320,7 +327,7 @@ public class Source {
         }
     }
 // --------------------------------------------------------------------
-    this(char[] pFileName, EMode pMode = Source.EMode.New)
+    this(string pFileName, EMode pMode = Source.EMode.New)
 // --------------------------------------------------------------------
     {
         if (pFileName in Source.smSourceIndex)
@@ -344,10 +351,10 @@ public class Source {
     }
 
 // --------------------------------------------------------------------
-    void create(char[] pFileName)
+    void create(string pFileName)
 // --------------------------------------------------------------------
     {
-        char[] lObjectName;
+        string lObjectName;
 
         mReferencedImports.length = 0;
         mHasBeenSearched = false;
@@ -365,7 +372,7 @@ public class Source {
 
         if (std.path.getExt(pFileName) != "ddoc")
         {
-            char[] lAltName;
+            string lAltName;
             mNoLink = (std.path.getExt(pFileName) == "di");
             mModuleName = FileToModulename(pFileName, lAltName);
             lObjectName = addExt(pFileName,ObjExt);
@@ -389,14 +396,6 @@ public class Source {
             if (mObjectName == lObjectName)
             {
                 mObjectName = ObjWritePath ~ std.path.getBaseName(mObjectName);
-                version(none)
-                {
-                    foreach(int i, inout char c; mObjectName)
-                    {
-                        if (c == ':' && i > 1)
-                            c = '\\';
-                    }
-                }
                 util.pathex.MakePath(mObjectName);
             }
         }
@@ -446,7 +445,7 @@ debug(dtor)
         FileDateTime lCurFileTime;
         bool lCanUse;
         int lTextPos = 0;
-        char[] lFileText;
+        string lFileText;
 
 
         if(mHasBeenSearched)
@@ -479,7 +478,7 @@ debug(dtor)
             // Check if any macro processing is required.
             if ((mMacroInput == True) && (std.path.getExt(mFileName) != "d"))
             {
-                char[] lNewFile;
+                string lNewFile;
                 lNewFile = std.path.addExt(mFileName, "d");
                 if (util.macro.RunMacro(lFileText, "build", lNewFile))
                 {
@@ -508,8 +507,8 @@ debug(dtor)
 
                 AddRoot( std.path.getDirName(util.pathex.CanonicalPath(mFileName, false)) );
             }
-            if (AutoImports() == True) {
-            foreach(char[] lNextFile; mReferencedImports)
+
+            foreach(string lNextFile; mReferencedImports)
             {
                 if (mCollectUses)
                 {
@@ -527,13 +526,13 @@ debug(dtor)
                     lCanUse = true;
                     if (!(ModulesToIgnore is null))
                     {
-                        foreach(char[] lNextModule; ModulesToIgnore() ){
+                        foreach(string lNextModule; ModulesToIgnore() ){
                             int lFindPos;
-                            char[] lType = "package";
-                            char[] lFullFileName;
+                            string lType = "package";
+                            string lFullFileName;
                             version(Windows)
                             {
-                                char[] lLowerMod;
+                                string lLowerMod;
                                 lFullFileName = std.string.tolower(util.pathex.CanonicalPath(lNextFile));
                                 lLowerMod = std.string.tolower(lNextModule);
                                 version(Windows)
@@ -605,19 +604,18 @@ debug(dtor)
                             }
                         }
                     }
-                    if (lCanUse){
+                    if (lCanUse && (vExplicit == False))
+                    {
                         // Not known yet, so add it and grab its mod time
-                        char[] lUseName = GetFullPathnameScan(lNextFile, ~0);
+                        string lUseName = GetFullPathnameScan(lNextFile, ~0);
                         lCurFileTime = (new Source(lUseName)).DependantsTime;
                     }
 
-
                 }
+            }
 
-                // Ensure we get the most recent mod time.
-                UpdateDependantTime (lCurFileTime);
-            }
-            }
+            // Ensure we get the most recent mod time.
+            UpdateDependantTime (lCurFileTime);
 
         }
         mHasBeenSearched = true;
@@ -658,9 +656,9 @@ debug(dtor)
     bool IncrementBuildNumber()
 // --------------------------------------------------------------------
     {
-        char[] lFileName;
+        string lFileName;
         Source lBNSource;
-        char[] lBaseDir;
+        string lBaseDir;
 
         if (mBuildNumber < 0)
             return false;
@@ -681,7 +679,7 @@ debug(dtor)
         mBuildNumber++;
 
         {
-            char[] lAltName;
+            string lAltName;
             std.file.write(lFileName,
                 std.string.format(
                 "module %s;\n"
@@ -719,7 +717,7 @@ debug(dtor)
   private {
 
     // -------------------------------------------
-    void ActivateVersion(char[] pID)
+    void ActivateVersion(string pID)
     // -------------------------------------------
     {
         if (pID.length > 0)
@@ -732,7 +730,7 @@ debug(dtor)
     }
 
     // -------------------------------------------
-    bool IsActiveVersion(char[] pID)
+    bool IsActiveVersion(string pID)
     // -------------------------------------------
     {
         if (pID.length == 0)
@@ -752,10 +750,10 @@ debug(dtor)
     }
 
     // -------------------------------------------
-    void ActivateDebug(char[] pID)
+    void ActivateDebug(string pID)
     // -------------------------------------------
     {
-        static const char[] lDefaultLevel = "1";
+        static const string lDefaultLevel = "1";
         if (pID.length == 0)
             pID = lDefaultLevel;
 
@@ -767,7 +765,7 @@ debug(dtor)
     }
 
     // -------------------------------------------
-    bool IsActiveDebug(char[] pID)
+    bool IsActiveDebug(string pID)
     // -------------------------------------------
     {
 
@@ -788,14 +786,14 @@ debug(dtor)
     }
 
     // -------------------------------------------
-    void ProcessTokens (char[] pFileText, inout int pPos, char[] pEndStmt = kCloseBrace)
+    void ProcessTokens (string pFileText, inout int pPos, string pEndStmt = kCloseBrace)
     // -------------------------------------------
     {
         /* This scans the source text for specific tokens until the 'pEndStmt'
            token is found, or end of text.
         */
-        char[] lCurToken;
-        char[] lPrevToken;
+        string lCurToken;
+        string lPrevToken;
         int lLastPos;
 
         lCurToken = "";
@@ -894,10 +892,10 @@ debug(dtor)
     }
 
     //----------------------------------------------------------
-    void doMain (in char[] pFileText, inout int pPos, char[] pCurrentToken)
+    void doMain (in string pFileText, inout int pPos, string pCurrentToken)
     {
         int lSavedPos;
-        char[] lToken;
+        string lToken;
 
         lSavedPos = pPos;
         lToken = GetNextToken(pFileText,pPos);
@@ -918,10 +916,10 @@ debug(dtor)
     }
 
     //----------------------------------------------------------
-    void doVersion (in char[] pFileText, inout int pPos)
+    void doVersion (in string pFileText, inout int pPos)
     {
-        char[] lCurrentToken;
-        char[] lVersionId;
+        string lCurrentToken;
+        string lVersionId;
         int lSavedPos;
 
         lCurrentToken = GetNextToken (pFileText, pPos);
@@ -1026,10 +1024,10 @@ debug(dtor)
     }
 
     //----------------------------------------------------------
-    void doDebug(in char[] pFileText, inout int pPos)
+    void doDebug(in string pFileText, inout int pPos)
     {
-        char[] lCurrentToken;
-        char[] lDebugId;
+        string lCurrentToken;
+        string lDebugId;
         int lSavedPos;
 
         lSavedPos = pPos;
@@ -1138,10 +1136,10 @@ debug(dtor)
     }
 
     //----------------------------------------------------------
-    void doImport (in char[] pFileText, inout int pPos)
+    void doImport (in string pFileText, inout int pPos)
     {
-        char[] lCurrentToken;
-        char[] lModName;
+        string lCurrentToken;
+        string lModName;
         int lSavedPos;
 
         // import lModName.lModName, lModName, lModName.lModName.lModName;
@@ -1192,10 +1190,10 @@ debug(dtor)
             pPos = lSavedPos;
     }
     //----------------------------------------------------------
-    void doModule (in char[] pFileText, inout int pPos)
+    void doModule (in string pFileText, inout int pPos)
     {
-        char[] lCurrentToken;
-        char[] lModName;
+        string lCurrentToken;
+        string lModName;
         int lSavedPos;
 
         // module lModName [.lModName];
@@ -1221,12 +1219,12 @@ debug(dtor)
     }
 
     //----------------------------------------------------------
-    void doPragma (in char[] pFileText, inout int pPos)
+    void doPragma (in string pFileText, inout int pPos)
     {
         /* Looking for syntax form ... pragma(<type> [ , <id> [,<id>]...] );
         */
-        char[] lCurrentToken;
-        char[] lPragmaId;
+        string lCurrentToken;
+        string lPragmaId;
         int lSavedPos;
 
         lPragmaId.length = 0;
@@ -1331,8 +1329,8 @@ debug(dtor)
 
             } else if (lCurrentToken == "build")
             {
-                char[] lExternFile;
-                char[][] lExternOpts;
+                string lExternFile;
+                string[] lExternOpts;
                 if ( (lCurrentToken = GetNextToken(pFileText,pPos)) == ",")
                 {
                     lCurrentToken = GetNextToken(pFileText,pPos);
@@ -1391,7 +1389,7 @@ debug(dtor)
                     }
                     else
                     {
-                        char[] lLookAhead;
+                        string lLookAhead;
                         lSavedPos = pPos;
                         lLookAhead = GetNextToken(pFileText,pPos);
                         while(lLookAhead != kCloseParen)
@@ -1455,10 +1453,10 @@ debug(dtor)
     }
 
     //----------------------------------------------------------
-    void doAttribute (in char[] pFileText, inout int pPos, char[] pAttrType)
+    void doAttribute (in string pFileText, inout int pPos, string pAttrType)
     {
-        char[] lCurrentToken;
-        char[] lNextToken;
+        string lCurrentToken;
+        string lNextToken;
         int lSavedPos;
 
         // Handle private/public/etc... blocks.
@@ -1493,7 +1491,7 @@ debug(dtor)
 
     //----------------------------------------------------------
     /* Get the next token, skipping over comments. */
-    char[] GetNextToken (in char[] pFileText, inout int pPos)
+    string GetNextToken (in string pFileText, inout int pPos)
     {
         int lLastPos;
 
@@ -1580,14 +1578,14 @@ debug(dtor)
     }
 
     //----------------------------------------------------------
-    void skipContent (in  char[] pFileText, inout int pPos, char[] pEndStmt = kCloseBrace)
+    void skipContent (in  string pFileText, inout int pPos, string pEndStmt = kCloseBrace)
     {
         // Skips thru nested blocks.
 
         /* The initial token is assumed to be
            the first token inside a '{' '}' pair.
            */
-        char[] lCurrentToken;
+        string lCurrentToken;
 
         while ((lCurrentToken = GetNextToken (pFileText, pPos)) !is null)
         {
@@ -1602,7 +1600,7 @@ debug(dtor)
     }
 
     //----------------------------------------------------------
-    char[] GetStringLit (in  char[] pFileText, inout int pPos, char pEndStmt = '"')
+    string GetStringLit (in  string pFileText, inout int pPos, char pEndStmt = '"')
     {
         int lStartLit;
         int lEndLit;
@@ -1626,9 +1624,9 @@ debug(dtor)
 
 } // end class
 
-char[] ModuleToFilename(char[] pModuleName)
+string ModuleToFilename(string pModuleName)
 {
-    char[] lFileName;
+    string lFileName;
 
     // Replace dots with the opsys path separator
     lFileName = util.str.ReplaceChar(pModuleName.dup, '.', std.path.sep[0]);
@@ -1643,10 +1641,10 @@ char[] ModuleToFilename(char[] pModuleName)
     return lFileName;
 }
 
-char[] FileToModulename(char[] pFileName, inout char[] pAltName)
+string FileToModulename(string pFileName, inout string pAltName)
 {
-    char[] lModuleName;
-    char[] lTemp;
+    string lModuleName;
+    string lTemp;
 
     // Copy the name
     lModuleName = util.pathex.AbbreviateFileName(pFileName, GetImportRoots() );
@@ -1683,12 +1681,12 @@ char[] FileToModulename(char[] pFileName, inout char[] pAltName)
 }
 
 
-int LoadBuildNumber(char[] pModuleName, char[] pFileName)
+int LoadBuildNumber(string pModuleName, string pFileName)
 {
-    char[][] lFileLines;
-    char[] lFileName;
+    string[] lFileLines;
+    string lFileName;
     int lBuildNumber = 0;
-    char[] lBaseDir;
+    string lBaseDir;
 
     lFileName = ModuleToFilename(pModuleName ~ "_bn");
     lBaseDir = std.path.getDirName(pFileName);
@@ -1701,9 +1699,9 @@ int LoadBuildNumber(char[] pModuleName, char[] pFileName)
     {
         lFileLines = GetTextLines( lFileName, util.fileex.GetOpt.Exists );
         BLK_FindBN:
-        foreach (char[] lLine; lFileLines)
+        foreach (string lLine; lFileLines)
         {
-            if ( util.str.IsLike(lLine, cast(dchar[])"*long auto_build_number = *;*") == True )
+            if ( util.str.IsLike(lLine, "*long auto_build_number = *;*"c) == True )
             {
                 for(int i = std.string.find(lLine,"=") + 2; i < lLine.length; i++)
                 {
@@ -1718,7 +1716,7 @@ int LoadBuildNumber(char[] pModuleName, char[] pFileName)
     }
     else
     {
-        char[] lAltName;
+        string lAltName;
         std.file.write(lFileName,
             std.string.format("module %s;\n" , FileToModulename(lFileName, lAltName)) ~
             "// This file is automatically maintained by the BUILD utility,\n"
@@ -1731,7 +1729,7 @@ int LoadBuildNumber(char[] pModuleName, char[] pFileName)
 }
 
 // -------------------------------------------
-void ActivateVersion(char[] pID)
+void ActivateVersion(string pID)
 // -------------------------------------------
 {
     if (pID.length > 0)
@@ -1747,10 +1745,10 @@ void ActivateVersion(char[] pID)
 }
 
 // -------------------------------------------
-void ActivateDebug(char[] pID)
+void ActivateDebug(string pID)
 // -------------------------------------------
 {
-    static const char[] lDefaultLevel = "1";
+    static const string lDefaultLevel = "1";
     if (pID.length == 0)
         pID = lDefaultLevel;
 
@@ -1790,7 +1788,7 @@ void SetKnownVersions()
     {
         ActivateVersion("BuildVerbose");
         if (vVerboseMode == True)
-            foreach(char[] k; vActiveVersions.keys){
+            foreach(string k; vActiveVersions.keys){
                 writefln("Active Version: '%s'", k);
             }
     }
@@ -1798,11 +1796,11 @@ void SetKnownVersions()
 
 struct ExternRef
 {
-    char[]   FilePath;
-    char[][] ToolOpts;
-    char[]   Prefix;
-    char[]   Postfix;
-    char[]   Rule;
+    string   FilePath;
+    string[] ToolOpts;
+    string   Prefix;
+    string   Postfix;
+    string   Rule;
 }
 private
 {
@@ -1810,17 +1808,17 @@ private
 }
 
 //-------------------------------------------------------
-int ProcessExternal( ExternRef pRef, char[] pScanningFile)
+int ProcessExternal( ExternRef pRef, string pScanningFile)
 //-------------------------------------------------------
 {
     int lResult = -1;
     static Rule[] lRules;
-    char[] lExtension;
-    char[] lInFile;
-    char[] lOutFile;
+    string lExtension;
+    string lInFile;
+    string lOutFile;
     FileDateTime lInDate;
     FileDateTime lOutDate;
-    char[] lCommand;
+    string lCommand;
 
 
     if (lRules.length == 0)
@@ -1872,12 +1870,12 @@ int ProcessExternal( ExternRef pRef, char[] pScanningFile)
             throw new SourceException(
                 std.string.format("External input file '%s' not found", lInFile));
 
-        char[] lTemp;
+        string lTemp;
         lTemp = "a=" ~ pRef.Prefix ~ "," ~
                 "b=" ~ util.pathex.GetFileBaseName(lInFile) ~ "," ~
                 "c=" ~ pRef.Postfix;
         lOutFile = util.str.Expand("{a}{b}{c}", lTemp);
-        char[] lInPath = getDirName(lInFile);
+        string lInPath = getDirName(lInFile);
         if (lInPath.length > 0 && util.str.ends(lInPath, std.path.sep) == False)
             lInPath ~= std.path.sep;
         lOutFile = lInPath ~ lOutFile;
@@ -1890,9 +1888,9 @@ int ProcessExternal( ExternRef pRef, char[] pScanningFile)
         lOutDate = new FileDateTime(lOutFile);
         if ((lInDate > lOutDate) || (vForceCompile == True))
         {
-            char[] lKeyValues;
-            char[] lExe;
-            char[] lArgs;
+            string lKeyValues;
+            string lExe;
+            string lArgs;
             int lPos;
             int lInQuote;
 
@@ -1907,7 +1905,7 @@ int ProcessExternal( ExternRef pRef, char[] pScanningFile)
                          "@IPATH=" ~ std.path.getDirName(lInFile) ~ "," ~
                          "@OPATH=" ~ std.path.getDirName(lOutFile)
                     ;
-            foreach(char[] lOpt; pRef.ToolOpts)
+            foreach(string lOpt; pRef.ToolOpts)
             {
                 if (std.string.find(lOpt, "=") != -1)
                     lKeyValues ~= "," ~ lOpt;
@@ -1980,10 +1978,10 @@ int ProcessExternal( ExternRef pRef, char[] pScanningFile)
 
 struct Rule
 {
-    char[] Name;
-    char[] Input;
-    char[] Output;
-    char[] Tool;
+    string Name;
+    string Input;
+    string Output;
+    string Tool;
     eRuleUsage InUse;
     eRuleUsage OutUse;
 };
@@ -1994,10 +1992,10 @@ Rule[] LoadRules()
 //-------------------------------------------------------
 {
     Rule[] lRules;
-    char[][] lRuleText;
-    char[] lRuleDefnFile;
+    string[] lRuleText;
+    string lRuleDefnFile;
 
-    static char[] kRuleKey = "rule=";
+    static string kRuleKey = "rule=";
 
     lRuleDefnFile = util.pathex.LocateFile( vRDFName,
                                             getDirName(GetAppPath()) ~
@@ -2010,8 +2008,8 @@ Rule[] LoadRules()
             writefln("Rule Definitions from %s", lRuleDefnFile);
     }
 
-    util.fileex.GetTextLines( lRuleDefnFile, lRuleText );
-    foreach(char[] lLine; lRuleText)
+    lRuleText = util.fileex.GetTextLines( lRuleDefnFile);
+    foreach(string lLine; lRuleText)
     {
         lLine = util.str.strip(lLine);
         if (util.str.begins(lLine, kRuleKey ) == True)
@@ -2033,7 +2031,7 @@ Rule[] LoadRules()
         }
         else if (lRules.length > 0)
         {
-            char[][] lKeyValue;
+            string[] lKeyValue;
             lKeyValue = std.string.split(lLine, "=");
             if (lKeyValue.length == 2)
             {
@@ -2051,13 +2049,13 @@ Rule[] LoadRules()
 
                 else if (lKeyValue[0] == "use_in")
                 {
-                    foreach(eRuleUsage i, char[] lName; vUseNames)
+                    foreach(eRuleUsage i, string lName; vUseNames)
                         if (lKeyValue[1] == lName)
                             lRules[$-1].InUse = i;
                 }
                 else if (lKeyValue[0] == "use_out")
                 {
-                    foreach(eRuleUsage i, char[] lName; vUseNames)
+                    foreach(eRuleUsage i, string lName; vUseNames)
                         if (lKeyValue[1] == lName)
                             lRules[$-1].OutUse = i;
                 }
@@ -2080,7 +2078,7 @@ Rule[] LoadRules()
 }
 
 // -------------------------------------------
-void RunExternal(char[] pPath, char[][] pOpts, char[] pScanningFile)
+void RunExternal(string pPath, string[] pOpts, string pScanningFile)
 // -------------------------------------------
 {
     if (pPath.length == 0)
@@ -2088,9 +2086,9 @@ void RunExternal(char[] pPath, char[][] pOpts, char[] pScanningFile)
 
     vExternals.length = vExternals.length + 1;
     vExternals[$-1].FilePath = pPath;
-    foreach(char[] lOpt; pOpts)
+    foreach(string lOpt; pOpts)
     {
-        char[] lUCOpt = std.string.toupper(lOpt);
+        string lUCOpt = std.string.toupper(lOpt);
 
         if (util.str.begins(lUCOpt, "@PRE=") == True)
             vExternals[$-1].Prefix = lOpt[5..$];
@@ -2108,7 +2106,7 @@ void RunExternal(char[] pPath, char[][] pOpts, char[] pScanningFile)
         if (vVerboseMode == True)
         {
             writef("New external file to be built: %s", pPath);
-            foreach( char[] lOpt; pOpts)
+            foreach( string lOpt; pOpts)
                 writef(" `%s`", lOpt);
             writefln("");
         }

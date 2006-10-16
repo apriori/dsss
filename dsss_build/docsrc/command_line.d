@@ -2,8 +2,8 @@ Ddoc
 
 $(TOPIC_H command_line,Command Line)
 $(SECTION
-The $(I Build) utility supplies the source file and optional switches via
-the command line. The typical format of the $(I Build) utility's command
+The $(I Bud) utility supplies the source file and optional switches via
+the command line. The typical format of the $(I Bud) utility's command
 line is ...
 $(CODE
       $(B build) $(ANG sourcefile) $(SQR  $(ANG switches) ) $(SQR  $(ANG otherfiles) )
@@ -11,7 +11,7 @@ $(CODE
 
 You can however specify the files and switches in any order you like.
 $(BL)
-Normally you would only supply a single file name to $(I Build), that being
+Normally you would only supply a single file name to $(I Bud), that being
  the source file of the top-level file in the application. Typically
  the one that has the 'main()' or 'WinMain()' function, though this is
  not strictly necessary.
@@ -22,7 +22,7 @@ and any other type of file needed to build an application or library.
 $(BL)
 If you run the utility without any files and without any switches, it
  display a $(I help) screen with some details about the switches. That looks
- something like this ...
+ something similar to this ...
 $(CODE
   Path and Version : C:\Program Files\build.exe v3.6(339)
   Usage: build sourcefile [options objectfiles libraries]
@@ -89,7 +89,7 @@ $(CODE
                  $(B -R) will reverse the current usage.
                   Note that the default for Windows $(I DigitalMars) is to use a response file
                   but for all other environments it is to use command line arguments.
-    $(B -info)      Displays the version and path of the Build application
+    $(B -info)      Displays the version and path of the $(I Bud) application
     $(B -help)      Displays the full 'usage' help text.
     $(B -h)         Same as /-help, displays the full 'usage' help text.
     $(B -?   )      Same as /-help, displays the full 'usage' help text.
@@ -120,5 +120,5 @@ See also $(EXDEF response_file,Response File)
 
 Macros:
  Copyright = &copy; 2006, Derek Parnell, Melbourne
- Title = User Manual for BUILD
- Product = Build Utility
+ Title = User Manual for Bud
+ Product = $(I Bud) Utility

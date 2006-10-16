@@ -4,9 +4,9 @@ $(TOPIC_H profile_file,Profile File)
 $(SECTION
 The utility's profile is used to specify various values
 for the utility. The file is called $(B build.pfl). You can have from zero
-to three profile files because the $(I Build) utility looks in each
+to three profile files because the $(I Bud) utility looks in each
 of three places for a profile file, and it uses each one that it finds.
-It looks in the folder that $(I Build) is installed, then in the folder
+It looks in the folder that $(I Bud) is installed, then in the folder
 that the compiler is installed, and finally in the current folder.
 $(BL)
 The profile file consists of one or more command lines.
@@ -95,5 +95,5 @@ You can any number of configuration file group references on a command line. The
 
 Macros:
  Copyright = &copy; 2006, Derek Parnell, Melbourne
- Title = User Manual for BUILD
- Product = Build Utility
+ Title = User Manual for Bud
+ Product = $(I Bud) Utility

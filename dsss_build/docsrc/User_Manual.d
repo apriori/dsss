@@ -2,20 +2,20 @@ Ddoc
 
 $(TOPIC_H description, Description)
 $(SECTION
-Build is a tool to assist building applications and libraries written
+$(I Bud) is a tool to assist building applications and libraries written
 using the D programming language.
 )
 
 
 $(ABSTRACT
 It is an effective replacement for
-the general 'make' tools. The primary difference between $(I Build) and
-other tools is that $(I Build) does not need you to create and maintain
+the general 'make' tools. The primary difference between $(I Bud) and
+other tools is that $(I Bud) does not need you to create and maintain
 'makefiles'. Instead, it analyses the source code files to determine
 all dependancies and constructs the appropriate calls to the compiler,
 linker and librarian.
 $(BL)
-The aim of $(I Build) is to create a target file from the source file(s)
+The aim of $(I Bud) is to create a target file from the source file(s)
 supplied to it. This is usually an executable file but could also be
 a library. In both cases, source files are converted to object files, and
 then either linked to form an executable or packaged into a library file.
@@ -32,16 +32,16 @@ $(TOC_SECTION
     $(TOC introduction, Introduction)
 
     $(TOC pragmas, Pragmas)
-        $(TOC_SUB pragmas,pragma_build, Build)
-        $(TOC_SUB pragmas,pragma_build_def, Build Def)
-        $(TOC_SUB pragmas,pragma_export_version, Export Version)
-        $(TOC_SUB pragmas,pragma_ignore, Ignore)
-        $(TOC_SUB pragmas,pragma_include, Include)
-        $(TOC_SUB pragmas,pragma_link, Link)
-        $(TOC_SUB pragmas,pragma_nolink, Nolink)
-        $(TOC_SUB pragmas,pragma_target, Target)
+        $(TOC_SUB pragmas,pragma_build, build)
+        $(TOC_SUB pragmas,pragma_build_def, build def)
+        $(TOC_SUB pragmas,pragma_export_version, export version)
+        $(TOC_SUB pragmas,pragma_ignore, ignore)
+        $(TOC_SUB pragmas,pragma_include, include)
+        $(TOC_SUB pragmas,pragma_link, link)
+        $(TOC_SUB pragmas,pragma_nolink, nolink)
+        $(TOC_SUB pragmas,pragma_target, target)
 
-    $(TOC autobuild, Auto Build Number)
+    $(TOC autobuild, Automatic build number)
 
     $(TOC rules, Rule Definition File)
 
@@ -53,12 +53,15 @@ $(TOC_SECTION
         $(TOC_SUB switches,switch_help,-?)
         $(TOC_SUB switches,switch_allobj,-allobj)
         $(TOC_SUB switches,switch_autowinlibs,-AutoWinLibs)
+        $(TOC_SUB switches,switch_BCFPATH,-BCFPATH)
         $(TOC_SUB switches,switch_CFPATH,-CFPATH)
         $(TOC_SUB switches,switch_cleanup,-clean)
         $(TOC_SUB switches,switch_cleanup,-cleanup)
         $(TOC_SUB switches,switch_DCPATH,-DCPATH)
         $(TOC_SUB switches,switch_dll,-dll)
+        $(TOC_SUB switches,switch_emptyargs,-emptyargs)
         $(TOC_SUB switches,switch_exec,-exec$(ANG args))
+        $(TOC_SUB switches,switch_explicit,-explicit)
         $(TOC_SUB switches,switch_full,-full)
         $(TOC_SUB switches,switch_gui,-gui)
         $(TOC_SUB switches,switch_help,-h)
@@ -86,6 +89,7 @@ $(TOC_SECTION
         $(TOC_SUB switches,switch_test, -test)
         $(TOC_SUB switches,switch_uses, -uses)
         $(TOC_SUB switches,switch_UMB, -UMB)
+        $(TOC_SUB switches,switch_usefinal,-usefinal=$(ANG yes/no))
         $(TOC_SUB switches,switch_v,-v (lowercase))
         $(TOC_SUB switches,switch_V,-V (uppercase))
         $(TOC_SUB switches,switch_X,-X$(ANG name))
@@ -102,8 +106,8 @@ $(TOC_SECTION
 $(SECTION $(SECTIONDEF_H copyright, Copyright:, &copy; 2005 Derek Parnell))
 $(SECTION $(SECTIONDEF_H authors, Authors:, Derek Parnell - Melbourne))
 $(SECTION $(SECTIONDEF_H create, Initial Creation:, January 2005))
-$(SECTION $(SECTIONDEF_H version, Version:, 3.03))
-$(SECTION $(SECTIONDEF_H date, Date:, 20 September 2006))
+$(SECTION $(SECTIONDEF_H version, Version:, 3.04))
+$(SECTION $(SECTIONDEF_H date, Date:, 16 October 2006))
 $(SECTION $(SECTION_H license, License:)
 $(CITE
 This software is provided 'as-is', without any express or implied
@@ -133,5 +137,5 @@ $(SECTIONDEF_H references, References:, This is based on the work called 'dmake 
 
 Macros:
  Copyright = &copy; 2006, Derek Parnell, Melbourne
- Title = User Manual for BUILD
- Product = Build Utility
+ Title = User Manual for Bud
+ Product = $(I Bud) Utility

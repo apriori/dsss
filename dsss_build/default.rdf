@@ -17,10 +17,8 @@ tool=dmc -c {OPT} -o{@OUT} {@IN}
 -------------------------------------
 TEST
 -------------------------------------
-rule=test
-in=d
+rule=DIndent
+in=id
 out=d
-tool=mklines {@IN} {@OUT}
-use_in=compile
-use_out=compile
-
+tool=dindent {@IN} {@OUT}
+out_use=compile

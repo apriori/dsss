@@ -2,18 +2,18 @@ Ddoc
 
 $(TOPIC_H macros,Macros)
 $(SECTION
-The $(I macro) system in Build works by transforming the contents of a file,
+The $(I macro) system in $(I Bud) works by transforming the contents of a file,
 via the use of special commands, into a new file that will be
 compiled.
 $(BL)
 The macro system is fairly restricted for now but a much more powerful
-facility will be available in subsequent releases of Build. However, in spite
+facility will be available in subsequent releases of $(I Bud). However, in spite
 of this, a lot can be achieved by the current macro facility.
 $(BL)
 )
 
 $(SECTION $(B How it Works)$(BR)
-Build firstly examines the default Macro Definition File $(PAREN MDF)
+$(I Bud) firstly examines the default Macro Definition File $(PAREN MDF)
 and preprocesses
 the defined special commands in preparation for any macro files it may be
 presented with. Next, whenever it encounters a macro file on the command
@@ -140,14 +140,14 @@ $(EXAMPLE ,
 @replace becos because
 )
 Additionally there is another command that is only recognized when embedded
-in a macro file. This is the $(B output) command. It tells $(I Build) what
+in a macro file. This is the $(B output) command. It tells $(I Bud) what
 name to use for the transformed file.
 $(EXAMPLE Send output to another file,
 @output ../result/mytest.d
 )
 If the $(B output) command is not found in a file, the transformed file
 is assumed to tbe the same name as the macro file but with ".d" as
-the extention. In other words, "test.mac" when transformed becomes "test.d".
+the extension. In other words, "test.mac" when transformed becomes "test.d".
 $(BL)
 It is important to note that $(B all) embedded macro commands are removed from
 the transformed file and that no embedded macro command can modify any other
@@ -156,8 +156,8 @@ embedded macro command.
 
 Macros:
  Copyright = &copy; 2006, Derek Parnell, Melbourne
- Title = User Manual for BUILD
- Product = Build Utility
+ Title = User Manual for Bud
+ Product = $(I Bud) Utility
  ROW     = <tr class="macrorow">$0</tr>
  THEAD   = <thead class="macrothead">$0</thead>
  THCELL = <td class="macrothcell">$0</td>

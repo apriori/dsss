@@ -1,8 +1,8 @@
 Ddoc
 
-$(TOPIC_H autobuild,Auto Build Number)
+$(TOPIC_H autobuild,Automatic build number)
 $(SECTION
-Automatically Incremented Build Numbering for Modules
+Automatically incremented build numbering for Modules
 You can optionally specify that the $(I build) utility automatically
 increments a build number for any module. You do this by supplying
  a single line in your source code in the form ... $(BR)
@@ -30,7 +30,7 @@ private import parser_bn;
 You can access the build number from within the module thus ... $(BR)
 
 $(CODE
-writefln("Build number is %d", auto_build_number);
+writefln("The application build number is %d", auto_build_number);
 )
 You can access the build numbers of other modules in you application
  by importing the appropriate file and prefixing the references with
@@ -49,18 +49,18 @@ writefln("  Tokens %d", tokenizer_bn.auto_build_number);
 The "_bn.d" file created by $(I build) for this module would look like ... $(BR)
 $(CODE
 module parser_bn;
-/// This file is automatically maintained by the BUILD utility,
+/// This file is automatically maintained by the Bud utility,
 /// Please refrain from manually editing it.
 long auto_build_number = 77;
 )
 
 Of course the number $(I 77) is just an example. This number would actually
- start at 1 and increment whenever $(I Build) needed to create a new object
+ start at 1 and increment whenever $(I Bud) needed to create a new object
 file for the module.
 )
 
 
 Macros:
  Copyright = &copy; 2006, Derek Parnell, Melbourne
- Title = User Manual for BUILD
- Product = Build Utility
+ Title = User Manual for Bud
+ Product = Bud Utility

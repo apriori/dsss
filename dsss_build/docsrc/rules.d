@@ -11,8 +11,8 @@ tools that take a single input file to create the required output file.
 $(BL)
 The default Rule Definition File is called $(QUOTE default.rdf) but this
 can be changed in the $(EXREF configuration_file.html, Configuration File).
-If you don't specify a full path to the file, $(I Build) searches for it.
-It first first looks in the directory where $(I Build) is installed, and if
+If you don't specify a full path to the file, $(I Bud) searches for it.
+It first first looks in the directory where $(I Bud) is installed, and if
 it is not found there, the scans throught the directories in the
 PATH environment symbol.
 $(BL)
@@ -33,10 +33,10 @@ $(TABLE
      $(CELL tool=$(ANG command pattern)) $(CELL Yes) $(CELL Defines the command line to use.)
      )
   $(ROW
-     $(CELL in=$(ANG extention)) $(CELL No) $(CELL Specifies the file type (extension) of the input file)
+     $(CELL in=$(ANG extension)) $(CELL No) $(CELL Specifies the file type (extension) of the input file)
      )
   $(ROW
-     $(CELL out=$(ANG extention)) $(CELL No) $(CELL Specifies the file type (extension) of the output file)
+     $(CELL out=$(ANG extension)) $(CELL No) $(CELL Specifies the file type (extension) of the output file)
      )
   $(ROW
      $(CELL in_use=$(ANG usage code)) $(CELL No)
@@ -61,7 +61,7 @@ The $(QUOTE tool=$(ANG command pattern)) line can contain special tokens.
 These are keywords enclosed
 in braces. At compile time, the tokens are replaced by replacement text
 taken from the $(B pragma(build)) statement that invoked the rule. In addition,
-$(I Build) also generates some reserved tokens.
+$(I Bud) also generates some reserved tokens.
 $(TABLE
 $(THEAD
 $(ROW $(THCELL Reserved Token) $(THCELL Usage))
@@ -74,7 +74,7 @@ $(ROW $(CELL @IPATH) $(CELL the path of the input file.))
 $(ROW $(CELL @OPATH) $(CELL the path of the output file.))
 )
 $(NOTE *This is everything up to but not including the final '.' character in the name.)
-$(I Build) ensures that the outfile's path will exist before the tool
+$(I Bud) ensures that the outfile's path will exist before the tool
 is run.
 $(EXAMPLE Sample RDF,
 ----- Windows Resource Compiler --------
@@ -99,5 +99,5 @@ tool=dmc -c {COPT} {@IN} -o{@OUT} {HDR}
 
 Macros:
  Copyright = &copy; 2006, Derek Parnell, Melbourne
- Title = User Manual for BUILD
- Product = Build Utility
+ Title = User Manual for Bud
+ Product = $(I Bud) Utility

@@ -4,10 +4,15 @@ $(TOPIC_H configuration_file,Configuration File)
 $(SECTION
 The utility's configuration file is used to specify your default options
 for the utility. The file is called $(B build.cfg). You can have from zero
-to three configuration files because the $(I Build) utility looks in each
-of three places for a configuration file, and it uses each one that it finds.
-It looks in the folder that $(I Build) is installed, then in the folder
+to four configuration files because the $(I Bud) utility looks in each
+of four places for a configuration file, and it uses each one that it finds.
+It looks in the folder that $(I Bud) is installed, then in a user defined
+alternative path (defined by -BCFPATH switch), then in the folder
 that the compiler is installed, and finally in the current folder.
+$(BL)
+$(B Note:) The alternative location is optional. It can be specified in
+an environment switch called BCFPATH or in a command line switch
+of the same name, -BCFPATH.
 $(BL)
 The configuration file consists of one or more command lines.
 Each command line is specified in a single text line, but you can have any
@@ -83,13 +88,13 @@ $(CODE
 )
 $(INDENT
 $(SECTION The identifiers for the settable strings are detailed below.)
-$(TABROW ExeExtention, The file extention for executable files. $(EG exe))
-$(TABROW LibExtention, The file extention for library files.$(EG lib))
-$(TABROW ObjExtention, The file extention for object files.$(EG obj))
-$(TABROW ShrLibExtention, The file extention for shared libraries files.$(EG dll))
-$(TABROW SrcExtention   , The file extention for D source files.$(EG d))
-$(TABROW MacroExtention ,  The file extention for macro files.$(EG mac))
-$(TABROW DdocExtention  , The file extention for D Documentation files.$(EG ddoc))
+$(TABROW ExeExtension, The file extension for executable files. $(EG exe))
+$(TABROW LibExtension, The file extension for library files.$(EG lib))
+$(TABROW ObjExtension, The file extension for object files.$(EG obj))
+$(TABROW ShrLibExtension, The file extension for shared libraries files.$(EG dll))
+$(TABROW SrcExtension   , The file extension for D source files.$(EG d))
+$(TABROW MacroExtension ,  The file extension for macro files.$(EG mac))
+$(TABROW DdocExtension  , The file extension for D Documentation files.$(EG ddoc))
 $(TABROW CompilerExe    , The file name of the compiler.$(EG dmd.exe))
 $(TABROW CompileOnly    , The switch that is passed to the compiler to tell
                           it not to link, just compile the files instead.$(EG -c))
@@ -126,7 +131,7 @@ $(TABROW CompilerDefs   , The default switches that are always passed to
                           $(BR) Note that in the DigitalMars environment if
                           you don't specify any CompilerDefs, "-op" is
                           assumed.)
-$(TABROW OutFileSwitch  , The switch tells $(I Build)
+$(TABROW OutFileSwitch  , The switch tells $(I Bud)
                           where to create the executable file. $(EG -of))
 $(TABROW ImportPath     , This is the switch for the compiler to tell it where
                           to search for imported modules. $(EG -I))
@@ -141,33 +146,33 @@ $(TABROW MapSwitch      , This is the switch for the linker to tell it
 $(TABROW SymInfoSwitch  , This is the switch for the linker to tell it
                           to insert symbolic debugging information into
                           the executable.$(EG /co))
-$(TABROW BuildImportPath, This is the switch for $(I Build) to tell it
+$(TABROW BuildImportPath, This is the switch for $(I Bud) to tell it
                           a path to scan for imported modules. $(EG -I))
-$(TABROW ImportPathDelim, This is the switch for $(I Build) to tell it
+$(TABROW ImportPathDelim, This is the switch for $(I Bud) to tell it
                           which character is used to delimit paths on
                           a BuildImportPath list. $(EG ;))
-$(TABROW OutputPath     , This is the switch for $(I Build) to tell it
+$(TABROW OutputPath     , This is the switch for $(I Bud) to tell it
                           the path to use for all temporary output files. $(EG -od))
-$(TABROW RunSwitch      , This is the switch for $(I Build) to tell it
+$(TABROW RunSwitch      , This is the switch for $(I Bud) to tell it
                           to run the application once it successfully
                           compiles. $(EG -exec))
 $(TABROW LibrarianPath  , This is the default path where build will run
                           the librarian tool from. It will be overridden
                           by a 'LIBCMD=' in the configuration file or
                           on the commandline. $(EG c:\tools\))
-$(TABROW ResponseExt    , This is the file extention that Build will use
+$(TABROW ResponseExt    , This is the file extension that $(I Bud) will use
                           for its response files. $(EG brf))
-$(TABROW DefResponseFile, This is the name of $(I Build's) default
+$(TABROW DefResponseFile, This is the name of the $(I Bud) default
                           response file. $(EG build.brf))
-$(TABROW RDFName        , This is the name of $(I Build's) default
+$(TABROW RDFName        , This is the name of the $(I Bud) default
                           Rules Definition File. $(EG default.rdf))
-$(TABROW DefMacroDefFile, This is the name of $(I Build's) default
+$(TABROW DefMacroDefFile, This is the name of the $(I Bud) default
                           Macro Definition File. $(EG build.mdf))
 $(TABROW LinkerStdOut   , This is the commandline option given to the linker
-                          when the $(I Build) commandline has the $(I "-silent")
+                          when the $(I Bud) commandline has the $(I "-silent")
                           switch. $(EG >nul))
 $(TABROW IgnoredModules , This is a comma delimited list of modules or packages
-                          to ignore. $(I Build) will not scan these modules and
+                          to ignore. $(I Bud) will not scan these modules and
                           packages for dependancies. $(EG std,dfl,dui)
                           If none is specified by this configuration item then
                           'phobos' is assumed.)
@@ -204,35 +209,35 @@ $(TABROW AssumedLibs    , This is a comma delimited list of libraries that
                                 $(ITEM m)
                           )
 )
-$(TABROW PathId         , The name of the environment symbol used by $(I Build)
+$(TABROW PathId         , The name of the environment symbol used by $(I Bud)
                           when scanning for executables. $(EG PATH))
-$(TABROW HomePathId     , The name of the environment symbol used by $(I Build)
+$(TABROW HomePathId     , The name of the environment symbol used by $(I Bud)
                           when scanning for configuration file. $(EG HOME))
-$(TABROW EtcPath        , The name of an alternative path used by $(I Build)
+$(TABROW EtcPath        , The name of an alternative path used by $(I Bud)
                           when scanning for configuration file. $(EG c:\etc\))
-$(TABROW GenDebugInfo   , The switch that tells $(I Build) and the compiler
+$(TABROW GenDebugInfo   , The switch that tells $(I Bud) and the compiler
                           to insert debugging information into the object
                           files. $(EG -g))
-$(TABROW ModOutPrefix   , If the $(I Build) switch $(I $(QUOTE -modules)) was
-                          used, this defines the string which $(I Build) will
+$(TABROW ModOutPrefix   , If the $(I Bud) switch $(I $(QUOTE -modules)) was
+                          used, this defines the string which $(I Bud) will
                           begin the Modules List output file with.
                           $(EG  MODULES = \n))
-$(TABROW ModOutSuffix   , If the $(I Build) switch $(I $(QUOTE -modules)) was
-                          used, this defines the string which $(I Build) will
+$(TABROW ModOutSuffix   , If the $(I Bud) switch $(I $(QUOTE -modules)) was
+                          used, this defines the string which $(I Bud) will
                           end the Modules List output file with.
                           $(EG  ))
-$(TABROW ModOutBody     , If the $(I Build) switch $(I $(QUOTE -modules)) was
-                          used, this defines the string which $(I Build) will
+$(TABROW ModOutBody     , If the $(I Bud) switch $(I $(QUOTE -modules)) was
+                          used, this defines the string which $(I Bud) will
                           use as a template for each module being listed.
                           $(EG     $(DOLLAR)(MODULE {mod})) $(BL)
                           Note that {mod} will be replaced with the module's
                           name and {src} will be replaced with the source
                           file's name.)
-$(TABROW ModOutDelim    , If the $(I Build) switch $(I $(QUOTE -modules)) was
-                          used, this defines the string which $(I Build) will
+$(TABROW ModOutDelim    , If the $(I Bud) switch $(I $(QUOTE -modules)) was
+                          used, this defines the string which $(I Bud) will
                           insert in between each listed module.
                           $(EG \n))
-$(TABROW ModOutFile     , If the $(I Build) switch $(I $(QUOTE -modules)) was
+$(TABROW ModOutFile     , If the $(I Bud) switch $(I $(QUOTE -modules)) was
                           used, this defines the output file's suffix. This
                           is only used if the $(I $(QUOTE -modules)) switch
                           did not specify an exact file name to use. In which
@@ -260,7 +265,7 @@ $(TABROW AppendLinkSwitches, If 'yes' this causes linker switches to be
 )
 
 $(EXAMPLE ,
-INIT:MacroExtention = bmc
+INIT:MacroExtension = bmc
 INIT:LinkerPath = /u2/qwerty/
 INIT:AssumedLibs = c,kde,mgui
 )
@@ -270,13 +275,13 @@ $(TABLE
   $(THEAD
     $(THCELLS $(I INIT:) item,DigitalMars-Windows,GDC-Windows,DigitalMars-Unix,GDC-Unix)
   )
-  $(ROW  $(CELLS ExeExtention,exe,exe,,))
-  $(ROW  $(CELLS LibExtention,lib,lib,a,a))
-  $(ROW  $(CELLS ObjExtention,obj,obj,o,o))
-  $(ROW  $(CELLS ShrLibExtention,dll,dll,s,s))
-  $(ROW  $(CELLS SrcExtention,d,d,d,d))
-  $(ROW  $(CELLS MacroExtention,mac,mac,mac,mac))
-  $(ROW  $(CELLS DdocExtention,ddoc,ddoc,ddoc,ddoc))
+  $(ROW  $(CELLS ExeExtension,exe,exe,,))
+  $(ROW  $(CELLS LibExtension,lib,lib,a,a))
+  $(ROW  $(CELLS ObjExtension,obj,obj,o,o))
+  $(ROW  $(CELLS ShrLibExtension,dll,dll,s,s))
+  $(ROW  $(CELLS SrcExtension,d,d,d,d))
+  $(ROW  $(CELLS MacroExtension,mac,mac,mac,mac))
+  $(ROW  $(CELLS DdocExtension,ddoc,ddoc,ddoc,ddoc))
   $(ROW  $(CELLS CompilerExe,dmd.exe,gdc.exe,dmd,gdc))
   $(ROW  $(CELLS CompileOnly,-c,-c,-c,-c))
   $(ROW  $(CELLS LinkerExe,link.exe,gdc.exe,gcc,gdmd))
@@ -434,8 +439,8 @@ You can any number of configuration file group references on a command line. The
 
 Macros:
  Copyright = &copy; 2006, Derek Parnell, Melbourne
- Title = User Manual for BUILD
- Product = Build Utility
+ Title = User Manual for Bud
+ Product = $(I Bud) Utility
  EG    = <span class="eg">Example: "$0"</span>
  MYTITLE = $(Title)
  TABLE   = <table class="conftab">$0</table>

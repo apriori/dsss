@@ -80,7 +80,7 @@ private{
 public {
     version(BuildVerbose) Bool vVerbose;
     Bool vTestRun;
-    char[] vExeExtention;
+    char[] vExeExtension;
     char[] vPathId;
 }
 // Module constructor
@@ -94,12 +94,12 @@ static this()
     }
     version(Windows)
     {
-        vExeExtention = "exe";
+        vExeExtension = "exe";
         vPathId = "PATH";
     }
     version(Posix)
     {
-        vExeExtention = "";
+        vExeExtension = "";
         vPathId = "PATH";
     }
     version(BuildVerbose) vVerbose = False;
@@ -137,33 +137,9 @@ char[][] GetTextLines(char[] pFileName, GetOpt pOpt = GetOpt.Always)
     char[][] lLines;
     char[]   lText;
     lText = GetText(pFileName, pOpt);
-    lLines = util.str.splitlines( lText );
+    lLines = std.string.splitlines( lText );
     return lLines;
 }
-void GetTextLines(char[] pFileName, out dchar[][] pResult, GetOpt pOpt = GetOpt.Always)
-{
-    dchar[]   lText;
-
-    lText = std.utf.toUTF32(GetText(pFileName, pOpt));
-    pResult = util.str.splitlines( lText );
-}
-
-void GetTextLines(char[] pFileName, out wchar[][] pResult, GetOpt pOpt = GetOpt.Always)
-{
-    wchar[]   lText;
-
-    lText = std.utf.toUTF16(GetText(pFileName, pOpt));
-    pResult = util.str.splitlines( lText );
-}
-
-void GetTextLines(char[] pFileName, out char[][] pResult, GetOpt pOpt = GetOpt.Always)
-{
-    char[]   lText;
-
-    lText = GetText(pFileName, pOpt);
-    pResult = util.str.splitlines( lText );
-}
-
 
 enum CreateOpt
 {
@@ -212,7 +188,7 @@ void CreateTextFile(char[] pFileName, char[] pLines, CreateOpt pOpt = CreateOpt.
     char[][] lLines;
 
     // Split into lines, disregarding line-end conventions.
-    lLines = util.str.splitlines(pLines);
+    lLines = std.string.splitlines(pLines);
     // Write out the text using the opsys' line-end convention.
     CreateTextFile(pFileName, lLines, pOpt);
 }
@@ -356,10 +332,10 @@ int RunCommand(char[] pExeName, char[] pCommand)
 //-------------------------------------------------------
 {
 
-    if (vExeExtention.length > 0)
+    if (vExeExtension.length > 0)
     {
         if (std.path.getExt(pExeName).length == 0)
-            pExeName ~= "." ~ vExeExtention;
+            pExeName ~= "." ~ vExeExtension;
     }
 
     if (util.pathex.IsRelativePath(pExeName) == True)

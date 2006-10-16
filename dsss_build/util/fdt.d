@@ -66,10 +66,11 @@ private
         static import std.utf;
         static import std.file;
     }
-    version(Windows) static import opsys = std.c.windows.windows;
+    version(Windows)      static import opsys = std.c.windows.windows;
     else version(linux)   static import opsys = std.c.linux.linux;
     else version(darwin)  static import opsys = std.c.darwin.darwin;
-    else version(Unix)    static import opsys = std.c.unix;
+    else version(Unix)    static import opsys = std.c.unix.unix;
+
     version(Posix)   static import std.string;
 }
 

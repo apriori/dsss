@@ -4,6 +4,42 @@ $(TOPIC_H change_log, Change Log)
 $(SECTION
 A list of changes and fixes that have been made.
 
+$(SUBSECTION_H ,v3.04 -- /October/2006 )
+$(LIST
+    $(ITEM ** $(B FIX:) Correctly handle INIT:CompilerExe from configuration file
+      )
+    $(ITEM ** $(B FIX:) Correctly handles version platform statements.
+      )
+    $(ITEM ** $(B FIX:) Correctly handles the #! arguments.
+      )
+    $(ITEM ** $(B FIX:) Sets default OutFileSwitch for GDC to "-o "
+      )
+    $(ITEM ** $(B FIX:) Sets default Shared Library Extension for unix to "so"
+      )
+    $(ITEM ** $(B FIX:) Sets default Linker 'lib' switch for GNU tools to "-l"
+      )
+    $(ITEM ** $(B FIX:) The auto-build-number facility has been repaired.
+      )
+    $(ITEM ** $(B FIX:) No longer runs any FINAL commands if the compile failed.
+      )
+    $(ITEM ** $(B FIX: Ticket #38) Now correctly handles paths enclosed in quotes.
+      )
+    $(ITEM ** $(B ENH:) A new $(I -explicit) switch will cause only the
+    files explicitly named on the command line to be compiled. All other
+    files, such as imported ones, are processed but not compiled.
+    )
+    $(ITEM ** $(B ENH:) A new $(I -usefinal) switch to control the usage of
+    FINAL statements defined in the configuration file.
+    )
+    $(ITEM ** $(B ENH:) A new $(I -emptyargs) switch to control whether or
+    not to abort if there are any empty arguments on the command line.
+    )
+    $(ITEM ** $(B ENH:) A new $(I -BCFPATH) switch to define an alternative
+    location for $(I Bud) configuration files. This can also be supplied as
+    an environment switch.
+    )
+)
+
 $(SUBSECTION_H ,v3.03 -- 20/September/2006 )
 $(LIST
     $(ITEM ** $(B FIX: Ticket #33) For unix editions, 'pthread' is
@@ -111,7 +147,7 @@ $(LIST
      building a library.
     )
     $(ITEM ** $(B FIX: Ticket #9 ) Now, if the output file created by the
-     rule ends with the library extention, it is presented to the linker
+     rule ends with the library extension, it is presented to the linker
      as a library rather than an object file.
     )
     $(ITEM ** $(B FIX: ) $(I thanks to gmiller:) Added booltype.d to
@@ -135,13 +171,13 @@ $(LIST
     current directory was C:\dmd\src\phobos it would not exclude any of the
     'std' modules.)
 
-    $(ITEM ** $(B ENH: ) Any file name on the command line with an extention
-     of $(I ".brf" ) will be used as a $(EXREF response_file.html, Build Response File)
+    $(ITEM ** $(B ENH: ) Any file name on the command line with an extension
+     of $(I ".brf" ) will be used as a $(EXREF response_file.html, $(I Bud) Response File)
     )
 
     $(ITEM ** $(B ENH: ) If there is nothing on the command line and the
     file 'build.brf' exists in the current directory, then it will be
-    used as the $(EXREF response_file.html, Build Response File) for this run.
+    used as the $(EXREF response_file.html, $(I Bud) Response File) for this run.
     )
 
     $(ITEM ** $(B ENH: ) Will now look for the compiler's configuration file
@@ -212,14 +248,14 @@ $(SQR Posix:GNU)
 
 $(SUBSECTION_H ,v2.10 -- 06/Apr/2006 )
 $(LIST
-    $(ITEM ** $(B FIX: ) The default Build Response File invoked when just
+    $(ITEM ** $(B FIX: ) The default $(I Bud) Response File invoked when just
     placing '@' on the command line is now correctly named "build.brf")
     $(ITEM ** $(B ENH: )  For Windows environments, command line files can now use
     either "/" or "\" as path separator characters.)
     $(ITEM ** $(B ENH: )  The linker program is now used directly rather than being
     invoked via DMD. )
     $(ITEM ** $(B ENH: ) You can now specify the default linker switches in
-    the Build Configuration File. )
+    the $(I Bud) Configuration File. )
     $(ITEM ** $(B ENH: ) Using the new switch $(I -PP ), you can now
     specify additional paths to search for files.)
     $(ITEM ** $(B ENH:) Support for $(I Ddoc) files.)

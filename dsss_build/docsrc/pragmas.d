@@ -58,8 +58,8 @@ version(build) { pragma(nolink); }
 $(SECTION
 $(SECTION_H pragma_ignore,pragma: ignore)
 This identifies that the current module is not to be passed to
-the compiler or linker. It is however scanned by Build and can thus
-contain Build pragma directives and import statements. This would be
+the compiler or linker. It is however scanned by $(I Bud) and can thus
+contain $(I Bud) pragma directives and import statements. This would be
 used to create a special $(I all.d) file to pull in all the modules
 for a library or program.
 
@@ -77,7 +77,7 @@ $(SECTION
 $(SECTION_H pragma_include,pragma: include)
 This identifies a required file which is not otherwise imported.
 In some applications, especially ones converted over from C, it is
-possible that the file on the $(I Build) command line does not directly
+possible that the file on the $(I Bud) command line does not directly
 or indirectly import a required file. In those situations, you can
 use this pragma to tell build to include it in the compilation checking
 process.
@@ -150,7 +150,7 @@ In either case, this utility uses the rules in a $(EXREF rules.html, Rule Defini
 decide what to do.
 $(BL)
 The utility searches for the $(I FILENAME) in the currently defined 'import'
-paths and if doesn't exist, $(I Build) will abort.
+paths and if doesn't exist, $(I Bud) will abort.
 $(BL)
 The $(I OPTIONS) can be included if you need to pass any special values
 to the external tool. There can be any number of these, but each one must
@@ -163,10 +163,10 @@ Rule Definition File's 'tool' specification. In the example above,
 the tokens {COPT} and {HDR}, if found in the 'tool' line, would be
 replaced with $(I -wc -x) and $(I abc.hp) respectively.
 $(BL)
-There are some OPTIONS that have a special meaning to $(I Build).
+There are some OPTIONS that have a special meaning to $(I Bud).
 $(DEFINITIONS
 $(DEFITEM rule=$(ANG name), This identifies the name of the rule to use.
-If this isn't supplied, the rule is found by matching the file extention
+If this isn't supplied, the rule is found by matching the file extension
 on the $(I FILENAME) against the $(I in=) and $(I out=) file types in
 each rule definition.)
 $(DEFITEM @pre=$(ANG text), This text is prepended to the $(I FILENAME) to form
@@ -185,7 +185,7 @@ than the input file's date (or a forced compile is requested).
 $(BL)
 By default, the output file from the external tool is added to the linkage
 set of files, and the input file is ignored. These behaviours can be changed
-by options in the $(EXREF rules.html, Rule definition). It is possible to tell $(I Build) to
+by options in the $(EXREF rules.html, Rule definition). It is possible to tell $(I Bud) to
 compile, link or ignore the input file and/or the output file.
 $(BL)
 All these external programs are run before the D compiler is invoked.
@@ -260,5 +260,5 @@ There is no restrictions on what you can include in this pragma.)
 
 Macros:
  Copyright = &copy; 2006, Derek Parnell, Melbourne
- Title = User Manual for BUILD
- Product = Build Utility
+ Title = User Manual for Bud
+ Product = $(I Bud) Utility

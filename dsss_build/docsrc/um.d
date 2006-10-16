@@ -1,4 +1,4 @@
-/* This is used to generate the user manual for Build.
+/* This is used to generate the user manual for Bud.
 
 --usage:
    build um.d -clean

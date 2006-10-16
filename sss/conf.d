@@ -398,8 +398,8 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
             if (section == "*") {
                 // "global" section, no target/type
             } else if (section == "") {
-                // top-level section, no target/type but a "name" and "version"
-                conf.settings[section]["name"]
+                // FIXME: top-level section, no target/type but a "name" and "version"
+                
             } else if (section.length > 0 &&
                        section[0] == '+') {
                 // special section

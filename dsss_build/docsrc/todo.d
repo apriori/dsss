@@ -31,5 +31,5 @@ version (build) pragma(plugin, $(ANG tool)[,delim=xxx],[, $(ANG parms)] ) { [bod
 
 Macros:
  Copyright = &copy; 2006, Derek Parnell, Melbourne
- Title = User Manual for BUILD
- Product = Build Utility
+ Title = User Manual for Bud
+ Product = $(I Bud) Utility

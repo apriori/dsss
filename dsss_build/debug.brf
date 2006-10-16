@@ -1,5 +1,6 @@
 # This creates the 'debugging' edition of Build
 build.d         # Starting file.
+-Tbud
 +dbg
 # --Derek Parnell-- May 07, 2005 10:43:00 PM
 

@@ -2,7 +2,7 @@ Ddoc
 
 $(TOPIC_H switches,Switches)
 $(SECTION
-$(I Build) supports a number of command line switches to control its
+$(I Bud) supports a number of command line switches to control its
 default assumptions. All switches begin with a $(B '-'). Any switch that
 begins with a double dash $(B '--') has the effect of cancelling that
 switch.
@@ -26,12 +26,50 @@ command line.
 
 $(SECTIONDEF_H switch_v,switch: -v, Global verbose mode)
 $(INDENT $(BR)
-Sets $(I verbose) mode on for both $(I Build) and for the compiler.
+Sets $(I verbose) mode on for both $(I Bud) and for the compiler.
 )
 
 $(SECTIONDEF_H switch_V,switch: -V, Normal verbose mode)
 $(INDENT $(BR)
-Set $(I verbose) mode on for just $(I Build) and $(B not) for the compiler.
+Set $(I verbose) mode on for just $(I Bud) and $(B not) for the compiler.
+)
+
+$(SECTIONDEF_H switch_explicit,switch: -explicit, Process only explicitly named files)
+$(INDENT $(BR)
+Normally, the utility will compile not only the files named in the command line,
+but also any file named in $(I import) statements if they require it. This
+switch will force the utility to only compile files named on the
+command line.
+$(EXAMPLE Only compile the two files named,
+build fileone.d filetwo.d -explicit
+)
+)
+
+$(SECTIONDEF_H switch_usefinal,switch: -usefinal, Allow the processing of
+ 'FINAL' processing)
+$(INDENT $(BR)
+By default, all the $(I FINAL) commands found in the configuration files
+are processed after successful compilation. You can control whether you
+want this or not by using this switch.
+$(EXAMPLE Prevent processing of FINAL commands,
+-usefinal=no
+)
+$(EXAMPLE Ensure processing of FINAL commands (default),
+-usefinal=yes
+)
+)
+
+$(SECTIONDEF_H switch_emptyargs,switch: -emptyargs, Ignore empty commandline arguments)
+$(INDENT $(BR)
+By default, if $(I Bud) comes across any empty arguments from either the commandline
+or configuration file, they are simply ignored. However by setting this switch
+to 'yes', you can force $(I Bud) to abort if it finds an empty argument.
+$(EXAMPLE Abort on finding an empty argument,
+-emptyargs=no
+)
+$(EXAMPLE Ignore empty arguments (default),
+-emptyargs=yes
+)
 )
 
 $(SECTIONDEF_H switch_names,switch: -names, Display Names)
@@ -41,9 +79,9 @@ Displays the names of the files used in building the target.
 
 $(SECTIONDEF_H switch_DCPATH,switch: -DCPATH, Identifies where the compiler has been installed.)
 $(INDENT $(BR)
-Normally, $(I Build) scans the PATH environment symbol to find where the
+Normally, $(I Bud) scans the PATH environment symbol to find where the
  D compiler is located. However, if you need to use the compiler from
- a different location, you would use this switch to tell $(I Build) where
+ a different location, you would use this switch to tell $(I Bud) where
  it is.
 
 $(NB If you use this switch, and the current CFPATH value is
@@ -59,9 +97,9 @@ $(EXAMPLE ,
 
 $(SECTIONDEF_H switch_CFPATH,switch: -CFPATH, Identifies where the D config file has been installed.)
 $(INDENT $(BR)
-Normally, $(I Build) looks in the same place that the compiler is
+Normally, $(I Bud) looks in the same place that the compiler is
  installed in, but if you need to use a different configuration
- path from that, you would use this switch to tell $(I Build) where
+ path from that, you would use this switch to tell $(I Bud) where
  it is.
 
 $(EXAMPLE ,
@@ -69,9 +107,23 @@ $(EXAMPLE ,
 )
 )
 
+$(SECTIONDEF_H switch_BCFPATH,switch: -BCFPATH, Identifies where a $(I Bud) config file has been installed.)
+$(INDENT $(BR)
+$(I Bud) looks for configuration files in the following places... $(BR)
+$(LIST
+  $(ITEM The directory that the utility is installed in)
+  $(ITEM The directory defined by this switch -BCFPATH or the BCFPATH environment switch)
+  $(ITEM The directory that the compiler is installed in)
+  $(ITEM The current directory)
+  )
+$(EXAMPLE ,
+  -BCFPATHc:\myproject\configs
+)
+)
+
 $(SECTIONDEF_H switch_full,switch: -full, Causes all source files to be compiled.)
 $(INDENT $(BR)
-Normally, $(I Build) only compiles a source file if it's object file
+Normally, $(I Bud) only compiles a source file if it's object file
 is out of date or missing. This switch forces all source files to be
 recompiled, even if not strictly required.
 
@@ -80,9 +132,9 @@ $(NB  Module sources in the $(I ignore) list are still ignored though.)
 
 $(SECTIONDEF_H switch_link,switch: -link, Forces the linker to be called instead of the librarian.)
 $(INDENT $(BR)
-Normally, if $(I Build) does not find a $(B main()) or $(B WinMain()) function
+Normally, if $(I Bud) does not find a $(B main()) or $(B WinMain()) function
  in the source files, it creates a library to contain the object
-files. But when this switch is used, $(I Build) will attempt to
+files. But when this switch is used, $(I Bud) will attempt to
  create an application by calling the linker rather than the librarian.
 
 You would typically use this if the $(I main) function was being supplied
@@ -119,7 +171,7 @@ $(EXAMPLE ,
 
 $(SECTIONDEF_H switch_nolink,switch: -nolink, Ensures that the linker is not called.)
 $(INDENT $(BR)
-Normally, if $(I Build) finds a $(B main()) or $(B WinMain()) function, it
+Normally, if $(I Bud) finds a $(B main()) or $(B WinMain()) function, it
 tries to create an application by calling the linker. If you use
 this switch however, the linker will not be called.
 
@@ -131,7 +183,7 @@ object files without linking them with this switch.
 
 $(SECTIONDEF_H switch_lib,switch: -lib, Forces the object files to be placed in a library.)
 $(INDENT $(BR)
-Normally, if $(I Build) finds a $(B main()) or $(B WinMain()) function, it
+Normally, if $(I Bud) finds a $(B main()) or $(B WinMain()) function, it
 tries to create an application by calling the linker. But if you
 use this switch, the librarian is called instead of the linker.
 
@@ -143,7 +195,7 @@ $(EXDEF switches#switch_nolink, -nolink) switch.
 $(SECTIONDEF_H switch_obj,switch: -obj, Shorthand for using both $(EXDEF switches#switch_nolink,-nolink)
  and $(EXDEF switches#switch_nolib,-nolib) switches.)
 $(INDENT $(BR)
-Normally $(I Build) tries to create either an executable or a library file.
+Normally $(I Bud) tries to create either an executable or a library file.
 However sometimes you just need the object files to be created.
 This switch is literally the same has if you had placed both -nolink and
 -nolib on the command line. As this is a common way to compile
@@ -153,14 +205,14 @@ this neat shorthand is available.
 
 $(SECTIONDEF_H switch_nolib,switch: -nolib, Ensures that the object files are not used to form a library.)
 $(INDENT $(BR)
-Normally, if $(I Build) does not find a $(B main()) or a $(B WinMain()) function,
+Normally, if $(I Bud) does not find a $(B main()) or a $(B WinMain()) function,
 it calls the librarian to create a library for your object files.
 But if you use this switch, the librarian is not called.
 )
 
 $(SECTIONDEF_H switch_allobj,switch: -allobj, Ensures that all object files are added to a library.)
 $(INDENT $(BR)
-Normally, $(I Build) will only create a library using the object files
+Normally, $(I Bud) will only create a library using the object files
 that are in the same directory as the new library. You would use
 this switch if you wanted all object files created by this build
 session to be included in the library.
@@ -168,8 +220,8 @@ session to be included in the library.
 
 $(SECTIONDEF_H switch_cleanup,switch: -cleanup, Ensures that all working files created during the run are removed.)
 $(INDENT $(BR)
-Normally, $(I Build) does not delete any object files or working files
-when it finishes a session. You can use this switch to have $(I Build)
+Normally, $(I Bud) does not delete any object files or working files
+when it finishes a session. You can use this switch to have $(I Bud)
 clean up after itself. This will remove all object files created
 in this run, plus any temporary work files.
 $(BL)
@@ -256,7 +308,7 @@ to see what would happen without actually building anything.
 $(SECTIONDEF_H switch_PP,switch: -PP$(ANG path),
      Adds a project path to the source search list.)
 $(INDENT $(BR)
-This is used to add a path that will be searched when $(I Build) is
+This is used to add a path that will be searched when $(I Bud) is
 looking for source files that are only supplied with relative paths.
 $(BL)
 The default source file search list is just the current directory. This switch
@@ -267,7 +319,7 @@ appear as required.
 $(EXAMPLE ,
 build editor codeparser -PPc:\projects\myeditor\source
 )
-In the above example, $(I Build) will look for 'editor.d' and 'codeparser.d'
+In the above example, $(I Bud) will look for 'editor.d' and 'codeparser.d'
 first in the current directory and then, if it didn't find them, in the
 folder 'c:\projects\myeditor\source'.
 )
@@ -299,7 +351,7 @@ $(SECTIONDEF_H switch_dll,switch: -dll,
 $(INDENT $(BR)
 $(NB This only applies to Windows environment.)
 $(BL)
-Normally, if $(I Build) finds a $(B DllMain()) function it automatically
+Normally, if $(I Bud) finds a $(B DllMain()) function it automatically
 creates a DLL library. However, if you need to force a DLL
 library to be created instead of a normal library, you would use this switch.
 )
@@ -309,7 +361,7 @@ $(SECTIONDEF_H switch_gui,switch: -gui,
 $(INDENT $(BR)
 $(NB This only applies to Windows environment.)
 $(BL)
-Normally, if $(I Build) finds a $(B WinMain()) function it automatically
+Normally, if $(I Bud) finds a $(B WinMain()) function it automatically
 creates a GUI application. However, if you need to force a GUI
 application, you would use this switch.
 $(BL)
@@ -318,12 +370,12 @@ build the application for. To do this, it takes the format of
 -gui:X.Y where $(I X.Y) is the Windows version number. Use 4.0
 for Windows NT, 2000, and ME, and 5.0 for Windows XP.
 $(BL)
-By default, $(I Build) uses the version of Windows it is running under.
+By default, $(I Bud) uses the version of Windows it is running under.
 )
 
-$(SECTIONDEF_H switch_info,switch: -info, Displays information about Build.)
+$(SECTIONDEF_H switch_info,switch: -info, Displays information about $(I Bud).)
 $(INDENT $(BR)
-Displays the version and path of the $(I Build) application.
+Displays the version and path of the $(I Bud) application.
 $(EXAMPLE ,
 Path and Version : y:\util\build.exe v2.9(1197)
   built on Wed Aug 10 11:03:42 2005
@@ -333,7 +385,7 @@ Path and Version : y:\util\build.exe v2.9(1197)
 $(SECTIONDEF_H switch_help,switch: -help, Displays the full text of the Usage information.)
 $(INDENT $(BR)
 This displays the commandline syntax, including all the switches, used
-to run $(I Build).
+to run $(I Bud).
 $(BL)
 This has the aliases of $(B -h) and $(B -?)
 )
@@ -362,12 +414,12 @@ build myApp -noautoimport
 $(SECTIONDEF_H switch_X,switch: -X$(ANG name),
     Identifies a module or package to ignore.)
 $(INDENT $(BR)
-Normally, $(I Build) assumes that all imported modules are available
+Normally, $(I Bud) assumes that all imported modules are available
 to be recompiled if required. You would use this switch if you explictly
-did not want $(I Build) to recompile a module.
+did not want $(I Bud) to recompile a module.
 
 $(NB The $(I Phobos) package of modules is automatically ignored. This
-means that $(I Build) does not try to recompile phobos.)
+means that $(I Bud) does not try to recompile phobos.)
 
 $(EXAMPLE ignore the module (or package) called 'parser',
 -Xparser
@@ -390,7 +442,7 @@ $(EXAMPLE (notice the Phobos package),
 $(SECTIONDEF_H switch_T,switch: -T$(ANG name),
     Identifies the target name to build.)
 $(INDENT $(BR)
-Normally, $(I Build) derives the target name from the first file name
+Normally, $(I Bud) derives the target name from the first file name
 on the command line, or from the pragma(target) if present.
 If however, you wish to override that, use this switch.
 
@@ -416,11 +468,11 @@ In the example above, the executable built would be called
 $(SECTIONDEF_H switch_autowinlibs,switch: -AutoWinLibs(=$(ANG Yes/No)),
    Give Windows libraries to linker)
 $(INDENT $(BR)
-By default, when creating a Windows GUI application, $(I Build) will
+By default, when creating a Windows GUI application, $(I Bud) will
 supply a list of commonly used windows libraries to the linker. However,
 if for some reason you do not want this to happen, you can use this switch
 to disable that. $(BL)
-$(B Note:) that this switch is not valid for Posix editions of $(I Build).
+$(B Note:) that this switch is not valid for Posix editions of $(I Bud).
 )
 
 $(SECTIONDEF_H switch_modules,switch: -modules(=$(ANG name)),
@@ -428,7 +480,7 @@ $(SECTIONDEF_H switch_modules,switch: -modules(=$(ANG name)),
 $(INDENT $(BR)
 Use this switch to cause a Module List File to be created. This
 file will contain a list of all the module names processed by
-$(I Build). You can use the Configuration File to specify the
+$(I Bud). You can use the Configuration File to specify the
 layout of this file, but by default the file will look like
 a Ddoc macro definition ...
 
@@ -445,12 +497,12 @@ if not supplied it takes the form of $(I $(ANG target)_modules.ddoc ).
 $(SECTIONDEF_H switch_uses,switch: -uses$(SQR =outputname),
     Create the Uses/Used-By cross reference file.)
 $(INDENT $(BR)
-This causes $(I Build) to create a file that details the modules that
+This causes $(I Bud) to create a file that details the modules that
 are used by a module and the modules that uses a module.
 $(BL)
 You can optionally specify a name for the cross reference file. If you
 don't then the name of the cross reference file takes the Target file's
-base name and adds the extention ".use".
+base name and adds the extension ".use".
 $(BL)
 The file is in two sections. The first, headed by the line $(QUOTE $(SQR USES))
 lists each file that has been analyzed. Each line has the file name followed
@@ -484,13 +536,13 @@ y:\dmd\src\phobos\std\stdio.d <> tres.d
 $(SECTIONDEF_H switch_UMB,switch: -UMB=$(ANG Yes/No),
     Determines where the linker expects the object files.)
 $(INDENT $(BR)
-For $(B DMD) environments, $(I Build) expects that object files will be created
+For $(B DMD) environments, $(I Bud) expects that object files will be created
 in the same directory as the source file, or in the directory
 specified in any $(LOCAL switch_od,-od) switch. However, this switch
-can tell $(I Build) to expect them in the current directory.
+can tell $(I Bud) to expect them in the current directory.
 $(BL)
-For $(B GDC) environments, $(I Build) expects that object files will be created
-in the current directory. However  this switch can tell $(I Build) to expect
+For $(B GDC) environments, $(I Bud) expects that object files will be created
+in the current directory. However  this switch can tell $(I Bud) to expect
 then to be in same directory as the source file, or in the directory
 specified in any $(LOCAL switch_od,-od) switch.
 $(BL)
@@ -512,5 +564,5 @@ in the current directory.
 
 Macros:
  Copyright = &copy; 2006, Derek Parnell, Melbourne
- Title = User Manual for BUILD
- Product = Build Utility
+ Title = User Manual for Bud
+ Product = $(I Bud) Utility

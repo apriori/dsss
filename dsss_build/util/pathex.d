@@ -163,7 +163,7 @@ char[] CanonicalPath(char[] pPath, bool pDirInput = true)
     lPath = pPath.dup;
 
     // Strip off any enclosing quotes.
-    if (lPath.length > 2 && lPath[0] == '"' && lPath[$] == '"')
+    if (lPath.length > 2 && lPath[0] == '"' && lPath[$-1] == '"')
     {
         lPath = lPath[1..$-1];
     }
@@ -239,18 +239,18 @@ char[] CanonicalPath(char[] pPath, bool pDirInput = true)
 }
 
 // ----------------------------------------------
-char[] ReplaceExtention(char[] pFileName, char[] pNewExtention)
+char[] ReplaceExtension(char[] pFileName, char[] pNewExtension)
 // ----------------------------------------------
 {
     char[] lNewFileName;
 
-    lNewFileName = std.path.addExt(pFileName, pNewExtention);
+    lNewFileName = std.path.addExt(pFileName, pNewExtension);
 
     /* Needs this to work around the 'feature' in addExt in which
        replacing an extention with an empty string leaves a dot
        after the file name.
     */
-    if (pNewExtention.length == 0)
+    if (pNewExtension.length == 0)
     {
         if (lNewFileName.length > 0)
         {
