@@ -235,7 +235,10 @@ void usage()
     clean:     clean up object files from all or some builds
     distclean: clean up all files from all or some builds
     install:   install all or some binaries or libraries
-    genconfig: generate a config file`
+    genconfig: generate a config file
+  Each command has its own set of options, which are not listed here. To list
+  the options for a command:
+    dsss <command> --help`
             );
         
     } else if (command == cmd_t.BUILD) {

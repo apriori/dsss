@@ -4,13 +4,14 @@ all: dsss
 
 dsss: dsss_build/dsss_build
 	./dsss_build/dsss_build -Idsss_build sss/main.d -Tdsss
+	`pwd`/dsss build
 
 dsss_build/dsss_build:
 	cd dsss_build && \
 	$(MAKE) -f Makefile.gdc
 
 install: dsss
-	./dsss install --prefix=$(PREFIX)
+	`pwd`/dsss install --prefix=$(PREFIX)
 
 clean:
 	rm -f *.o

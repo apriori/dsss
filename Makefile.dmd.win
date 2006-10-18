@@ -4,13 +4,14 @@ all: dsss.exe
 
 dsss.exe: dsss_build/dsss_build.exe
 	dsss_build/dsss_build.exe -od. -Idsss_build sss/main.d -Tdsss
+	`cwd`\\dsss.exe build
 
 dsss_build/dsss_build.exe:
 	cd dsss_build && \
 	$(MAKE) -f Makefile.dos
 
 install: dsss.exe
-	dsss install --prefix=$(PREFIX)
+	`cwd`\\dsss install --prefix=$(PREFIX)
 
 clean:
 	rm -f *.obj
