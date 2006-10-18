@@ -37,7 +37,6 @@
 **************************************************************************/
 
 module util.fileex;
-private import util.fileex_bn;   // The build number for this module.
 
 version(unix)   version = Unix;
 version(Unix)   version = Posix;
@@ -88,10 +87,6 @@ public {
 static this()
 // ----------------------------------------------
 {
-    debug(1)
-    {
-        std.stdio.writefln(__FILE__ ~ " build #%d", auto_build_number);
-    }
     version(Windows)
     {
         vExeExtension = "exe";

@@ -1,16 +1,13 @@
 DMD=dmd
 DFLAGS=-op -release -inline
 SOURCES=$(SOURCES) build.d
-SOURCES=$(SOURCES) util/pathex_bn.d
 SOURCES=$(SOURCES) util/pathex.d
 SOURCES=$(SOURCES) source_bn.d
 SOURCES=$(SOURCES) util/str.d
 SOURCES=$(SOURCES) build_bn.d
-SOURCES=$(SOURCES) util/fdt_bn.d
 SOURCES=$(SOURCES) source.d
 SOURCES=$(SOURCES) util/fdt.d
 SOURCES=$(SOURCES) util/fileex.d
-SOURCES=$(SOURCES) util/fileex_bn.d
 SOURCES=$(SOURCES) util/linetoken.d
 SOURCES=$(SOURCES) util/macro.d
 SOURCES=$(SOURCES) util/booltype.d

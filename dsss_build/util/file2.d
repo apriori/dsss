@@ -37,7 +37,6 @@
 **************************************************************************/
 
 module util.file2;
-private import util.file2_bn;   // The build number for this module.
 
 version(unix)   version = Unix;
 version(Unix)   version = Posix;
@@ -48,14 +47,6 @@ private{
     static import std.file;
     static import std.stdio;
     bool[char[]] lExistingFiles;
-}
-
-static this()
-{
-    debug(1)
-    {
-        writefln(__FILE__ ~ " build #%d", auto_build_number);
-    }
 }
 
 // --------------------------------------------------

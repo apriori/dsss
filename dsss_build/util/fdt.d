@@ -48,7 +48,6 @@
 **/
 
 module util.fdt;
-private static import util.fdt_bn;
 version(unix)  version = Unix;
 version(Unix)  version = Posix;
 version(linux)  version = Posix;

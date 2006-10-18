@@ -37,7 +37,6 @@
 **************************************************************************/
 
 module util.pathex;
-private import util.pathex_bn;   // The build number for this module.
 
 version(linux)  version = Posix;
 version(darwin) version = Posix;
@@ -69,10 +68,6 @@ static this()
 // ----------------------------------------------
 {
     vInitCurDir = GetCurDir();
-    debug(1)
-    {
-        std.stdio.writefln(__FILE__ ~ " build #%d", auto_build_number);
-    }
 }
 
 // ----------------------------------------------
