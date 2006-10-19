@@ -36,6 +36,7 @@ import sss.clean;
 import sss.conf;
 import sss.genconfig;
 import sss.install;
+import sss.uninstall;
 
 private {
     /** Possible commands */
@@ -45,6 +46,7 @@ private {
             CLEAN,
             DISTCLEAN,
             INSTALL,
+            UNINSTALL,
             GENCONFIG
     }
     
@@ -115,13 +117,18 @@ int main(char[][] args)
                 commandSet = true;
                 command = cmd_t.INSTALL;
                 
+            } else if (arg == "uninstall") {
+                commandSet = true;
+                command = cmd_t.UNINSTALL;
+                
             } else if (arg == "genconfig") {
                 commandSet = true;
                 command = cmd_t.GENCONFIG;
                 
             }
             
-        } else if (command == cmd_t.GENCONFIG) {
+        } else if (command == cmd_t.GENCONFIG ||
+                   command == cmd_t.UNINSTALL) {
             /* commands with no special options (put them in their own else-if
              * if they gain options */
             if (argIsHelp()) {
@@ -215,6 +222,10 @@ int main(char[][] args)
             return sss.install.install(buildElems);
             break;
             
+        case cmd_t.UNINSTALL:
+            return sss.uninstall.uninstall(buildElems);
+            break;
+            
         case cmd_t.GENCONFIG:
             return sss.genconfig.genconfig(buildElems);
             break;
@@ -235,6 +246,7 @@ void usage()
     clean:     clean up object files from all or some builds
     distclean: clean up all files from all or some builds
     install:   install all or some binaries or libraries
+    uninstall: uninstall a specified tool or library
     genconfig: generate a config file
   Each command has its own set of options, which are not listed here. To list
   the options for a command:
@@ -268,6 +280,13 @@ void usage()
 `Usage: dsss [dsss options] install [install options] [sources, binaries or packages]
   Install Options:
     --prefix=<prefix>: set the install prefix`
+            );
+        
+    } else if (command == cmd_t.UNINSTALL) {
+        writefln(
+`Usage: dsss [dsss options] uninstall [uninstall options] [tools or libraries]
+  Uninstall Options:
+    [none yet]`
             );
         
     } else if (command == cmd_t.GENCONFIG) {
