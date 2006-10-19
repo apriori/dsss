@@ -11,9 +11,10 @@ dsss_build/dsss_build.exe:
 	$(MAKE) -f Makefile.dos
 
 install: dsss.exe
-	`cwd`\\dsss install --prefix=$(PREFIX)
+	`cwd`\\dsss.exe install --prefix=$(PREFIX)
 
 clean:
+	-`cwd`\\dsss.exe distclean
 	rm -f *.obj
 	rm -f dsss.exe
 	cd dsss_build && \

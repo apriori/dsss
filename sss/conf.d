@@ -1,5 +1,5 @@
 /**
- * DSSS configuration stuf
+ * DSSS configuration stuff
  * 
  * Authors:
  *  Gregor Richards
@@ -77,6 +77,9 @@ char[] libPrefix;
 /** The prefix to which includes are installed */
 char[] includePrefix;
 
+/** The prefix to which manifests are installed */
+char[] manifestPrefix;
+
 /** The location of stub.d (used to make stub D libraries) */
 char[] stubDLoc;
 
@@ -117,13 +120,15 @@ void getPrefix(char[] argvz)
         
         // set build environment variable
         version (Posix) {
-            setEnvVar("DSSS_BUILD", installPrefix ~
-                      std.path.sep ~ "dsss_build" ~
-                      std.path.sep ~ "dsss_build");
+            dsss_build = installPrefix ~
+                std.path.sep ~ "dsss_build" ~
+                std.path.sep ~ "dsss_build";
+            setEnvVar("DSSS_BUILD", dsss_build);
         } else version (Windows) {
-            setEnvVar("DSSS_BUILD", installPrefix ~
-                      std.path.sep ~ "dsss_build" ~
-                      std.path.sep ~ "dsss_build.exe");
+            dsss_build = installPrefix ~
+                std.path.sep ~ "dsss_build" ~
+                std.path.sep ~ "dsss_build.exe";
+            setEnvVar("DSSS_BUILD", dsss_build);
         } else {
             static assert(0);
         }
@@ -142,11 +147,13 @@ void getPrefix(char[] argvz)
         
         // set build environment variable
         version (Posix) {
-            setEnvVar("DSSS_BUILD", installPrefix ~
-                      std.path.sep ~ "dsss_build");
+            dsss_build = installPrefix ~
+                 std.path.sep ~ "dsss_build";
+            setEnvVar("DSSS_BUILD", dsss_build);
         } else version (Windows) {
-            setEnvVar("DSSS_BUILD", installPrefix ~
-                      std.path.sep ~ "dsss_build.exe");
+            dsss_build = installPrefix ~
+                std.path.sep ~ "dsss_build.exe";
+            setEnvVar("DSSS_BUILD", dsss_build);
         } else {
             static assert(0);
         }
@@ -157,6 +164,10 @@ void getPrefix(char[] argvz)
     includePrefix = forcePrefix ~ std.path.sep ~
         "include" ~ std.path.sep ~
         "d";
+    manifestPrefix = forcePrefix ~ std.path.sep ~
+        "share" ~ std.path.sep ~
+        "dsss" ~ std.path.sep ~
+        "manifest";
     
     // set some environment variables
     version (Posix) {
@@ -190,7 +201,7 @@ void getPrefix(char[] argvz)
         static assert(0);
     }
     
-    dsss_build = "dsss_build -I" ~ includePrefix ~ " -LIBPATH=" ~ libPrefix ~ " -LIBPATH=. " ~
+    dsss_build ~= " -I" ~ includePrefix ~ " -LIBPATH=" ~ libPrefix ~ " -LIBPATH=. " ~
         dsss_buildOptions ~ " ";
 }
 
@@ -292,7 +303,8 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
             // from nothing - just make every directory into a library
             char[][] dires = listdir(".");
             foreach (dire; dires) {
-                if (isdir(dire)) {
+                if (isdir(dire) &&
+                    dire[0] != '.') {
                     confFile ~= "[" ~ dire ~ "]\n";
                 }
             }
@@ -327,7 +339,12 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
         
     /// Tested versions
     bool[char[]] versions;
-        
+    
+    // set up the defaults for the top-level section
+    conf.settings[""] = null;
+    conf.settings[""]["name"] = getBaseName(getcwd());
+    conf.settings[""]["version"] = "0.0.0";
+    
     // parse line-by-line
     for (int i = 0; i < lines.length; i++) {
         char[] line = lines[i];
@@ -370,7 +387,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
             writefln("DSSS config error: unclosed scope.");
             exit(1);
         }
-            
+        
         // combine lines
         while (i < lines.length - 1 &&
                line.length &&
@@ -378,11 +395,11 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
             i++;
             line = line[0 .. ($ - 1)] ~ lines[i];
         }
-            
+        
         // then parse it
         char[][] tokens = tokLine(line);
         if (tokens.length == 0) continue;
-            
+        
         // then do something with it
         if (tokens[0] == "[" &&
             tokens[$ - 1] == "]") {
@@ -398,8 +415,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
             if (section == "*") {
                 // "global" section, no target/type
             } else if (section == "") {
-                // FIXME: top-level section, no target/type but a "name" and "version"
-                
+                // top-level section
             } else if (section.length > 0 &&
                        section[0] == '+') {
                 // special section

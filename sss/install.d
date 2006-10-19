@@ -44,6 +44,19 @@ int install(char[][] buildElems)
     // get the corresponding sources
     char[][] buildSources = sourcesByElems(buildElems, conf);
     
+    // prepare to make a manifest
+    char[][] manifest;
+    char[] manifestFile;
+    manifestFile = manifestPrefix ~ std.path.sep ~ conf.settings[""]["name"] ~ ".manifest";
+    manifest ~= manifestFile;
+    
+    /// Copy in the file and add it to the manifest
+    void copyAndManifest(char[] file, char[] prefix, char[] from = "")
+    {
+        copyInFile(file, prefix, from);
+        manifest ~= prefix ~ std.path.sep ~ file;
+    }
+    
     // now install the requested things
     foreach (build; buildSources) {
         char[][char[]] settings = conf.settings[build];
@@ -69,7 +82,7 @@ int install(char[][] buildElems)
                 // copy in the .a and .so/.dll files
                 
                 // 1) .a
-                copyInFile("libS" ~ target ~ ".a", libPrefix);
+                copyAndManifest("libS" ~ target ~ ".a", libPrefix);
                 
                 char[] shlibname = getShLibName(settings);
                 
@@ -80,17 +93,18 @@ int install(char[][] buildElems)
                         char[][] shortshlibnames = getShortShLibNames(settings);
                 
                         // copy in
-                        copyInFile(shlibname, libPrefix);
+                        copyAndManifest(shlibname, libPrefix);
                 
                         // make softlinks
                         foreach (ssln; shortshlibnames) {
                             // make it
                             saySystemDie("ln -sf " ~ shlibname ~ " " ~
                                          libPrefix ~ std.path.sep ~ ssln);
+                            manifest ~= libPrefix ~ std.path.sep ~ ssln;
                         }
                     } else version (Windows) {
                         // 2) .dll
-                        copyInFile(shlibname, libPrefix);
+                        copyAndManifest(shlibname, libPrefix);
                     } else {
                         static assert(0);
                     }
@@ -105,17 +119,17 @@ int install(char[][] buildElems)
             char[][] srcFiles = targetToFiles(build, conf);
             foreach (file; srcFiles) {
                 // install the .di file
-                copyInFile(getBaseName(file ~ "i"),
-                           includePrefix ~ std.path.sep ~ getDirName(file),
-                           getDirName(file) ~ std.path.sep);
+                copyAndManifest(getBaseName(file ~ "i"),
+                                includePrefix ~ std.path.sep ~ getDirName(file),
+                                getDirName(file) ~ std.path.sep);
             }
             
         } else if (type == "binary") {
             // fairly easy
             version (Posix) {
-                copyInFile(target, binPrefix);
+                copyAndManifest(target, binPrefix);
             } else {
-                copyInFile(target ~ ".exe", binPrefix);
+                copyAndManifest(target ~ ".exe", binPrefix);
             }
         }
         
@@ -123,6 +137,10 @@ int install(char[][] buildElems)
         if ("postinstall" in settings) {
             dsssScriptedStep(settings["postinstall"]);
         }
+        
+        // install the manifest itself
+        mkdirP(manifestPrefix);
+        std.file.write(manifestFile, std.string.join(manifest, "\n") ~ "\n");
         
         // extra line for clarity
         writefln("");

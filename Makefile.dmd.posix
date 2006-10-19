@@ -14,6 +14,7 @@ install: dsss
 	`pwd`/dsss install --prefix=$(PREFIX)
 
 clean:
+	-`pwd`/dsss distclean
 	rm -f *.o
 	rm -f dsss
 	cd dsss_build && \
