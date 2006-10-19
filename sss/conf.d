@@ -670,43 +670,60 @@ body {
 /** Perform a pre- or post- script step */
 void dsssScriptedStep(char[] step)
 {
-    char[] cmd;
+    // since parts of the script can potentially change the directory, store it
+    char[] origcwd = getcwd();
     
-    char[] ext = std.string.tolower(getExt(step));
-    if (ext == "d") {
-        // if it's a .d file, -exec it
-        cmd = dsss_build ~ "-exec " ~ step;
-    } else if (step.length > 8 &&
-               step[0..8] == "install ") {
-        // doing an install
-        char[][] comps = std.string.split(step);
-        if (comps.length < 3) return; // not valid
+    // split the steps by ;
+    char[][] cmds = std.string.split(step, ";");
+    
+    foreach (cmd; cmds) {
+        // clean cmd
+        while (iswhite(cmd[0])) cmd = cmd[1..$];
+        while (iswhite(cmd[$-1])) cmd = cmd[0..($-1)];
+        writefln("Command: %s", cmd);
         
-        // then do each of the installs
-        for (int ci = 1; ci < comps.length - 1; ci += 2) {
+        // run it
+        char[] ext = std.string.tolower(getExt(cmd));
+        if (ext == "d") {
+            // if it's a .d file, -exec it
+            saySystemDie(dsss_build ~ "-exec " ~ cmd);
+        } else if (cmd.length > 8 &&
+                   cmd[0..8] == "install ") {
+            // doing an install
+            char[][] comps = std.string.split(cmd);
+            if (comps.length != 3) continue; // FIXME: not valid
+            
+            // do this install
             // check for / or \
-            int slloc = std.string.rfind(comps[ci], '/');
+            int slloc = std.string.rfind(comps[1], '/');
             if (slloc == -1)
-                std.string.rfind(comps[ci], '\\');
+                std.string.rfind(comps[1], '\\');
             
             if (slloc != -1) {
                 // path provided
-                copyInFile(comps[ci][(slloc + 1) .. $],
-                           comps[ci + 1],
-                           comps[ci][0 .. (slloc + 1)]);
-            } else {
-                copyInFile(comps[ci], comps[ci + 1]);
+                copyInFile(comps[1][(slloc + 1) .. $],
+                               comps[2],
+                               comps[1][0 .. (slloc + 1)]);
+                } else {
+                    copyInFile(comps[1], comps[2]);
             }
+         
+        } else if (cmd.length > 3 &&
+                   cmd[0..3] == "cd ") {
+            // change directories
+            char[][] comps = std.string.split(cmd);
+            if (comps.length != 2) continue; // FIXME: not valid
+            
+            // change our directory
+            chdir(comps[1]);
+        
+        } else {
+            // hopefully we can just run it
+            saySystemDie(cmd);
         }
-        
-        return;
-        
-    } else {
-        // hopefully we can just run it
-        cmd = step;
     }
     
-    saySystemDie(cmd);
+    chdir(origcwd);
 }
 
 /** Get sources from a list of elements (sources or targets) */
