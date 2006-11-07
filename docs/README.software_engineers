@@ -54,16 +54,41 @@ version (Windows) {
 There are quite a few other settings supported, such as:
 
 * exclude
-  * exclude a list of .d files from being included in a library:
+  * Exclude a list of .d files from being included in a library:
     exclude=foo.d bar.d
 * {pre,post}{build,install,clean}
-  * commands to be run before/after building/installing/cleaning. Can be any
+  * Commands to be run before/after building/installing/cleaning. Can be any
     number of ;-separated commands, and supports some special command types:
     * .d files. If a .d file is specified as a command, it will be compiled and
       run.
+      * Notably, D files can always use DSSS' headers. That is, the package
+        'sss'.
     * install: DSSS has an internal 'install' command, which takes the
       following syntax:
       * install <file> <target directory>
+  * In any command, you can use environment variables with a '$', such as
+    $PREFIX. The following environment variables are provided by DSSS:
+    * $DSSS : The dsss binary, if you need to call DSSS recursively. Better
+      than counting on it being on the PATH.
+    * $PREFIX : The prefix to which the software is being installed.
+    * $BIN_PREFIX : The prefix to which binaries are being installed.
+    * $LIB_PREFIX : The prefix to which libraries are being installed.
+    * $INCLUDE_PREFIX : The prefix to which generated .di interface files are
+      being installed.
+      * This is the /base/ prefix, so for example the module foo.bar will be
+        installed to $INCLUDE_PREFIX/foo/bar.di
+      * This directory can also be used for .d files.
 * buildflags
   * Flags that will be added to the output to build/bud when building this
     section.
+
+
+Furthermore, there is a global section for settings which are not specific to
+any binary or library. You can add settings to this section simply by adding
+them before any section declarations, or by making an empty section declaration
+like so:
+[]
+global_setting=0
+
+The important global settings are 'name' (which will otherwise be gleaned from
+the directory name) and 'version' (which will otherwise be set to 'latest').
