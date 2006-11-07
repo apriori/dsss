@@ -700,7 +700,7 @@ void dsssScriptedStep(char[] step)
         char[] ext = std.string.tolower(getExt(cmd));
         if (ext == "d") {
             // if it's a .d file, -exec it
-            saySystemDie(dsss_build ~ "-clean -exec " ~ cmd);
+            saySystemDie(dsss_build ~ "-full -exec " ~ cmd);
         } else if (cmd.length > 8 &&
                    cmd[0..8] == "install ") {
             // doing an install

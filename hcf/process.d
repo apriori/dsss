@@ -33,7 +33,9 @@ import std.stream;
 import std.c.stdlib;
 
 private {
-    version (Posix) {
+    version (Windows) {
+        import bcd.windows.windows;
+    } else {
         extern (C) int dup2(int, int);
         extern (C) int fork();
         extern (C) int pipe(int[2]);
@@ -41,10 +43,6 @@ private {
         extern (C) int write(int, void*, size_t);
         extern (C) int close(int);
         extern (C) size_t waitpid(size_t, int*, int);
-    } else version (Windows) {
-        import bcd.windows.windows;
-    } else {
-        static assert(0);
     }
 }
 
