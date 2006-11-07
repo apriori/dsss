@@ -116,15 +116,31 @@ int net(char[][] args)
                     switch (srcFormat) {
                         case "tar.gz":
                         case "tgz":
-                            systemOrDie("gunzip -c src." ~ srcFormat ~ " | tar -xf -");
+                            version (Windows) {
+                                // assume BsdTar
+                                systemOrDie("bsdtar -xf src." ~ srcFormat);
+                            } else {
+                                systemOrDie("gunzip -c src." ~ srcFormat ~ " | tar -xf -");
+                            }
                             break;
                             
                         case "tar.bz2":
-                            systemOrDie("bunzip2 -c src.tar.bz2 | tar -xf -");
+                            version (Windows) {
+                                // assume BsdTar
+                                systemOrDie("bsdtar -xf src.tar.bz2");
+                            } else {
+                                systemOrDie("bunzip2 -c src.tar.bz2 | tar -xf -");
+                            }
                             break;
                             
                         case "zip":
-                            systemOrDie("unzip src.zip");
+                            version (Windows) {
+                                // assume BsdTar
+                                systemOrDie("bsdtar -xf src.zip");
+                            } else {
+                                // assume InfoZip
+                                systemOrDie("unzip src.zip");
+                            }
                             break;
                             
                         default:
