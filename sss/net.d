@@ -103,11 +103,14 @@ int net(char[][] args)
                     
                 default:
                 {
-                    // download ...
+                    /* download ...
                     HttpGet dlhttp = new HttpGet(conf.srcURL[args[1]]);
                     
                     // save it to a source file
-                    write("src." ~ srcFormat, dlhttp.read());
+                    write("src." ~ srcFormat, dlhttp.read());*/
+                    
+                    // mango doesn't work properly (?)
+                    systemOrDie("wget '" ~ conf.srcURL[args[1]] ~ "' -O src." ~ srcFormat);
                     
                     // extract it
                     switch (srcFormat) {
