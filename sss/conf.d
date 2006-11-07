@@ -80,6 +80,12 @@ char[] includePrefix;
 /** The prefix to which manifests are installed */
 char[] manifestPrefix;
 
+/** The prefix to which the source list is downloaded */
+char[] srcListPrefix;
+
+/** The prefix for scratch work */
+char[] scratchPrefix;
+
 /** The location of stub.d (used to make stub D libraries) */
 char[] stubDLoc;
 
@@ -168,9 +174,15 @@ void getPrefix(char[] argvz)
         "share" ~ std.path.sep ~
         "dsss" ~ std.path.sep ~
         "manifest";
+    srcListPrefix = forcePrefix ~ std.path.sep ~
+        "share" ~ std.path.sep ~
+        "dsss" ~ std.path.sep ~
+        "sources";
     
-    // set some environment variables
+    // set the scratch prefix and some some environment variables
     version (Posix) {
+        scratchPrefix = "/tmp";
+        
         setEnvVar("DSSS", installPrefix ~ "/dsss");
         setEnvVar("PREFIX", forcePrefix);
         setEnvVar("BIN_PREFIX", binPrefix);
@@ -188,6 +200,8 @@ void getPrefix(char[] argvz)
         }
         setEnvVar("LD_LIBRARY_PATH", ldlibp);
     } else version (Windows) {
+        scratchPrefix = forcePrefix ~ std.path.sep ~ "tmp";
+        
         setEnvVar("DSSS", installPrefix ~ "/dsss.exe");
         setEnvVar("PREFIX", forcePrefix);
         setEnvVar("BIN_PREFIX", binPrefix);
@@ -343,7 +357,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
     // set up the defaults for the top-level section
     conf.settings[""] = null;
     conf.settings[""]["name"] = getBaseName(getcwd());
-    conf.settings[""]["version"] = "0.0.0";
+    conf.settings[""]["version"] = "latest";
     
     // parse line-by-line
     for (int i = 0; i < lines.length; i++) {
@@ -686,7 +700,7 @@ void dsssScriptedStep(char[] step)
         char[] ext = std.string.tolower(getExt(cmd));
         if (ext == "d") {
             // if it's a .d file, -exec it
-            saySystemDie(dsss_build ~ "-exec " ~ cmd);
+            saySystemDie(dsss_build ~ "-clean -exec " ~ cmd);
         } else if (cmd.length > 8 &&
                    cmd[0..8] == "install ") {
             // doing an install

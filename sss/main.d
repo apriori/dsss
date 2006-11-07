@@ -36,6 +36,7 @@ import sss.clean;
 import sss.conf;
 import sss.genconfig;
 import sss.install;
+import sss.net;
 import sss.uninstall;
 
 private {
@@ -47,6 +48,7 @@ private {
             DISTCLEAN,
             INSTALL,
             UNINSTALL,
+            NET,
             GENCONFIG
     }
     
@@ -121,6 +123,10 @@ int main(char[][] args)
                 commandSet = true;
                 command = cmd_t.UNINSTALL;
                 
+            } else if (arg == "net") {
+                commandSet = true;
+                command = cmd_t.NET;
+                
             } else if (arg == "genconfig") {
                 commandSet = true;
                 command = cmd_t.GENCONFIG;
@@ -128,7 +134,8 @@ int main(char[][] args)
             }
             
         } else if (command == cmd_t.GENCONFIG ||
-                   command == cmd_t.UNINSTALL) {
+                   command == cmd_t.UNINSTALL ||
+                   command == cmd_t.NET) {
             /* commands with no special options (put them in their own else-if
              * if they gain options */
             if (argIsHelp()) {
@@ -226,6 +233,10 @@ int main(char[][] args)
             return sss.uninstall.uninstall(buildElems);
             break;
             
+        case cmd_t.NET:
+            return sss.net.net(buildElems);
+            break;
+            
         case cmd_t.GENCONFIG:
             return sss.genconfig.genconfig(buildElems);
             break;
@@ -247,6 +258,7 @@ void usage()
     distclean: clean up all files from all or some builds
     install:   install all or some binaries or libraries
     uninstall: uninstall a specified tool or library
+    net:       Internet-based installation and package management
     genconfig: generate a config file
   Each command has its own set of options, which are not listed here. To list
   the options for a command:
@@ -288,6 +300,14 @@ void usage()
   Uninstall Options:
     [none yet]`
             );
+        
+    } else if (command == cmd_t.NET) {
+        writefln(
+`Usage: dsss [dsss options] net <net command> <package name>
+  Net Commands:
+    install: Install a package via the network source`
+            );
+
         
     } else if (command == cmd_t.GENCONFIG) {
         writefln(
