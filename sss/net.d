@@ -27,6 +27,7 @@
 module sss.net;
 
 import std.stdio;
+import std.string;
 import std.file;
 alias std.file.write write;
 import std.path;
@@ -150,9 +151,27 @@ int net(char[][] args)
                 }
             }
             
-            // FIXME: apply patches
+            // 4) apply patches
+            foreach (patch; conf.srcPatches[args[1]]) {
+                char[][] pinfo = split(patch, ":");
+                char[] dir;
+                char[] pfile;
+                
+                // split into dir:file or just file
+                if (pinfo.length < 2) {
+                    dir = srcDir;
+                    pfile = pinfo[0];
+                } else {
+                    dir = pinfo[0];
+                    pfile = pinfo[1];
+                }
+                
+                chdir(dir);
+                systemOrDie("patch -p0 -i " ~ srcListPrefix ~ std.path.sep ~ pfile);
+                chdir(srcDir);
+            }
             
-            // 4) figure out where the source is
+            // 5) figure out where the source is
             if (!exists(configFName)) {
                 char[][] sub = listdir(".");
                 foreach (entr; sub) {
@@ -169,11 +188,11 @@ int net(char[][] args)
                 }
             }
             
-            // 5) build
+            // 6) build
             int buildret = build(args[2..$]);
             if (buildret) return buildret;
             
-            // 6) install
+            // 7) install
             return install(args[2..$]);
             
             // FIXME: incomplete (delete sources)
@@ -198,6 +217,9 @@ class NetConfig {
     
     /** Source URL of packages */
     char[][char[]] srcURL;
+    
+    /** Patches */
+    char[][][char[]] srcPatches;
 }
 
 /** Read the net configuration info */
@@ -225,10 +247,11 @@ NetConfig ReadNetConfig()
         
         char[][] pkinfo = std.string.split(pkg, " ");
         
-        //format: pkg protocol/format URL
+        //format: pkg protocol/format URL [patches]
         if (pkinfo.length < 3) continue;
         conf.srcFormat[pkinfo[0]] = pkinfo[1];
         conf.srcURL[pkinfo[0]] = pkinfo[2];
+        conf.srcPatches[pkinfo[0]] = pkinfo[3..$];
     }
     
     return conf;
