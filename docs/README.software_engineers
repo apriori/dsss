@@ -51,7 +51,7 @@ version (Windows) {
  target=foo_for_notwindows
 }
 
-There are quite a few other settings supported:
+There are quite a few other settings supported, such as:
 
 * exclude
   * exclude a list of .d files from being included in a library:
