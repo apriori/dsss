@@ -33,5 +33,8 @@ int main()
 {
     if (exists("mango")) return 0;
     
-    return system("svn co http://svn.dsource.org/projects/mango/trunk/mango");
+    int svnret = system("svn co http://svn.dsource.org/projects/mango/trunk/mango");
+    if (svnret) return svnret;
+    
+    return system("patch -p0 -i mango.diff -f");
 }
