@@ -53,7 +53,8 @@ int net(char[][] args)
         saySystemDie("svn co " ~ srcSrc ~ " " ~ srcListPrefix);
     } else {
         // update it
-        //saySystemDie("svn up " ~ srcListPrefix);
+        // FIXME: this should not run every time
+        saySystemDie("svn up " ~ srcListPrefix);
     }
     
     // load it
