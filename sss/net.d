@@ -41,7 +41,7 @@ import hcf.path;
 import hcf.process;
 
 import mango.http.client.HttpClient;
-import mango.http.server.HttpHeaders;
+import mango.http.client.HttpGet;
 
 /** The source of the sources list is defaulted here */
 private char[] srcSrc = "http://svn.dsource.org/projects/dsss/sources";
@@ -104,32 +104,10 @@ int net(char[][] args)
                 default:
                 {
                     // download ...
-                    HttpClient dlhttp = new HttpClient(
-                        HttpClient.Get,
-                        conf.srcURL[args[1]]
-                        );
-                    
-                    dlhttp.open();
-                    
-                    char[] outFile;
-                    void sink(char[] cont)
-                    {
-                        outFile ~= cont;
-                    }
-                    
-                    if (dlhttp.isResponseOK) {
-                        int length = dlhttp.getResponseHeaders.getInt(
-                            HttpHeader.ContentLength, int.max);
-                        dlhttp.read(&sink, length);
-                    } else {
-                        writefln("Failed to download sources!");
-                        return 1;
-                    }
-                    
-                    dlhttp.close();
+                    HttpGet dlhttp = new HttpGet(conf.srcURL[args[1]]);
                     
                     // save it to a source file
-                    write("src." ~ srcFormat, cast(void[]) outFile);
+                    write("src." ~ srcFormat, dlhttp.read());
                     
                     // extract it
                     switch (srcFormat) {
