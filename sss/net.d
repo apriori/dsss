@@ -35,6 +35,7 @@ import std.path;
 import sss.build;
 import sss.conf;
 import sss.install;
+import sss.uninstall;
 
 import hcf.path;
 import hcf.process;
@@ -133,7 +134,8 @@ int net(char[][] args)
                     // extract it
                     switch (srcFormat) {
                         case "tar.gz":
-                            systemOrDie("gunzip -c src.tar.gz | tar -xf -");
+                        case "tgz":
+                            systemOrDie("gunzip -c src." ~ srcFormat ~ " | tar -xf -");
                             break;
                             
                         case "tar.bz2":
@@ -188,11 +190,14 @@ int net(char[][] args)
                 }
             }
             
-            // 6) build
+            // 6) make sure it's not installed
+            uninstall(args[1..2]);
+            
+            // 7) build
             int buildret = build(args[2..$]);
             if (buildret) return buildret;
             
-            // 7) install
+            // 8) install
             return install(args[2..$]);
             
             // FIXME: incomplete (delete sources)
