@@ -2559,16 +2559,16 @@ int main(string[] pArgs)
         if (vUsesOutput.length == 0)
             vUsesOutput = util.pathex.GetBaseName(vTargetName) ~ ".use";
 
-        if (vTestRun == False)
-        {
+        /*if (vTestRun == False)
+        {*/
             // ensure requested path exists.
             util.pathex.MakePath(vUsesOutput);
             std.file.write(vUsesOutput, lFile);
-        }
+        /*}
         else
         {
             std.stdio.writefln("Uses: %s", vUsesOutput);
-        }
+        }*/
 
 
     }

@@ -103,105 +103,14 @@ int net(char[][] args)
             char[] origcwd = getcwd();
             chdir(srcDir);
             
-            // 3) get source
-            char[] srcFormat = conf.srcFormat[args[1]];
-            switch (srcFormat) {
-                case "svn":
-                    // Subversion, check it out
-                    saySystemDie("svn co " ~ conf.srcURL[args[1]]);
-                    break;
-                    
-                default:
-                {
-                    /* download ...
-                    HttpGet dlhttp = new HttpGet(conf.srcURL[args[1]]);
-                    
-                    // save it to a source file
-                    write("src." ~ srcFormat, dlhttp.read());*/
-                    
-                    // mango doesn't work properly (?)
-                    systemOrDie("wget '" ~ conf.srcURL[args[1]] ~ "' -O src." ~ srcFormat);
-                    
-                    // extract it
-                    switch (srcFormat) {
-                        case "tar.gz":
-                        case "tgz":
-                            version (Windows) {
-                                // assume BsdTar
-                                systemOrDie("bsdtar -xf src." ~ srcFormat);
-                            } else {
-                                systemOrDie("gunzip -c src." ~ srcFormat ~ " | tar -xf -");
-                            }
-                            break;
-                            
-                        case "tar.bz2":
-                            version (Windows) {
-                                // assume BsdTar
-                                systemOrDie("bsdtar -xf src.tar.bz2");
-                            } else {
-                                systemOrDie("bunzip2 -c src.tar.bz2 | tar -xf -");
-                            }
-                            break;
-                            
-                        case "zip":
-                            version (Windows) {
-                                // assume BsdTar
-                                systemOrDie("bsdtar -xf src.zip");
-                            } else {
-                                // assume InfoZip
-                                systemOrDie("unzip src.zip");
-                            }
-                            break;
-                            
-                        default:
-                            writefln("Unrecognized source format: %s", srcFormat);
-                            return 1;
-                    }
-                }
-            }
+            // 3) get sources
+            if (!getSources(args[1], conf)) return 1;
+            srcDir = getcwd();
             
-            // 4) apply patches
-            foreach (patch; conf.srcPatches[args[1]]) {
-                char[][] pinfo = split(patch, ":");
-                char[] dir;
-                char[] pfile;
-                
-                // split into dir:file or just file
-                if (pinfo.length < 2) {
-                    dir = srcDir;
-                    pfile = pinfo[0];
-                } else {
-                    dir = pinfo[0];
-                    pfile = pinfo[1];
-                }
-                
-                chdir(dir);
-                systemOrDie("patch -p0 -i " ~ srcListPrefix ~ std.path.sep ~ pfile);
-                chdir(srcDir);
-            }
-            
-            // 5) figure out where the source is
-            if (!exists(configFName)) {
-                char[][] sub = listdir(".");
-                foreach (entr; sub) {
-                    if (entr[0] == '.') continue;
-                    
-                    // check if it's a source directory
-                    if (isdir(entr)) {
-                        if (exists(entr ~ std.path.sep ~ configFName)) {
-                            // found
-                            chdir(entr);
-                            srcDir = getcwd();
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            // 6) make sure it's not installed
+            // 4) make sure it's not installed
             uninstall(args[1..2]);
             
-            // 7) install prerequisites
+            // 5) install prerequisites
             DSSSConf dsssconf = readConfig(args[2..$]);
             char[][] prereqs;
             if ("requires" in dsssconf.settings[""]) {
@@ -217,11 +126,11 @@ int net(char[][] args)
                 if (netret) return netret;
             }
             
-            // 8) build
+            // 6) build
             int buildret = build(args[2..$], dsssconf);
             if (buildret) return buildret;
             
-            // 9) install
+            // 7) install
             return install(args[2..$]);
         }
         
@@ -282,4 +191,106 @@ NetConfig ReadNetConfig()
     }
     
     return conf;
+}
+
+/** Get the source for a given package
+ * Returns true on success, false on failure
+ * NOTE: Your chdir can change! */
+bool getSources(char[] pkg, NetConfig conf) {
+    // 1) get source
+    char[] srcFormat = conf.srcFormat[pkg];
+    switch (srcFormat) {
+        case "svn":
+            // Subversion, check it out
+            saySystemDie("svn co " ~ conf.srcURL[pkg]);
+            break;
+                    
+        default:
+        {
+            /* download ...
+            HttpGet dlhttp = new HttpGet(conf.srcURL[pkg]);
+                    
+            // save it to a source file
+            write("src." ~ srcFormat, dlhttp.read());*/
+                    
+            // mango doesn't work properly (?)
+            systemOrDie("wget '" ~ conf.srcURL[pkg] ~ "' -O src." ~ srcFormat);
+                    
+            // extract it
+            switch (srcFormat) {
+                case "tar.gz":
+                case "tgz":
+                    version (Windows) {
+                        // assume BsdTar
+                        systemOrDie("bsdtar -xf src." ~ srcFormat);
+                    } else {
+                        systemOrDie("gunzip -c src." ~ srcFormat ~ " | tar -xf -");
+                    }
+                    break;
+                            
+                case "tar.bz2":
+                    version (Windows) {
+                        // assume BsdTar
+                        systemOrDie("bsdtar -xf src.tar.bz2");
+                    } else {
+                        systemOrDie("bunzip2 -c src.tar.bz2 | tar -xf -");
+                    }
+                    break;
+                            
+                case "zip":
+                    version (Windows) {
+                        // assume BsdTar
+                        systemOrDie("bsdtar -xf src.zip");
+                    } else {
+                        // assume InfoZip
+                        systemOrDie("unzip src.zip");
+                    }
+                    break;
+                            
+                default:
+                    writefln("Unrecognized source format: %s", srcFormat);
+                    return false;
+            }
+        }
+    }
+            
+    // 2) apply patches
+    char[] srcDir = getcwd();
+    foreach (patch; conf.srcPatches[pkg]) {
+        char[][] pinfo = split(patch, ":");
+        char[] dir;
+        char[] pfile;
+        
+        // split into dir:file or just file
+        if (pinfo.length < 2) {
+            dir = srcDir;
+            pfile = pinfo[0];
+        } else {
+            dir = pinfo[0];
+            pfile = pinfo[1];
+        }
+        
+        chdir(dir);
+        systemOrDie("patch -p0 -i " ~ srcListPrefix ~ std.path.sep ~ pfile);
+        chdir(srcDir);
+    }
+    
+    // 3) figure out where the source is and chdir
+    if (!exists(configFName)) {
+        char[][] sub = listdir(".");
+        foreach (entr; sub) {
+            if (entr[0] == '.') continue;
+                    
+            // check if it's a source directory
+            if (isdir(entr)) {
+                if (exists(entr ~ std.path.sep ~ configFName)) {
+                    // found
+                    chdir(entr);
+                    break;
+                }
+            }
+        }
+    }
+    
+    return true;
 }
