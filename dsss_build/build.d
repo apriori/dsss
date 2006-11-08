@@ -149,7 +149,7 @@ private{
             string vShLibrarianOutFileSwitch = "";
             string vHomePathId = "HOME";
             string vEtcPath    = "";
-            string vSymInfoSwitch = "/co";
+            string vSymInfoSwitch = "-g";
             string vOutFileSwitch = "-of";
             string vLinkLibSwitch = "";
             string vStartLibsSwitch = "";
