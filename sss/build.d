@@ -230,14 +230,14 @@ version (build) {
             version (GNU_or_Posix) {
                 // first do a static library
                 if (exists("libS" ~ target ~ ".a")) std.file.remove("libS" ~ target ~ ".a");
-                char[] stbl = bl ~ bflags ~ " -lib -full " ~ fileList ~ " -TlibS" ~ target ~ ".a";
+                char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -TlibS" ~ target ~ ".a";
                 saySystemDie(stbl);
                 
                 if (shLibSupport() &&
                     ("shared" in settings)) {
                     // then make the shared library
                     if (exists(shlibname)) std.file.remove(shlibname);
-                    char[] shbl = bl ~ bflags ~ " -fPIC -shlib -full " ~ fileList ~ " -T" ~ shlibname ~
+                    char[] shbl = bl ~ bflags ~ " -fPIC -explicit -shlib -full " ~ fileList ~ " -T" ~ shlibname ~
                         " " ~ shlibflag;
                     
                     // finally, the shared compile
@@ -247,7 +247,7 @@ version (build) {
             } else version (Windows) {
                 // for the moment, only do a static library
                 if (exists("S" ~ target ~ ".lib")) std.file.remove("S" ~ target ~ ".lib");
-                char[] stbl = bl ~ bflags ~ " -lib -full " ~ fileList ~ " -TS" ~ target ~ ".lib";
+                char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -TS" ~ target ~ ".lib";
                 saySystemDie(stbl);
             } else {
                 static assert(0);
