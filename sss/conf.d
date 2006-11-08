@@ -446,7 +446,8 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
                     conf.settings[section]["type"] = "library";
                     
                     // target according to the library naming convention
-                    char[] pkg = canonPath(section);
+                    char[] pkg = std.string.replace(canonPath(section),
+                                                    "\\", "/");
                     
                     // LNC:
                     // D<compiler>-<package-with-hyphens>
