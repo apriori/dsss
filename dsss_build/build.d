@@ -137,7 +137,7 @@ private{
             string vConfigFile=`sc.ini`;
             string vCompilerPath=``;
             string vLinkerPath=``;
-            string vLinkerDefs=`/noi/map`;
+            string vLinkerDefs=``;
             string vConfigPath=``;
             string vLibPaths = ``;
             string vConfigSep = ";";
@@ -1121,6 +1121,11 @@ int Build()
                 }
 
                 // (2) Set the output file name
+                if (vLibraryAction == LibOpt.Shared) {
+                    lCommandLine ~= vShLibrarianOutFileSwitch;
+                } else {
+                    lCommandLine ~= vOutFileSwitch;
+                }
                 lCommandLine ~= util.str.enquote(util.pathex.AbbreviateFileName(lTargetName)) ~ "\n";
 
                 // (3) Set the map name
