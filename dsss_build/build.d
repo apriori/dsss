@@ -1934,13 +1934,13 @@ void ReadCompilerConfigFile()
             continue;
         }
 
-        // Examine LINKCMD
+        /* Examine LINKCMD
         lPos = std.string.find(lLine, "LINKCMD=");
         if(lPos == 0)
         {
             SetFileLocation(lLine[8..$], vLinkerPath, vLinkerExe, "linker");
             continue;
-        }
+        }*/
 
         lPos = std.string.find(lLine, "LIBCMD=");
         if(lPos == 0) {
@@ -3591,10 +3591,10 @@ void ProcessOneBuildConfig(string pArg, Bool pVerbose, string pPath, inout strin
                 {
                     SetFileLocation(lArg[8..$], vCompilerPath, vCompilerExe, "compiler");
                 }
-                else if (util.str.begins(lArg, "LINKCMD=") == True)
+                /*else if (util.str.begins(lArg, "LINKCMD=") == True)
                 {
                     SetFileLocation(lArg[8..$], vLinkerPath, vLinkerExe, "linker");
-                }
+                }*/
                 else if (util.str.begins(lArg, "LINKSWITCH=") == True)
                 {
                     vLinkerDefs = lArg[11..$].dup;
