@@ -31,7 +31,7 @@ import std.string;
 import std.c.stdlib;
 
 version (Windows) {
-    import bd.windows.windows;
+    import bcd.windows.windows;
 }
 
 /** Get an environment variable D-ly */
@@ -41,9 +41,13 @@ char[] getEnvVar(char[] var)
         return toString(
             getenv(toStringz(var)));
     } else version (Windows) {
-        return toString(
-            GetEnvironmentVariableA(
-                toStringz(var)));
+        char[1024] buffer;
+        buffer[0] = '\0';
+        GetEnvironmentVariableA(
+                toStringz(var),
+                buffer,
+                1024);
+        return toString(buffer);
     } else {
         static assert(0);
     }

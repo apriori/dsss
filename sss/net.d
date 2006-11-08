@@ -294,3 +294,10 @@ bool getSources(char[] pkg, NetConfig conf) {
     
     return true;
 }
+
+version (build) {
+    version (Windows) {
+        pragma(link, "wsock32");
+    }
+}
+

@@ -8460,8 +8460,6 @@ extern (Windows) int _lcreat(char *, int);
 extern (Windows) int _lclose(int);
 extern (Windows) int _hwrite(int, char *, int);
 extern (Windows) int _hread(int, void *, int);
-extern (Windows) int wWinMain(HINSTANCE__ *, HINSTANCE__ *, wchar *, int);
-extern (Windows) int WinMain(HINSTANCE__ *, HINSTANCE__ *, char *, int);
 extern (Windows) int WriteConsoleOutputCharacterW(void *, wchar *, uint, _COORD, uint *);
 extern (Windows) int WriteConsoleOutputCharacterA(void *, char *, uint, _COORD, uint *);
 extern (Windows) int WriteConsoleOutputAttribute(void *, ushort *, uint, _COORD, uint *);

@@ -1,22 +1,23 @@
 PREFIX=C:\\dsss
+MAKE=make
 
 all: dsss.exe
 
 dsss.exe: dsss_build/dsss_build.exe
-	dsss_build/dsss_build.exe -exec getmango.d
-	dsss_build/dsss_build.exe -od. -Idsss_build sss/main.d -Tdsss
-	`cwd`\\dsss.exe build
+	dsss_build\\dsss_build.exe -exec getmango.d
+	dsss_build\\dsss_build.exe -od. -Idsss_build sss\\main.d -Tdsss
+	dsss.exe build
 
-dsss_build/dsss_build.exe:
+dsss_build\\dsss_build.exe:
 	cd dsss_build && \
-	$(MAKE) -f Makefile.dos
+	$(MAKE) -fMakefile.dos
 
 install: dsss.exe
-	`cwd`\\dsss.exe install --prefix=$(PREFIX)
+	dsss.exe install --prefix=$(PREFIX)
 
 clean:
-	-`cwd`\\dsss.exe distclean
-	rm -f *.obj
-	rm -f dsss.exe
+	-dsss.exe distclean
+	del *.obj
+	del dsss.exe
 	cd dsss_build && \
 	$(MAKE) -f Makefile.dos clean

@@ -1,5 +1,5 @@
 DMD=dmd
-DFLAGS=-op -release -inline
+DFLAGS=-op -release -inline -version=BuildVerbose
 SOURCES=$(SOURCES) build.d
 SOURCES=$(SOURCES) util/pathex.d
 SOURCES=$(SOURCES) source_bn.d
