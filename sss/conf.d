@@ -676,7 +676,12 @@ body {
             }
         }
     }
-    addDir(target, true);
+    
+    if (isdir(target)) {
+        addDir(target, true);
+    } else {
+        files ~= target;
+    }
     
     return files;
 }
