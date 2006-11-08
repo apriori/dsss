@@ -68,10 +68,20 @@ int net(char[][] args)
         return 1;
     }
     switch (args[0]) {
+        case "assert":
+        {
+            // make sure that the tool is installed, install it if not
+            char[] manifestFile = manifestPrefix ~ std.path.sep ~ args[1] ~ ".manifest";
+            if (exists(manifestFile)) {
+                writefln("%s is already installed.\n", args[1]);
+                return 0;
+            }
+            
+            // fall through
+        }
+        
         case "install":
         {
-            // FIXME: dependencies
-            
             // download and install the specified package and its dependencies
             if (args.length < 2) {
                 writefln("The install command requires a package name as an argument.");
@@ -181,6 +191,7 @@ int net(char[][] args)
                         if (exists(entr ~ std.path.sep ~ configFName)) {
                             // found
                             chdir(entr);
+                            srcDir = getcwd();
                             break;
                         }
                     }
@@ -190,14 +201,28 @@ int net(char[][] args)
             // 6) make sure it's not installed
             uninstall(args[1..2]);
             
-            // 7) build
-            int buildret = build(args[2..$]);
+            // 7) install prerequisites
+            DSSSConf dsssconf = readConfig(args[2..$]);
+            char[][] prereqs;
+            if ("requires" in dsssconf.settings[""]) {
+                prereqs = split(dsssconf.settings[""]["requires"]);
+            }
+            foreach (prereq; prereqs) {
+                // assert that it's installed
+                char[][] netcmd;
+                netcmd ~= "assert";
+                netcmd ~= prereq;
+                int netret = net(netcmd);
+                chdir(srcDir);
+                if (netret) return netret;
+            }
+            
+            // 8) build
+            int buildret = build(args[2..$], dsssconf);
             if (buildret) return buildret;
             
-            // 8) install
+            // 9) install
             return install(args[2..$]);
-            
-            // FIXME: incomplete (delete sources)
         }
         
         default:
