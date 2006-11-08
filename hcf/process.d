@@ -98,16 +98,18 @@ class PStream : Stream {
             }
         } else version (Windows) {
             _STARTUPINFOA si;
+            si.cb = _STARTUPINFOA.sizeof;
             si.hStdInput = ipr;
             si.hStdOutput = opw;
             si.hStdError = opw;
+            si.dwFlags = STARTF_USESTDHANDLES;
             
             _PROCESS_INFORMATION pi;
             
             CreateProcessA(null, command, null, null,
                            1, 0, null, null, &si, &pi);
-            CloseHandle(ipw);
-            CloseHandle(opr);
+            CloseHandle(ipr);
+            CloseHandle(opw);
             CloseHandle(pi.hThread);
             phnd = pi.hProcess;
         }
