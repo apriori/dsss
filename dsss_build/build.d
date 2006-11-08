@@ -37,7 +37,7 @@ version(unix)   version = Unix;
 version(Unix)   version = Posix;
 version(linux)  version = Posix;
 version(darwin) version = Posix;
-version(DigitalMars) version(Windows) version = UseResponseFile;
+//version(DigitalMars) version(Windows) version = UseResponseFile;
 
 version(build)
 {
@@ -129,11 +129,11 @@ private{
         version(Windows) {
             string vCompilerExe=`dmd.exe`;
             string vCompileOnly = `-c`;
-            string vLinkerExe=`link.exe`;
+            string vLinkerExe=`dmd.exe`;
             bool   vPostSwitches = true;
             bool   vAppendLinkSwitches = true;
-            string vArgDelim = ",";
-            string vArgFileDelim = "+";
+            string vArgDelim = " ";
+            string vArgFileDelim = " ";
             string vConfigFile=`sc.ini`;
             string vCompilerPath=``;
             string vLinkerPath=``;
