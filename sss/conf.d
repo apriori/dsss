@@ -469,7 +469,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
                     // <package>
                     // swap out /'s
                     pkg =
-                        std.string.replace(pkg, std.path.sep, "-");
+                        std.string.replace(pkg, "/", "-");
                     // name it
                     conf.settings[section]["target"] =
                         lname ~ pkg;
