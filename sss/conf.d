@@ -638,7 +638,7 @@ body {
     bool excluded(char[] path)
     {
         for (int i = 0; i < exclude.length; i++) {
-            if (fnmatch(path, exclude[i])) {
+            if (fnmatch(std.string.replace(path, "\\", "/"), exclude[i])) {
                 return true;
             }
         }

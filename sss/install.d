@@ -110,7 +110,18 @@ int install(char[][] buildElems)
                     }
                 }
             } else version (Windows) {
-                assert(0);
+                // copy in the .lib and .dll files
+                
+                // 1) .lib
+                copyAndManifest("S" ~ target ~ ".lib", libPrefix);
+                
+                char[] shlibname = getShLibName(settings);
+                
+                if (shLibSupport() &&
+                    ("shared" in settings)) {
+                    // 2) .dll
+                    copyAndManifest(shlibname, libPrefix);
+                }
             } else {
                 static assert(0);
             }

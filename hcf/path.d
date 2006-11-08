@@ -132,6 +132,9 @@ char[] canonPath(char[] origpath)
 void mkdirP(char[] dir)
 {
     dir = canonPath(dir);
+    version (Windows) {
+        dir = std.string.replace(dir, "/", "\\");
+    }
     
     // split it into elements
     char[][] dires = split(dir, sep);

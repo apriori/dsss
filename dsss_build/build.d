@@ -37,7 +37,7 @@ version(unix)   version = Unix;
 version(Unix)   version = Posix;
 version(linux)  version = Posix;
 version(darwin) version = Posix;
-//version(DigitalMars) version(Windows) version = UseResponseFile;
+version(DigitalMars) version(Windows) version = UseResponseFile;
 
 version(build)
 {
@@ -129,15 +129,15 @@ private{
         version(Windows) {
             string vCompilerExe=`dmd.exe`;
             string vCompileOnly = `-c`;
-            string vLinkerExe=`dmd.exe`;
+            string vLinkerExe=`link.exe`;
             bool   vPostSwitches = true;
             bool   vAppendLinkSwitches = true;
-            string vArgDelim = " ";
-            string vArgFileDelim = " ";
+            string vArgDelim = ",";
+            string vArgFileDelim = "+";
             string vConfigFile=`sc.ini`;
             string vCompilerPath=``;
             string vLinkerPath=``;
-            string vLinkerDefs=``;
+            string vLinkerDefs=`/noi/map`;
             string vConfigPath=``;
             string vLibPaths = ``;
             string vConfigSep = ";";
@@ -149,7 +149,7 @@ private{
             string vShLibrarianOutFileSwitch = "";
             string vHomePathId = "HOME";
             string vEtcPath    = "";
-            string vSymInfoSwitch = "-g";
+            string vSymInfoSwitch = "/co";
             string vOutFileSwitch = "-of";
             string vLinkLibSwitch = "";
             string vStartLibsSwitch = "";
@@ -1121,11 +1121,6 @@ int Build()
                 }
 
                 // (2) Set the output file name
-                if (vLibraryAction == LibOpt.Shared) {
-                    lCommandLine ~= vShLibrarianOutFileSwitch;
-                } else {
-                    lCommandLine ~= vOutFileSwitch;
-                }
                 lCommandLine ~= util.str.enquote(util.pathex.AbbreviateFileName(lTargetName)) ~ "\n";
 
                 // (3) Set the map name
@@ -1140,7 +1135,6 @@ int Build()
                     lLibraryFiles = vDefaultLibs ~ lLibraryFiles;
                 if (lLibraryFiles.length > 0)
                 {
-                    lCommandLine ~= vStartLibsSwitch ~ "\n";
                     foreach( int i, string lLib; lLibraryFiles)
                     {
                         lLib =  std.path.addExt(lLib, vLibExtension);
@@ -1149,7 +1143,6 @@ int Build()
                         lCommandLine ~= vLinkLibSwitch ~
                                         util.str.enquote(lLib);
                     }
-                    lCommandLine ~= vEndLibsSwitch ~ "\n";
                 }
                 lCommandLine ~= "\n";
 
@@ -1934,13 +1927,13 @@ void ReadCompilerConfigFile()
             continue;
         }
 
-        /* Examine LINKCMD
+        // Examine LINKCMD
         lPos = std.string.find(lLine, "LINKCMD=");
         if(lPos == 0)
         {
             SetFileLocation(lLine[8..$], vLinkerPath, vLinkerExe, "linker");
             continue;
-        }*/
+        }
 
         lPos = std.string.find(lLine, "LIBCMD=");
         if(lPos == 0) {
@@ -3591,10 +3584,10 @@ void ProcessOneBuildConfig(string pArg, Bool pVerbose, string pPath, inout strin
                 {
                     SetFileLocation(lArg[8..$], vCompilerPath, vCompilerExe, "compiler");
                 }
-                /*else if (util.str.begins(lArg, "LINKCMD=") == True)
+                else if (util.str.begins(lArg, "LINKCMD=") == True)
                 {
                     SetFileLocation(lArg[8..$], vLinkerPath, vLinkerExe, "linker");
-                }*/
+                }
                 else if (util.str.begins(lArg, "LINKSWITCH=") == True)
                 {
                     vLinkerDefs = lArg[11..$].dup;

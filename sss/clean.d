@@ -112,7 +112,17 @@ int distclean(DSSSConf conf = null)
                 }
                 
             } else version (Windows) {
-                assert(0);
+                // first remove
+                tryRemove("S" ~ target ~ ".lib");
+                
+                // then remove the shared libraries
+                char[] shlibname = getShLibName(settings);
+                char[][] shortshlibnames = getShortShLibNames(settings);
+                
+                tryRemove(shlibname);
+                foreach (ssln; shortshlibnames) {
+                    tryRemove(ssln);
+                }
             } else {
                 static assert(0);
             }
