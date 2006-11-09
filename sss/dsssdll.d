@@ -24,42 +24,48 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-import std.c.stdio;
-import std.c.stdlib;
-import std.string;
-import std.c.windows.windows;
-import std.gc;
-
-HINSTANCE   g_hInst;
-
-extern (C)
-{
+version (DSSSDLL) {
+    import std.c.stdio;
+    import std.c.stdlib;
+    import std.string;
+    import std.c.windows.windows;
+    import std.gc;
+    
+    HINSTANCE   g_hInst;
+    
+    extern (C)
+    {
 	void _minit();
 	void _moduleCtor();
 	void _moduleDtor();
-}
-
-extern (Windows) BOOL DllMain(HINSTANCE hInstance, ULONG ulReason, LPVOID pvReserved)
-{
-    switch (ulReason)
-    {
-        case DLL_PROCESS_DETACH:
-	    std.c.stdio._fcloseallp = null;
-	    break;
     }
-    g_hInst = hInstance;
-    return true;
-}
-
-export void DLL_Initialize(void* gc)
-{
-    std.gc.setGCHandle(gc);
-    _minit();
-    _moduleCtor();
-}
-
-export void DLL_Terminate()
-{
-    _moduleDtor();
-    std.gc.endGCHandle();
+    
+    extern (Windows) BOOL DllMain(HINSTANCE hInstance, ULONG ulReason, LPVOID pvReserved)
+    {
+        switch (ulReason)
+        {
+            case DLL_PROCESS_DETACH:
+                std.c.stdio._fcloseallp = null;
+                break;
+        }
+        g_hInst = hInstance;
+        return true;
+    }
+    
+    void DLL_Initialize(void* gc)
+    {
+        std.gc.setGCHandle(gc);
+        _minit();
+        _moduleCtor();
+    }
+    
+    void DLL_Terminate()
+    {
+        _moduleDtor();
+        std.gc.endGCHandle();
+    }
+    
+    version (build) {
+        pragma(link, "kernel32");
+    }
 }

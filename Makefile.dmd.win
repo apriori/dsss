@@ -21,5 +21,6 @@ clean:
 	del *.obj
 	del dsss.exe
 	del dsss_int.exe
-	cd dsss_build && \
+	cd dsss_build
 	$(MAKE) -f Makefile.dos clean
+	cd ..
