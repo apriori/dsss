@@ -53,7 +53,13 @@ bool whereAmI(char[] argvz, inout char[] dir, inout char[] bname)
     }
     
     // is this a directory?
-    if (dir != "") return true;
+    if (dir != "") {
+        if (!std.path.isabs(dir)) {
+            // make it absolute
+            dir = getcwd() ~ std.path.sep ~ dir;
+        }
+        return true;
+    }
     
     version (Windows) {
         // is it in cwd?

@@ -183,7 +183,7 @@ void getPrefix(char[] argvz)
     version (Posix) {
         scratchPrefix = "/tmp";
         
-        setEnvVar("DSSS", installPrefix ~ "/dsss");
+        setEnvVar("DSSS", installPrefix ~ std.path.sep ~ bname);
         setEnvVar("PREFIX", forcePrefix);
         setEnvVar("BIN_PREFIX", binPrefix);
         setEnvVar("LIB_PREFIX", libPrefix);
@@ -202,7 +202,7 @@ void getPrefix(char[] argvz)
     } else version (Windows) {
         scratchPrefix = forcePrefix ~ std.path.sep ~ "tmp";
         
-        setEnvVar("DSSS", installPrefix ~ "/dsss.exe");
+        setEnvVar("DSSS", installPrefix ~ std.path.sep ~ bname);
         setEnvVar("PREFIX", forcePrefix);
         setEnvVar("BIN_PREFIX", binPrefix);
         setEnvVar("LIB_PREFIX", libPrefix);
