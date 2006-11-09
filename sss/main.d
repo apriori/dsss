@@ -305,6 +305,8 @@ void usage()
         writefln(
 `Usage: dsss [dsss options] net <net command> <package name>
   Net Commands:
+    deps:    Install (from the network source) dependencies of the present
+             package
     install: Install a package via the network source`
             );
 
