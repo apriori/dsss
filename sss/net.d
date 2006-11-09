@@ -68,6 +68,26 @@ int net(char[][] args)
         return 1;
     }
     switch (args[0]) {
+        case "deps":
+        {
+            // install dependencies
+            DSSSConf dconf = readConfig(null);
+            char[][] deps = sourceToDeps(conf, dconf);
+            foreach (dep; deps) {
+                if (dep == "" || dep == dconf.settings[""]["name"]) continue;
+                
+                char[][] netcommand;
+                netcommand ~= "assert";
+                netcommand ~= dep;
+                
+                writefln("\n\nInstalling %s\n", dep);
+                int netret = net(netcommand);
+                if (netret) return netret;
+            }
+            
+            return 0;
+        }
+        
         case "assert":
         {
             // make sure that the tool is installed, install it if not
@@ -111,23 +131,15 @@ int net(char[][] args)
             uninstall(args[1..2]);
             
             // 5) install prerequisites
-            DSSSConf dsssconf = readConfig(args[2..$]);
-            char[][] prereqs;
-            if ("requires" in dsssconf.settings[""]) {
-                prereqs = split(dsssconf.settings[""]["requires"]);
-            }
-            foreach (prereq; prereqs) {
-                // assert that it's installed
-                char[][] netcmd;
-                netcmd ~= "assert";
-                netcmd ~= prereq;
-                int netret = net(netcmd);
-                chdir(srcDir);
-                if (netret) return netret;
-            }
+            char[][] netcmd;
+            netcmd ~= "deps";
+            int netret = net(netcmd);
+            if (netret) return netret;
+            chdir(srcDir);
             
             // 6) build
-            int buildret = build(args[2..$], dsssconf);
+            DSSSConf dconf = readConfig(null);
+            int buildret = build(args[2..$], dconf);
             if (buildret) return buildret;
             
             // 7) install
@@ -193,10 +205,87 @@ NetConfig ReadNetConfig()
     return conf;
 }
 
+/** Generate a list of dependencies for the current source */
+char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
+{
+    if (nconf is null) {
+        nconf = ReadNetConfig();
+    }
+    if (conf is null) {
+        conf = readConfig(null);
+    }
+    
+    // start with the requires setting
+    char[][] deps;
+    if ("requires" in conf.settings[""]) {
+        deps ~= std.string.split(conf.settings[""]["requires"]);
+    }
+    
+    // then trace uses
+    foreach (section; conf.sections) {
+        char[][] files;
+        if (conf.settings[section]["type"] == "binary") {
+            files ~= section;
+        } else {
+            files ~= targetToFiles(section, conf);
+        }
+        
+        // make a uses file
+        char[] usesLine = dsss_build ~ " -test -uses=temp.uses " ~
+            std.string.join(files, " ");
+        saySystemDie(usesLine);
+        
+        // then read the uses
+        char[] uses = cast(char[]) std.file.read("temp.uses");
+        foreach (use; std.string.split(uses, "\n")) {
+            if (use.length == 0) continue;
+            if (use[$-1] == '\r') use = use[0 .. $-1];
+            if (use.length == 0) continue;
+            
+            if (use == "[USEDBY]") break;
+            if (use[0] == '[') continue;
+            
+            // OK, we're definitely reading a use - split by " <> "
+            char[][] useinfo = std.string.split(use, " <> ");
+            if (useinfo.length < 2) continue;
+            
+            // add the dep
+            deps ~= canonicalSource(useinfo[1], nconf);
+        }
+        
+        // delete the uses file
+        std.file.remove("temp.uses");
+    }
+    
+    return deps;
+}
+
+/** Canonicalize a dependency (.d -> source) */
+char[] canonicalSource(char[] origsrc, NetConfig nconf)
+{
+    char[] src = origsrc.dup;
+    
+    if ((src.length > 2 &&
+         std.string.tolower(src[$-2 .. $]) == ".d") ||
+        (src.length > 3 &&
+         std.string.tolower(src[$-3 .. $]) == ".di")) {
+        // convert to a proper source
+        if (src in nconf.deps &&
+            nconf.deps[src].length == 1) {
+            src = nconf.deps[src][0].dup;
+        } else {
+            src = "";
+        }
+    }
+    
+    return src;
+}
+
 /** Get the source for a given package
  * Returns true on success, false on failure
  * NOTE: Your chdir can change! */
-bool getSources(char[] pkg, NetConfig conf) {
+bool getSources(char[] pkg, NetConfig conf)
+{
     // 1) get source
     char[] srcFormat = conf.srcFormat[pkg];
     switch (srcFormat) {
@@ -214,8 +303,8 @@ bool getSources(char[] pkg, NetConfig conf) {
             write("src." ~ srcFormat, dlhttp.read());*/
                     
             // mango doesn't work properly (?)
-            systemOrDie("wget '" ~ conf.srcURL[pkg] ~ "' -O src." ~ srcFormat);
-                    
+            systemOrDie("wget -c '" ~ conf.srcURL[pkg] ~ "' -O src." ~ srcFormat);
+            
             // extract it
             switch (srcFormat) {
                 case "tar.gz":
