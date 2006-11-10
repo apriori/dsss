@@ -3,7 +3,6 @@ PREFIX=/usr
 all: dsss
 
 dsss: dsss_build/dsss_build
-	./dsss_build/dsss_build -exec getmango.d
 	./dsss_build/dsss_build -od. -Idsss_build sss/main.d -Tdsss
 	`pwd`/dsss build
 

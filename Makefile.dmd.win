@@ -4,7 +4,6 @@ MAKE=make
 all: dsss.exe
 
 dsss.exe: dsss_build\\dsss_build.exe
-	dsss_build\\dsss_build.exe -exec getmango.d
 	dsss_build\\dsss_build.exe -od. -Idsss_build sss\\main.d -Tdsss_int
 	dsss_int.exe build
 
