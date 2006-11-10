@@ -42,8 +42,8 @@ import sss.uninstall;
 import hcf.path;
 import hcf.process;
 
-import mango.http.client.HttpClient;
-import mango.http.client.HttpGet;
+/*import mango.http.client.HttpClient;
+import mango.http.client.HttpGet;*/
 
 /** The source of the sources list is defaulted here */
 private char[] srcSrc = "http://svn.dsource.org/projects/dsss/sources";
@@ -304,7 +304,7 @@ bool getSources(char[] pkg, NetConfig conf)
             // save it to a source file
             write("src." ~ srcFormat, dlhttp.read());*/
                     
-            // mango doesn't work properly (?)
+            // mango doesn't work properly for me :(
             systemOrDie("wget -c '" ~ conf.srcURL[pkg] ~ "' -O src." ~ srcFormat);
             
             // extract it
