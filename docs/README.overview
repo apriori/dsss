@@ -50,16 +50,19 @@ is necessary for the host system.
 Acquisition
 -----------
 
-DSSS has a central repository of sources for D software. It maintains a list of
-software available, and what packages/modules all available software provides.
-Because it maintains a list of packages and modules, dependencies for a tool
-can be installed as easily as:
+In the spirit of Perl's CPAN or Ruby's Gems, DSSS has a central repository of
+sources for D software. It maintains a list of software packages available,
+where they can be acquired, and what packages/modules they provide. Because it
+maintains a list of packages and modules, dependencies for a tool can be
+installed as easily as:
 $ dsss net deps
 
-DSSS will then trace all of the software's D dependencies, download them,
-compile them, and install them. This feature can of course also be used to
-install arbitrary software, such as:
+DSSS will then trace all of the software's D dependencies and install them.
+This feature can of course also be used to install arbitrary software, such as:
 $ dsss net install mango
+
+Upon either of these commands, DSSS will download the software from its
+upstream source, compile it, and install it.
 
 
 More Information
