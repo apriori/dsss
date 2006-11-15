@@ -1,0 +1,4 @@
+0.2 from 0.1:
+        - Support for subdir types in dsss.conf
+        - Support for mirrors
+        - $ETC_PREFIX

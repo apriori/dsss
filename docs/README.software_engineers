@@ -78,6 +78,8 @@ There are quite a few other settings supported, such as:
       * This is the /base/ prefix, so for example the module foo.bar will be
         installed to $INCLUDE_PREFIX/foo/bar.di
       * This directory can also be used for .d files.
+    * $ETC_PREFIX : The prefix to which configuration files are being
+      installed.
 * buildflags
   * Flags that will be added to the output to build/bud when building this
     section.
@@ -92,3 +94,16 @@ global_setting=0
 
 The important global settings are 'name' (which will otherwise be gleaned from
 the directory name) and 'version' (which will otherwise be set to 'latest').
+
+
+You can make 'special' build steps, which do not correspond to source files, by
+naming them prefixed with a +. For example:
+[+genSource]
+prebuild = gensource.d
+
+
+You can also recurse into subdirectories, by specifying the subdirectory as a
+section and setting the type to "subdir":
+[subtool]
+type = subdir
+
