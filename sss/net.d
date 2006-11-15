@@ -58,9 +58,11 @@ int net(char[][] args)
         if (!exists(srcListPrefix)) {
             // select a source list mirror
             char[][] mirrorList = std.string.split(
-                cast(char[]) std.file.read(etcPrefix ~ std.path.sep ~
-                                           "dsss" ~ std.path.sep ~
-                                           "list.list"),
+                std.string.replace(
+                    cast(char[]) std.file.read(etcPrefix ~ std.path.sep ~
+                                               "dsss" ~ std.path.sep ~
+                                               "list.list"),
+                    "\r", ""),
                 "\n");
             while (mirrorList[$-1] == "") mirrorList = mirrorList[0..$-1];
             
@@ -207,7 +209,9 @@ NetConfig ReadNetConfig()
     NetConfig conf = new NetConfig();
     
     // read in the main tool/dep/version list
-    char[] pkgslist = cast(char[]) std.file.read(srcListPrefix ~ std.path.sep ~ "pkgs.list");
+    char[] pkgslist = std.string.replace(
+        cast(char[]) std.file.read(srcListPrefix ~ std.path.sep ~ "pkgs.list"),
+        "\r", "");
     foreach (pkg; std.string.split(pkgslist, "\n")) {
         if (pkg.length == 0 || pkg[0] == '#') continue;
         
