@@ -38,7 +38,7 @@ import hcf.process;
 import sss.conf;
 
 /** Entry into the "install" command */
-int install(char[][] buildElems)
+int install(char[][] buildElems, char[][]* subManifest = null)
 {
     // get the configuration
     DSSSConf conf = readConfig(buildElems);
@@ -72,7 +72,7 @@ int install(char[][] buildElems)
         
         // do preinstall
         if ("preinstall" in settings) {
-            dsssScriptedStep(settings["preinstall"]);
+            manifest ~= dsssScriptedStep(settings["preinstall"]);
         }
         
         // figure out what it is
@@ -144,16 +144,27 @@ int install(char[][] buildElems)
             } else {
                 copyAndManifest(target ~ ".exe", binPrefix);
             }
+        } else if (type == "subdir") {
+            // recurse
+            char[] origcwd = getcwd();
+            chdir(build);
+            int installret = install(null, &manifest);
+            if (installret) return installret;
+            chdir(origcwd);
         }
         
         // do postinstall
         if ("postinstall" in settings) {
-            dsssScriptedStep(settings["postinstall"]);
+            manifest ~= dsssScriptedStep(settings["postinstall"]);
         }
         
         // install the manifest itself
-        mkdirP(manifestPrefix);
-        std.file.write(manifestFile, std.string.join(manifest, "\n") ~ "\n");
+        if (subManifest) {
+            (*subManifest) ~= manifest;
+        } else {
+            mkdirP(manifestPrefix);
+            std.file.write(manifestFile, std.string.join(manifest, "\n") ~ "\n");
+        }
         
         // extra line for clarity
         writefln("");

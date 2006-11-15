@@ -137,6 +137,15 @@ int distclean(DSSSConf conf = null)
             } else {
                 static assert(0);
             }
+            
+        } else if (type == "subdir") {
+            // recurse
+            char[] origcwd = getcwd();
+            chdir(build);
+            int cleanret = distclean();
+            if (cleanret) return cleanret;
+            chdir(origcwd);
+            
         }
         
         // do the postclean step

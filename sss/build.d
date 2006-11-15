@@ -145,6 +145,13 @@ version (build) {
             }
             
             writefln("");
+            
+        } else if (type == "subdir") {
+            // recurse
+            char[] origcwd = getcwd();
+            chdir(build);
+            int buildret = sss.build.build(null);
+            chdir(origcwd);
         }
     }
     
@@ -270,7 +277,7 @@ version (build) {
         }
     }
     
-    // 4) Binaries
+    // 4) Binaries and specials
     foreach (build; buildSources) {
         char[][char[]] settings = conf.settings[build];
         
@@ -318,11 +325,12 @@ version (build) {
             writefln("");
             
         } else if (type == "special") {
-            // special type, just do pre/post
+            // special type, do pre/post
             writefln("%s", target);
             if ("prebuild" in settings) {
                 dsssScriptedStep(settings["prebuild"]);
             }
+            
             if ("postbuild" in settings) {
                 dsssScriptedStep(settings["postbuild"]);
             }

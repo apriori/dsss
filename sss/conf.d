@@ -82,6 +82,9 @@ char[] includePrefix;
 /** The prefix to which manifests are installed */
 char[] manifestPrefix;
 
+/** The prefix to which configuration files are installed */
+char[] etcPrefix;
+
 /** The prefix to which the source list is downloaded */
 char[] srcListPrefix;
 
@@ -176,6 +179,8 @@ void getPrefix(char[] argvz)
         "share" ~ std.path.sep ~
         "dsss" ~ std.path.sep ~
         "manifest";
+    etcPrefix = forcePrefix ~ std.path.sep ~
+        "etc";
     srcListPrefix = forcePrefix ~ std.path.sep ~
         "share" ~ std.path.sep ~
         "dsss" ~ std.path.sep ~
@@ -190,6 +195,7 @@ void getPrefix(char[] argvz)
         setEnvVar("BIN_PREFIX", binPrefix);
         setEnvVar("LIB_PREFIX", libPrefix);
         setEnvVar("INCLUDE_PREFIX", includePrefix);
+        setEnvVar("ETC_PREFIX", etcPrefix);
         setEnvVar("EXE_EXT", "");
         
         // make sure components run with libraries, etc
@@ -209,6 +215,7 @@ void getPrefix(char[] argvz)
         setEnvVar("BIN_PREFIX", binPrefix);
         setEnvVar("LIB_PREFIX", libPrefix);
         setEnvVar("INCLUDE_PREFIX", includePrefix);
+        setEnvVar("ETC_PREFIX", etcPrefix);
         setEnvVar("EXE_EXT", ".exe");
         
         // path for both bin and lib
@@ -484,6 +491,38 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
                 
             // FIXME: guarantee that sections aren't repeated
                 
+        } else if (tokens.length == 3 &&
+                   tokens[1] == ":") {
+            // a command
+            if (tokens[0] == "warn") {
+                // a warning
+                writefln("WARNING: %s", tokens[2]);
+            } else if (tokens[0] == "error") {
+                // an error
+                writefln("ERROR: %s", tokens[2]);
+            }
+            
+        } else if (tokens.length == 3 &&
+                   tokens[1] == "=") {
+            // a setting
+            conf.settings[section][std.string.tolower(tokens[0])] = expandEnvVars(tokens[2]);
+                
+        } else if (tokens.length == 1 &&
+                   isalnum(tokens[0][0])) {
+            // a setting with no value
+            conf.settings[section][std.string.tolower(tokens[0])] = "";
+            
+        } else if (tokens.length == 4 &&
+                   tokens[1] == "+" &&
+                   tokens[2] == "=") {
+            // append to a setting
+            char[] setting = std.string.tolower(tokens[0]);
+            if (setting in conf.settings[section]) {
+                conf.settings[section][setting] ~= " " ~ expandEnvVars(tokens[3]);
+            } else {
+                conf.settings[section][setting] = expandEnvVars(tokens[3]);
+            }
+                
         } else if (tokens[0] == "version") {
             /* a version statement, must be of one form:
              *  * version(version) {
@@ -545,38 +584,6 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
                 closeScope();
             }
          
-        } else if (tokens.length == 3 &&
-                   tokens[1] == ":") {
-            // a command
-            if (tokens[0] == "warn") {
-                // a warning
-                writefln("WARNING: %s", tokens[2]);
-            } else if (tokens[0] == "error") {
-                // an error
-                writefln("ERROR: %s", tokens[2]);
-            }
-            
-        } else if (tokens.length == 3 &&
-                   tokens[1] == "=") {
-            // a setting
-            conf.settings[section][std.string.tolower(tokens[0])] = expandEnvVars(tokens[2]);
-                
-        } else if (tokens.length == 1 &&
-                   isalnum(tokens[0][0])) {
-            // a setting with no value
-            conf.settings[section][std.string.tolower(tokens[0])] = "";
-            
-        } else if (tokens.length == 4 &&
-                   tokens[1] == "+" &&
-                   tokens[2] == "=") {
-            // append to a setting
-            char[] setting = std.string.tolower(tokens[0]);
-            if (setting in conf.settings[section]) {
-                conf.settings[section][setting] ~= " " ~ expandEnvVars(tokens[3]);
-            } else {
-                conf.settings[section][setting] = expandEnvVars(tokens[3]);
-            }
-                
         } else if ((tokens.length == 1 &&
                     (tokens[0] == "}" ||
                      tokens[0] == "{")) ||
@@ -689,9 +696,13 @@ body {
     return files;
 }
 
-/** Perform a pre- or post- script step */
-void dsssScriptedStep(char[] step)
+/** Perform a pre- or post- script step. Returns a list of installed files (if
+ * applicable) */
+char[][] dsssScriptedStep(char[] step)
 {
+    // list of installed files
+    char[][] manifest;
+    
     // since parts of the script can potentially change the directory, store it
     char[] origcwd = getcwd();
     
@@ -723,11 +734,14 @@ void dsssScriptedStep(char[] step)
             
             if (slloc != -1) {
                 // path provided
-                copyInFile(comps[1][(slloc + 1) .. $],
-                               comps[2],
-                               comps[1][0 .. (slloc + 1)]);
-                } else {
-                    copyInFile(comps[1], comps[2]);
+                char[] f = comps[1][(slloc + 1) .. $];
+                copyInFile(f,
+                           comps[2],
+                           comps[1][0 .. (slloc + 1)]);
+                manifest ~= (comps[2] ~ std.path.sep ~ f);
+            } else {
+                copyInFile(comps[1], comps[2]);
+                manifest ~= (comps[2] ~ std.path.sep ~ comps[1]);
             }
          
         } else if (cmd.length > 3 &&
@@ -746,6 +760,8 @@ void dsssScriptedStep(char[] step)
     }
     
     chdir(origcwd);
+    
+    return manifest;
 }
 
 /** Get sources from a list of elements (sources or targets) */

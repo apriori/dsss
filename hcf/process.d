@@ -28,7 +28,8 @@
 
 module hcf.process;
 
-import std.process;
+public import std.process;
+
 import std.stdio;
 import std.stream;
 
@@ -257,6 +258,13 @@ void systemOrDie(char[] cmd)
     int res;
     res = system(cmd);
     if (res) exit(res);
+}
+
+/** system + output */
+int sayAndSystem(char[] cmd)
+{
+    writefln("+ %s", cmd);
+    return system(cmd);
 }
 
 /** systemOrDie + output */

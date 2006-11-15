@@ -28,11 +28,13 @@
 
 module sss.net;
 
+import std.cstream;
 import std.stdio;
 import std.string;
 import std.file;
 alias std.file.write write;
 import std.path;
+import std.random;
 
 import sss.build;
 import sss.conf;
@@ -45,20 +47,47 @@ import hcf.process;
 /*import mango.http.client.HttpClient;
 import mango.http.client.HttpGet;*/
 
-/** The source of the sources list is defaulted here */
-private char[] srcSrc = "http://svn.dsource.org/projects/dsss/sources";
-
 /** Entry to the "net" command */
 int net(char[][] args)
 {
     // first, make sure our sources list is up to date
-    if (!exists(srcListPrefix)) {
-        // check it out
-        saySystemDie("svn co " ~ srcSrc ~ " " ~ srcListPrefix);
-    } else {
-        // update it
-        // FIXME: this should not run every time
-        saySystemDie("svn up " ~ srcListPrefix);
+    static bool srcListUpdated = false;
+    if (!srcListUpdated) {
+        srcListUpdated = true;
+        
+        if (!exists(srcListPrefix)) {
+            // select a source list mirror
+            char[][] mirrorList = std.string.split(
+                cast(char[]) std.file.read(etcPrefix ~ std.path.sep ~
+                                           "dsss" ~ std.path.sep ~
+                                           "list.list"),
+                "\n");
+            while (mirrorList[$-1] == "") mirrorList = mirrorList[0..$-1];
+            
+            writefln("Please choose a mirror for the source list:");
+            writefln("(Note that you may choose another mirror at any time by removing the directory");
+            writefln("%s)", srcListPrefix);
+            writefln("");
+            
+            foreach (i, mirror; mirrorList) {
+                writefln("%d) %s", i + 1, mirror);
+            }
+            
+            // choose
+            int sel = -1;
+            char[] csel;
+            while (sel < 0 || sel >= mirrorList.length) {
+                csel = din.readLine();
+                sel = atoi(csel) - 1;
+            }
+            
+            // check it out
+            saySystemDie("svn co " ~ mirrorList[sel] ~ " " ~ srcListPrefix);
+        } else {
+            // update it
+            // FIXME: this should not run every time
+            saySystemDie("svn up " ~ srcListPrefix);
+        }
     }
     
     // load it
@@ -226,10 +255,18 @@ char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
     // then trace uses
     foreach (section; conf.sections) {
         char[][] files;
-        if (conf.settings[section]["type"] == "binary") {
+        char[] type = conf.settings[section]["type"];
+        if (type == "binary") {
             files ~= section;
-        } else {
+        } else if (type == "library") {
             files ~= targetToFiles(section, conf);
+        } else if (type == "subdir") {
+            // recurse
+            char[] origcwd = getcwd();
+            chdir(section);
+            deps ~= sourceToDeps(nconf);
+            chdir(origcwd);
+            continue;
         }
         
         // make a uses file
@@ -288,82 +325,106 @@ char[] canonicalSource(char[] origsrc, NetConfig nconf)
  * NOTE: Your chdir can change! */
 bool getSources(char[] pkg, NetConfig conf)
 {
-    // 1) get source
-    char[] srcFormat = conf.srcFormat[pkg];
-    switch (srcFormat) {
-        case "svn":
-            // Subversion, check it out
-            saySystemDie("svn co " ~ conf.srcURL[pkg]);
-            break;
-                    
-        default:
-        {
-            /* download ...
-            HttpGet dlhttp = new HttpGet(conf.srcURL[pkg]);
-                    
-            // save it to a source file
-            write("src." ~ srcFormat, dlhttp.read());*/
-                    
-            // mango doesn't work properly for me :(
-            systemOrDie("wget -c '" ~ conf.srcURL[pkg] ~ "' -O src." ~ srcFormat);
-            
-            // extract it
-            switch (srcFormat) {
-                case "tar.gz":
-                case "tgz":
-                    version (Windows) {
-                        // assume BsdTar
-                        systemOrDie("bsdtar -xf src." ~ srcFormat);
-                    } else {
-                        systemOrDie("gunzip -c src." ~ srcFormat ~ " | tar -xf -");
-                    }
-                    break;
-                            
-                case "tar.bz2":
-                    version (Windows) {
-                        // assume BsdTar
-                        systemOrDie("bsdtar -xf src.tar.bz2");
-                    } else {
-                        systemOrDie("bunzip2 -c src.tar.bz2 | tar -xf -");
-                    }
-                    break;
-                            
-                case "zip":
-                    version (Windows) {
-                        // assume BsdTar
-                        systemOrDie("bsdtar -xf src.zip");
-                    } else {
-                        // assume InfoZip
-                        systemOrDie("unzip src.zip");
-                    }
-                    break;
-                            
-                default:
-                    writefln("Unrecognized source format: %s", srcFormat);
-                    return false;
+    /// get sources from upstream, return false on failure
+    bool getUpstream() {
+        // 1) get source
+        char[] srcFormat = conf.srcFormat[pkg];
+        int res;
+        switch (srcFormat) {
+            case "svn":
+                // Subversion, check it out
+                res = sayAndSystem("svn co " ~ conf.srcURL[pkg]);
+                break;
+                
+            default:
+            {
+                /* download ...
+                HttpGet dlhttp = new HttpGet(conf.srcURL[pkg]);
+                
+                // save it to a source file
+                write("src." ~ srcFormat, dlhttp.read());*/
+                
+                // mango doesn't work properly for me :(
+                systemOrDie("wget -c '" ~ conf.srcURL[pkg] ~ "' -O src." ~ srcFormat);
+                
+                // extract it
+                switch (srcFormat) {
+                    case "tar.gz":
+                    case "tgz":
+                        version (Windows) {
+                            // assume BsdTar
+                            res = sayAndSystem("bsdtar -xf src." ~ srcFormat);
+                        } else {
+                            res = sayAndSystem("gunzip -c src." ~ srcFormat ~ " | tar -xf -");
+                        }
+                        break;
+                        
+                    case "tar.bz2":
+                        version (Windows) {
+                            // assume BsdTar
+                            res = sayAndSystem("bsdtar -xf src.tar.bz2");
+                        } else {
+                            res = sayAndSystem("bunzip2 -c src.tar.bz2 | tar -xf -");
+                        }
+                        break;
+                        
+                    case "zip":
+                        version (Windows) {
+                            // assume BsdTar
+                            res = sayAndSystem("bsdtar -xf src.zip");
+                        } else {
+                            // assume InfoZip
+                            res = sayAndSystem("unzip src.zip");
+                        }
+                        break;
+                        
+                    default:
+                        writefln("Unrecognized source format: %s", srcFormat);
+                        return false;
+                }
             }
         }
-    }
-            
-    // 2) apply patches
-    char[] srcDir = getcwd();
-    foreach (patch; conf.srcPatches[pkg]) {
-        char[][] pinfo = split(patch, ":");
-        char[] dir;
-        char[] pfile;
         
-        // split into dir:file or just file
-        if (pinfo.length < 2) {
-            dir = srcDir;
-            pfile = pinfo[0];
-        } else {
-            dir = pinfo[0];
-            pfile = pinfo[1];
+        if (res != 0) return false;
+        
+        // 2) apply patches
+        char[] srcDir = getcwd();
+        foreach (patch; conf.srcPatches[pkg]) {
+            char[][] pinfo = split(patch, ":");
+            char[] dir;
+            char[] pfile;
+            
+            // split into dir:file or just file
+            if (pinfo.length < 2) {
+                dir = srcDir;
+                pfile = pinfo[0];
+            } else {
+                dir = pinfo[0];
+                pfile = pinfo[1];
+            }
+            
+            chdir(dir);
+            system("patch -p0 -i " ~ srcListPrefix ~ std.path.sep ~ pfile);
+            chdir(srcDir);
         }
         
-        chdir(dir);
-        systemOrDie("patch -p0 -i " ~ srcListPrefix ~ std.path.sep ~ pfile);
-        chdir(srcDir);
+        return true;
+    }
+    
+    if (!getUpstream()) {
+        // failed to get from upstream, try a mirror
+        char[][] mirrorsList = std.string.split(
+            cast(char[]) std.file.read(
+                srcListPrefix ~ std.path.sep ~ "mirrors.list"
+                ),
+            "\n");
+        while (mirrorsList[$-1] == "") mirrorsList = mirrorsList[0..$-1];
+        
+        // choose a random one
+        uint sel = cast(uint) ((cast(double) mirrorsList.length) * (rand() / (uint.max + 1.0)));
+        char[] mirror = mirrorsList[sel];
+        
+        saySystemDie("svn co " ~ mirror ~ "/" ~ pkg ~ " .");
     }
     
     // 3) figure out where the source is and chdir
