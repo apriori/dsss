@@ -133,11 +133,12 @@ int net(char[][] args)
             // fall through
         }
         
+        case "fetch":
         case "install":
         {
             // download and install the specified package and its dependencies
             if (args.length < 2) {
-                writefln("The install command requires a package name as an argument.");
+                writefln("No package name specified.");
                 return 1;
             }
             
@@ -150,33 +151,60 @@ int net(char[][] args)
             // 1) make the source directory
             char[] srcDir = scratchPrefix ~ std.path.sep ~ "DSSS_" ~ args[1];
             mkdirP(srcDir);
-            writefln("Building in %s", srcDir);
+            writefln("Working in %s", srcDir);
             
             // 2) chdir
             char[] origcwd = getcwd();
             chdir(srcDir);
             
+            // make sure the directory gets removed
+            scope(exit) {
+                chdir(origcwd);
+                rmRecursive(srcDir);
+            }
+            
             // 3) get sources
             if (!getSources(args[1], conf)) return 1;
             srcDir = getcwd();
             
-            // 4) make sure it's not installed
-            uninstall(args[1..2]);
+            // if we're just fetching, make the archive
+            if (args[0] == "fetch") {
+                char[] archname = args[1] ~ ".tar.gz";
+                
+                // compress
+                version (Windows) {
+                    system("bsdtar zcf " ~ archname ~ " ~ std.string.join(
+                        listdir(".", RegExp(r"^[^\.]")),
+                        " "));
+                } else {
+                    system("tar -cf - * | gzip -c > " ~ archname);
+                }
+                
+                // move into place
+                std.file.rename(archname,
+                                origcwd ~ std.path.sep ~ archname);
+                
+                writefln("Archive %s created.", archname);
+                return 0;
+            } else {
+                // 4) make sure it's not installed
+                uninstall(args[1..2]);
             
-            // 5) install prerequisites
-            char[][] netcmd;
-            netcmd ~= "deps";
-            int netret = net(netcmd);
-            if (netret) return netret;
-            chdir(srcDir);
+                // 5) install prerequisites
+                char[][] netcmd;
+                netcmd ~= "deps";
+                int netret = net(netcmd);
+                if (netret) return netret;
+                chdir(srcDir);
             
-            // 6) build
-            DSSSConf dconf = readConfig(null);
-            int buildret = build(args[2..$], dconf);
-            if (buildret) return buildret;
+                // 6) build
+                DSSSConf dconf = readConfig(null);
+                int buildret = build(args[2..$], dconf);
+                if (buildret) return buildret;
             
-            // 7) install
-            return install(args[2..$]);
+                // 7) install
+                return install(args[2..$]);
+            }
         }
         
         default:

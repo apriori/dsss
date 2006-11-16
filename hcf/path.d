@@ -169,3 +169,21 @@ void mkdirP(char[] dir)
         }
     }
 }
+
+/** Remove a file or directory and all of its children */
+void rmRecursive(char[] name)
+{
+    if (isdir(name)) {
+        foreach (elem; listdir(name)) {
+            // don't delete . or ..
+            if (elem == "." ||
+                elem == "..") continue;
+            rmRecursive(elem);
+        }
+        
+        // remove the directory itself
+        rmdir(name);
+    } else {
+        std.file.remove(name);
+    }
+}
