@@ -173,7 +173,7 @@ int net(char[][] args)
                 
                 // compress
                 version (Windows) {
-                    system("bsdtar zcf " ~ archname ~ " ~ std.string.join(
+                    system("bsdtar zcf " ~ archname ~ " " ~ std.string.join(
                         listdir(".", RegExp(r"^[^\.]")),
                         " "));
                 } else {

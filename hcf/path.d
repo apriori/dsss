@@ -178,7 +178,7 @@ void rmRecursive(char[] name)
             // don't delete . or ..
             if (elem == "." ||
                 elem == "..") continue;
-            rmRecursive(elem);
+            rmRecursive(name ~ std.path.sep ~ elem);
         }
         
         // remove the directory itself
