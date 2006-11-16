@@ -55,7 +55,12 @@ int net(char[][] args)
     if (!srcListUpdated) {
         srcListUpdated = true;
         
-        if (!exists(srcListPrefix)) {
+        // check for cruft from pre-0.3 DSSS
+        if (exists(srcListPrefix ~ std.path.sep ~ ".svn")) {
+            rmRecursive(srcListPrefix);
+        }
+        
+        if (!exists(srcListPrefix ~ std.path.sep ~ "mirror")) {
             // select a source list mirror
             char[][] mirrorList = std.string.split(
                 std.string.replace(
@@ -66,29 +71,51 @@ int net(char[][] args)
                 "\n");
             while (mirrorList[$-1] == "") mirrorList = mirrorList[0..$-1];
             
-            writefln("Please choose a mirror for the source list:");
-            writefln("(Note that you may choose another mirror at any time by removing the directory");
-            writefln("%s)", srcListPrefix);
-            writefln("");
-            
-            foreach (i, mirror; mirrorList) {
-                writefln("%d) %s", i + 1, mirror);
-            }
-            
-            // choose
             int sel = -1;
-            char[] csel;
-            while (sel < 0 || sel >= mirrorList.length) {
-                csel = din.readLine();
-                sel = atoi(csel) - 1;
+            
+            if (mirrorList.length == 1) {
+                // easy choice :)
+                sel = 0;
+            } else {
+                writefln("Please choose a mirror for the source list:");
+                writefln("(Note that you may choose another mirror at any time by removing the directory");
+                writefln("%s)", srcListPrefix);
+                writefln("");
+                
+                foreach (i, mirror; mirrorList) {
+                    writefln("%d) %s", i + 1, mirror);
+                }
+                
+                // choose
+                char[] csel;
+                while (sel < 0 || sel >= mirrorList.length) {
+                    csel = din.readLine();
+                    sel = atoi(csel) - 1;
+                }
             }
             
-            // check it out
-            saySystemDie("svn co " ~ mirrorList[sel] ~ " " ~ srcListPrefix);
+            // get it
+            mkdirP(srcListPrefix);
+            std.file.write(srcListPrefix ~ std.path.sep ~ "mirror",
+                           mirrorList[sel]);
+            char[] mirror = cast(char[]) std.file.read(
+                srcListPrefix ~ std.path.sep ~ "mirror");
+            saySystemDie("curl " ~ mirror ~ "/source.list "
+                         "-o " ~ srcListPrefix ~ std.path.sep ~ "source.list");
+            saySystemDie("curl " ~ mirror ~ "/pkgs.list "
+                         "-o " ~ srcListPrefix ~ std.path.sep ~ "pkgs.list");
         } else {
-            // update it
-            // FIXME: this should not run every time
-            saySystemDie("svn up " ~ srcListPrefix);
+            char[] mirror = cast(char[]) std.file.read(
+                srcListPrefix ~ std.path.sep ~ "mirror");
+            char[] srcList = srcListPrefix ~ std.path.sep ~ "source.list";
+            char[] pkgsList = srcListPrefix ~ std.path.sep ~ "pkgs.list";
+            
+            saySystemDie("curl " ~ mirror ~ "/source.list "
+                         "-o " ~ srcList ~
+                         " -z " ~ srcList);
+            saySystemDie("curl " ~ mirror ~ "/pkgs.list "
+                         "-o " ~ pkgsList ~
+                         " -z " ~ pkgsList);
         }
     }
     
@@ -150,6 +177,7 @@ int net(char[][] args)
             
             // 1) make the source directory
             char[] srcDir = scratchPrefix ~ std.path.sep ~ "DSSS_" ~ args[1];
+            char[] tmpDir = srcDir;
             mkdirP(srcDir);
             writefln("Working in %s", srcDir);
             
@@ -160,7 +188,7 @@ int net(char[][] args)
             // make sure the directory gets removed
             scope(exit) {
                 chdir(origcwd);
-                rmRecursive(srcDir);
+                rmRecursive(tmpDir);
             }
             
             // 3) get sources
@@ -173,7 +201,7 @@ int net(char[][] args)
                 
                 // compress
                 version (Windows) {
-                    system("bsdtar zcf " ~ archname ~ " " ~ std.string.join(
+                    system("bsdtar -zcf " ~ archname ~ " " ~ std.string.join(
                         listdir(".", RegExp(r"^[^\.]")),
                         " "));
                 } else {
@@ -215,6 +243,9 @@ int net(char[][] args)
 
 /** Net config object */
 class NetConfig {
+    /** The mirror in use */
+    char[] mirror;
+    
     /** Versions of packages */
     char[][char[]] vers;
     
@@ -235,6 +266,9 @@ class NetConfig {
 NetConfig ReadNetConfig()
 {
     NetConfig conf = new NetConfig();
+    
+    // read in the mirror
+    conf.mirror = cast(char[]) std.file.read(srcListPrefix ~ std.path.sep ~ "mirror");
     
     // read in the main tool/dep/version list
     char[] pkgslist = std.string.replace(
@@ -377,7 +411,7 @@ bool getSources(char[] pkg, NetConfig conf)
                 write("src." ~ srcFormat, dlhttp.read());*/
                 
                 // mango doesn't work properly for me :(
-                systemOrDie("wget -c '" ~ conf.srcURL[pkg] ~ "' -O src." ~ srcFormat);
+                systemOrDie("curl " ~ conf.srcURL[pkg] ~ " -o src." ~ srcFormat);
                 
                 // extract it
                 switch (srcFormat) {
@@ -436,7 +470,14 @@ bool getSources(char[] pkg, NetConfig conf)
             }
             
             chdir(dir);
-            system("patch -p0 -i " ~ srcListPrefix ~ std.path.sep ~ pfile);
+            
+            // download the patch file
+            saySystemDie("curl " ~ conf.mirror ~ "/" ~ pfile ~
+                         " -o " ~ pfile);
+            
+            // install the patch
+            system("patch -p0 -i " ~ pfile);
+            
             chdir(srcDir);
         }
         
@@ -456,7 +497,15 @@ bool getSources(char[] pkg, NetConfig conf)
         uint sel = cast(uint) ((cast(double) mirrorsList.length) * (rand() / (uint.max + 1.0)));
         char[] mirror = mirrorsList[sel];
         
-        saySystemDie("svn co " ~ mirror ~ "/" ~ pkg ~ " .");
+        saySystemDie("curl " ~ mirror ~ "/" ~ pkg ~ ".tar.gz " ~
+                     "-o " ~ pkg ~ ".tar.gz");
+        
+        // extract
+        version (Windows) {
+            saySystemDie("bsdtar -xf " ~ pkg ~ ".tar.gz");
+        } else {
+            saySystemDie("gunzip -c " ~ pkg ~ ".tar.gz | tar -xf -");
+        }
     }
     
     // 3) figure out where the source is and chdir
