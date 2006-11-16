@@ -31,10 +31,12 @@ module sss.net;
 import std.cstream;
 import std.stdio;
 import std.string;
+alias std.string.split split;
 import std.file;
 alias std.file.write write;
 import std.path;
 import std.random;
+import std.regexp;
 
 import sss.build;
 import sss.conf;
