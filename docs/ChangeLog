@@ -1,3 +1,10 @@
+0.3 from 0.2:
+        - Switched to curl instead of wget, due to curl's superior support for
+          updates based on time.
+        - dsss net fetch command implemented
+        - SVN-based source list system swapped out for an HTTP-based system
+          (makes a number of things more efficient)
+
 0.2 from 0.1:
         - Support for subdir types in dsss.conf
         - Support for mirrors

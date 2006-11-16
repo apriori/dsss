@@ -1,0 +1,4 @@
+* Generate native packages from D source
+* Support for cross-compilation
+* Generate documentation for libraries at build-time
+* Improved documentation
