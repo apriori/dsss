@@ -2,10 +2,13 @@ Due to bootstrapping and platform differences, installing DSSS from source can
 be a little bit complicated, but if you follow this list of steps it should
 work fine:
 
-1) If you currently have DSSS installed, UNINSTALL IT. To do this easily, just
+1) Get a D compiler. DMD version 0.166 or newer should work, GDC 0.20 (or the
+   latest snapshot until 0.20 is released) should work.
+
+2) If you currently have DSSS installed, UNINSTALL IT. To do this easily, just
    use the command 'dsss uninstall dsss'
 
-2) Use make to build DSSS with the appropriate Makefile. If you're using GDC
+3) Use make to build DSSS with the appropriate Makefile. If you're using GDC
    use Makefile.gdc.posix, if you're using DMD on Windows use Makefile.dmd.win,
    if you're using DMD on GNU/Linux use Makefile.dmd.posix. There is not
    presently a Makefile for GDC on Windows, I believe Makefile.gdc.posix should
@@ -14,7 +17,7 @@ work fine:
    To use make with a specified Makefile (in this example, Makefile.gdc.posix):
    $ make -f Makefile.gdc.posix
 
-3) Install DSSS to whatever directory you prefer. On Unix-like systems, a
+4) Install DSSS to whatever directory you prefer. On Unix-like systems, a
    common choice would be /usr, or /opt/d. You can also install it into your
    home directory. On Windows, a path like C:\DSSS or just C:\D is sensible.
 
@@ -25,7 +28,7 @@ work fine:
    To install DSSS to the directory you've chosen on Windows:
    > dsss install --prefix=<chosen directory>
 
-4) Add DSSS' "bin" directory to your PATH environment variable. On Unix (with
+5) Add DSSS' "bin" directory to your PATH environment variable. On Unix (with
    bash):
    $ export PATH="<chosen directory>/bin:$PATH"
    On Windows:
