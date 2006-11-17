@@ -62,6 +62,8 @@ int net(char[][] args)
             rmRecursive(srcListPrefix);
         }
         
+        writefln("Synchronizing...");
+        
         if (!exists(srcListPrefix ~ std.path.sep ~ "mirror")) {
             // select a source list mirror
             char[][] mirrorList = std.string.split(
@@ -102,12 +104,12 @@ int net(char[][] args)
                            mirrorList[sel]);
             char[] mirror = cast(char[]) std.file.read(
                 srcListPrefix ~ std.path.sep ~ "mirror");
-            saySystemDie("curl " ~ mirror ~ "/source.list "
-                         "-o " ~ srcListPrefix ~ std.path.sep ~ "source.list");
-            saySystemDie("curl " ~ mirror ~ "/pkgs.list "
-                         "-o " ~ srcListPrefix ~ std.path.sep ~ "pkgs.list");
-            saySystemDie("curl " ~ mirror ~ "/mirrors.list "
-                         "-o " ~ srcListPrefix ~ std.path.sep ~ "mirrors.list");
+            systemOrDie("curl -s " ~ mirror ~ "/source.list "
+                        "-o " ~ srcListPrefix ~ std.path.sep ~ "source.list");
+            systemOrDie("curl -s " ~ mirror ~ "/pkgs.list "
+                        "-o " ~ srcListPrefix ~ std.path.sep ~ "pkgs.list");
+            systemOrDie("curl -s " ~ mirror ~ "/mirrors.list "
+                        "-o " ~ srcListPrefix ~ std.path.sep ~ "mirrors.list");
         } else {
             char[] mirror = cast(char[]) std.file.read(
                 srcListPrefix ~ std.path.sep ~ "mirror");
@@ -115,15 +117,15 @@ int net(char[][] args)
             char[] pkgsList = srcListPrefix ~ std.path.sep ~ "pkgs.list";
             char[] mirrorsList = srcListPrefix ~ std.path.sep ~ "mirrors.list";
             
-            saySystemDie("curl " ~ mirror ~ "/source.list "
-                         "-o " ~ srcList ~
-                         " -z " ~ srcList);
-            saySystemDie("curl " ~ mirror ~ "/pkgs.list "
-                         "-o " ~ pkgsList ~
-                         " -z " ~ pkgsList);
-            saySystemDie("curl " ~ mirror ~ "/mirrors.list "
-                         "-o " ~ mirrorsList ~
-                         " -z " ~ mirrorsList);
+            systemOrDie("curl -s " ~ mirror ~ "/source.list "
+                        "-o " ~ srcList ~
+                        " -z " ~ srcList);
+            systemOrDie("curl -s " ~ mirror ~ "/pkgs.list "
+                        "-o " ~ pkgsList ~
+                        " -z " ~ pkgsList);
+            systemOrDie("curl -s " ~ mirror ~ "/mirrors.list "
+                        "-o " ~ mirrorsList ~
+                        " -z " ~ mirrorsList);
         }
     }
     
@@ -241,6 +243,32 @@ int net(char[][] args)
                 // 7) install
                 return install(args[2..$]);
             }
+        }
+        
+        case "list":
+        {
+            // Just list installable packages
+            foreach (pkg; conf.srcURL.keys.sort) {
+                writefln("%s", pkg);
+            }
+            return 0;
+        }
+        
+        case "search":
+        {
+            // List matching packages
+            if (args.length < 2) {
+                writefln("Search for what?");
+                return 1;
+            }
+            
+            foreach (pkg; conf.srcURL.keys.sort) {
+                if (std.regexp.find(pkg, args[1]) != -1) {
+                    writefln("%s", pkg);
+                }
+            }
+            
+            return 0;
         }
         
         default:

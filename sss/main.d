@@ -313,7 +313,9 @@ Usage: dsss [dsss options] <command> [command options]
     deps:    Install (from the network source) dependencies of the present
              package
     install: Install a package via the network source
-    fetch:   Fetch but do not compile or install a package`
+    fetch:   Fetch but do not compile or install a package
+    list:    List all installable packages
+    search:  Find an installable package by name`
             );
 
         
