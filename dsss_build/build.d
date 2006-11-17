@@ -143,6 +143,7 @@ private{
             string vConfigSep = ";";
             string vLibrarian = `lib.exe`;
             string vLibrarianOpts = `-c -p256`;
+            string vPostLibrarian = ``;
             bool   vShLibraries = false;
             string vShLibrarian = "";
             string vShLibrarianOpts = "";
@@ -171,6 +172,7 @@ private{
             string vConfigSep = ":";
             string vLibrarian = `ar`;
             string vLibrarianOpts = `-r`;
+            string vPostLibrarian = `ranlib`;
             bool   vShLibraries = false;
             string vShLibrarian = "";
             string vShLibrarianOpts = "";
@@ -207,6 +209,7 @@ private{
             string vConfigSep = ";";
             string vLibrarian = `ar.exe`;
             string vLibrarianOpts = `-c`;
+            string vPostLibrarian = `ranlib.exe`;
             bool   vShLibraries = false;
             string vShLibrarian = "";
             string vShLibrarianOpts = "";
@@ -233,6 +236,7 @@ private{
             string vConfigSep = ":";
             string vLibrarian = `ar`;
             string vLibrarianOpts = `-r`;
+            string vPostLibrarian = `ranlib`;
             bool   vShLibraries = true;
             string vShLibrarian = `gcc`;
             string vShLibrarianOpts = `-shared`;
@@ -1399,6 +1403,18 @@ int Build()
             }
 
             lRunResult = util.fileex.RunCommand(vLibrarianPath ~ vLibrarian, lCommand);
+            
+            // run the post-librarian
+            if (vPostLibrarian != "") {
+                version(BuildVerbose)
+                {
+                    // FIXME: this verbosity should include shared librarian
+                    if (vVerbose == True)
+                        std.stdio.writefln("Librarian with ..........\n%s\n", lTargetName);
+                }
+                
+                lRunResult = util.fileex.RunCommand(vPostLibrarian, lTargetName);
+            }
         }
     }
 
