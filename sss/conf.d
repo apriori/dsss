@@ -711,8 +711,8 @@ char[][] dsssScriptedStep(char[] step)
     
     foreach (cmd; cmds) {
         // clean cmd
-        while (iswhite(cmd[0])) cmd = cmd[1..$];
-        while (iswhite(cmd[$-1])) cmd = cmd[0..($-1)];
+        while (cmd.length > 0 && iswhite(cmd[0])) cmd = cmd[1..$];
+        while (cmd.length > 0 && iswhite(cmd[$-1])) cmd = cmd[0..($-1)];
         writefln("Command: %s", cmd);
         
         // run it
