@@ -41,6 +41,8 @@ import sss.install;
 import sss.net;
 import sss.uninstall;
 
+const char[] DSSS_VERSION = "0.4";
+
 private {
     /** Possible commands */
     enum cmd_t {
@@ -251,7 +253,8 @@ void usage()
 {
     if (command == cmd_t.NONE) {
         writefln(
-`Usage: dsss [dsss options] <command> [command options]
+`DSSS version ` ~ DSSS_VERSION ~ `
+Usage: dsss [dsss options] <command> [command options]
   DSSS Options:
     --help|-h: Display this help.
   Commands:
