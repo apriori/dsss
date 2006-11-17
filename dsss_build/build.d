@@ -152,8 +152,6 @@ private{
             string vSymInfoSwitch = "/co";
             string vOutFileSwitch = "-of";
             string vLinkLibSwitch = "";
-            string vStartLibsSwitch = "";
-            string vEndLibsSwitch = "";
         }
 
         version(Posix) {
@@ -182,8 +180,6 @@ private{
             string vSymInfoSwitch = "-g";
             string vOutFileSwitch = "-o ";
             string vLinkLibSwitch = "-l";
-            string vStartLibsSwitch = "-Wl,--start-group";
-            string vEndLibsSwitch = "-Wl,--end-group";
         }
 
         string     vVersionSwitch = "-version";
@@ -215,12 +211,9 @@ private{
             string vShLibrarian = "";
             string vShLibrarianOpts = "";
             string vShLibrarianOutFileSwitch = "";
-            string vStartLibsSwitch = "-Wl,--start-group";
             string vLinkLibSwitch = "-l";
-            string vEndLibsSwitch = "-Wl,--end-group";
             string vHomePathId = "HOME";
             string vEtcPath    = "";
-            string vOutFileSwitch = "-o ";
         }
 
         version(Posix) {
@@ -244,13 +237,12 @@ private{
             string vShLibrarian = `gcc`;
             string vShLibrarianOpts = `-shared`;
             string vShLibrarianOutFileSwitch = `-o `;
-            string vStartLibsSwitch = "-Wl,--start-group";
             string vLinkLibSwitch = "-l";
-            string vEndLibsSwitch = "-Wl,--end-group";
             string vHomePathId = "HOME";
             string vEtcPath    = "/etc/";
-            string vOutFileSwitch = "-rdynamic -o ";
         }
+        
+        string     vOutFileSwitch = "-o ";
         string     vVersionSwitch = "-fversion";
         string     vDebugSwitch = "-fdebug";
         string[]   vCompilerDefs;
@@ -1223,14 +1215,13 @@ int Build()
 
                 // (4) Gather the libraries names.
                 // Include the default libraries first.
-                lCommandLine ~= vStartLibsSwitch ~ "\n";
+                lLibraryFiles = lLibraryFiles.reverse;
                 if (vLibraryAction != LibOpt.Shared)
                     lLibraryFiles = vDefaultLibs ~ lLibraryFiles;
-                foreach( string lLib; lLibraryFiles)
+                foreach( string lLib; lLibraryFiles.reverse)
                 {
                     lCommandLine ~= vLinkLibSwitch ~ util.str.enquote(lLib) ~ "\n";
                 }
-                lCommandLine ~= vEndLibsSwitch ~ "\n";
 
                 if (vLibPaths.length > 1)
                 {

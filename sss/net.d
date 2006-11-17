@@ -106,11 +106,14 @@ int net(char[][] args)
                          "-o " ~ srcListPrefix ~ std.path.sep ~ "source.list");
             saySystemDie("curl " ~ mirror ~ "/pkgs.list "
                          "-o " ~ srcListPrefix ~ std.path.sep ~ "pkgs.list");
+            saySystemDie("curl " ~ mirror ~ "/mirrors.list "
+                         "-o " ~ srcListPrefix ~ std.path.sep ~ "mirrors.list");
         } else {
             char[] mirror = cast(char[]) std.file.read(
                 srcListPrefix ~ std.path.sep ~ "mirror");
             char[] srcList = srcListPrefix ~ std.path.sep ~ "source.list";
             char[] pkgsList = srcListPrefix ~ std.path.sep ~ "pkgs.list";
+            char[] mirrorsList = srcListPrefix ~ std.path.sep ~ "mirrors.list";
             
             saySystemDie("curl " ~ mirror ~ "/source.list "
                          "-o " ~ srcList ~
@@ -118,6 +121,9 @@ int net(char[][] args)
             saySystemDie("curl " ~ mirror ~ "/pkgs.list "
                          "-o " ~ pkgsList ~
                          " -z " ~ pkgsList);
+            saySystemDie("curl " ~ mirror ~ "/mirrors.list "
+                         "-o " ~ mirrorsList ~
+                         " -z " ~ mirrorsList);
         }
     }
     
@@ -495,18 +501,21 @@ bool getSources(char[] pkg, NetConfig conf)
             "\n");
         while (mirrorsList[$-1] == "") mirrorsList = mirrorsList[0..$-1];
         
-        // choose a random one
-        uint sel = cast(uint) ((cast(double) mirrorsList.length) * (rand() / (uint.max + 1.0)));
-        char[] mirror = mirrorsList[sel];
-        
-        saySystemDie("curl " ~ mirror ~ "/" ~ pkg ~ ".tar.gz " ~
-                     "-o " ~ pkg ~ ".tar.gz");
-        
-        // extract
-        version (Windows) {
-            saySystemDie("bsdtar -xf " ~ pkg ~ ".tar.gz");
-        } else {
-            saySystemDie("gunzip -c " ~ pkg ~ ".tar.gz | tar -xf -");
+        // fail with zero mirrors
+        if (mirrorsList.length > 0) {
+            // choose a random one
+            uint sel = cast(uint) ((cast(double) mirrorsList.length) * (rand() / (uint.max + 1.0)));
+            char[] mirror = mirrorsList[sel];
+            
+            saySystemDie("curl " ~ mirror ~ "/" ~ pkg ~ ".tar.gz " ~
+                         "-o " ~ pkg ~ ".tar.gz");
+            
+            // extract
+            version (Windows) {
+                saySystemDie("bsdtar -xf " ~ pkg ~ ".tar.gz");
+            } else {
+                saySystemDie("gunzip -c " ~ pkg ~ ".tar.gz | tar -xf -");
+            }
         }
     }
     
