@@ -1,0 +1,63 @@
+This document describes the general use of DSSS.
+
+
+Building Software with DSSS
+---------------------------
+
+Most D software can be built with DSSS, but if it hasn't been set up for DSSS
+the process is more complicated. To make things simple, we assume that the
+software you're trying to compile has already been set up to use DSSS - if it
+has not, read README.software_engineers.
+
+Building software is quite easy. You simply have to extract the sources, and
+change your directory to that of the sources, then invoke DSSS:
+$ dsss build
+
+DSSS will then proceed to build the software. 'dsss build' has several options,
+but they're generally only useful for software distribution maintainers. You
+can attain more information on them with the command:
+$ dsss build --help
+
+You can make DSSS remove all of the intermediate files it created, leaving only
+the fully-compiled binaries and libraries, with the command:
+$ dsss clean
+
+Finally, you can cause DSSS to remove /all/ compiled files, essentially leaving
+the source directory as it was before DSSS was used at all, with the command:
+$ dsss distbuild
+
+
+Installing Software with DSSS
+-----------------------------
+
+Some software can be used directly after building, but most software, libraries
+in particular, expect to be installed somewhere. DSSS can install software to
+any directory you choose, but will default to its own directory. After
+building, to install software to the default directory (provided by DSSS),
+invoke DSSS with the command:
+$ dsss install
+
+If you'd like to install the software to some other directory, you can specify
+that directory with the "--prefix" option to DSSS, like so:
+$ dsss install --prefix=<directory>
+
+You can also uninstall previously installed software. For example, to uninstall
+the hypothetical package "dhello":
+$ dsss uninstall dhello
+
+
+Acquiring Software with DSSS
+----------------------------
+
+A very convenient feature of DSSS is its ability to install software from the
+Internet. To install the hypothetical package "dhello" from DSSS' Internet
+repository, use the command:
+$ dsss net install dhello
+
+Furthermore, DSSS can, from a source directory, install all of the dependencies
+of that source. This allows developers to not concern themselves with whether
+the dependencies for their software is installed, or where the sources come
+from. To install the dependencies for the software you're building, just invoke
+DSSS with the command:
+$ dsss net deps
+
