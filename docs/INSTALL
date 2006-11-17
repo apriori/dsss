@@ -11,6 +11,9 @@ work fine:
    presently a Makefile for GDC on Windows, I believe Makefile.gdc.posix should
    work so long as you have MSYS installed.
 
+   To use make with a specified Makefile (in this example, Makefile.gdc.posix):
+   $ make -f Makefile.gdc.posix
+
 3) Install DSSS to whatever directory you prefer. On Unix-like systems, a
    common choice would be /usr, or /opt/d. You can also install it into your
    home directory. On Windows, a path like C:\DSSS or just C:\D is sensible.
