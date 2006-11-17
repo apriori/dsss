@@ -22,7 +22,7 @@ work fine:
    home directory. On Windows, a path like C:\DSSS or just C:\D is sensible.
 
    To install DSSS to the directory you've chosen on Unix (this may require you
-   to become root):
+   to become root, depending on what directory you've chosen):
    $ ./dsss install --prefix=<chosen directory>
 
    To install DSSS to the directory you've chosen on Windows:
