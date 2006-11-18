@@ -918,7 +918,7 @@ void copyInFile(char[] file, char[] prefix, char[] from = "")
     writefln("+ copying %s", file);
     version (Posix) {
         // preserve permissions
-        saySystemDie("cp -af " ~ from ~ file ~ " " ~ prefix ~ std.path.sep ~ file);
+        saySystemDie("cp -fpRL " ~ from ~ file ~ " " ~ prefix ~ std.path.sep ~ file);
     } else {
         copy(from ~ file, prefix ~ std.path.sep ~ file);
     }

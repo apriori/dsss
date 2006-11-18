@@ -36,6 +36,10 @@ import std.string;
 
 import std.c.stdlib;
 
+version (Windows) {
+    import bcd.windows.windows;
+}
+
 /** Get the system PATH */
 char[][] getPath()
 {
@@ -173,6 +177,13 @@ void mkdirP(char[] dir)
 /** Remove a file or directory and all of its children */
 void rmRecursive(char[] name)
 {
+    // can only delete writable files on Windows
+    version (Windows) {
+        SetFileAttributesA(toStringz(name),
+                           GetFileAttributesA(toStringz(name)) &
+                           ~FILE_ATTRIBUTE_READONLY);
+    }
+    
     if (isdir(name)) {
         foreach (elem; listdir(name)) {
             // don't delete . or ..
