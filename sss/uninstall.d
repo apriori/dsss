@@ -67,3 +67,17 @@ int uninstall(char[][] toolList)
     
     return 0;
 }
+
+/** Entry to the "installed" function */
+int installed()
+{
+    foreach (pkg; listdir(manifestPrefix).sort)
+    {
+        if (pkg.length < 9 || pkg[$-9 .. $]  != ".manifest") continue;
+        pkg = pkg[0 .. $-9];
+        
+        writefln("%s", pkg);
+    }
+    
+    return 0;
+}

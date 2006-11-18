@@ -511,6 +511,11 @@ bool getSources(char[] pkg, NetConfig conf)
             saySystemDie("curl " ~ conf.mirror ~ "/" ~ pfile ~
                          " -o " ~ pfile);
             
+            // convert it to DOS line endings if necessary
+            version (Windows) {
+                saySystemDie("unix2dos " ~ pfile);
+            }
+            
             // install the patch
             system("patch -p0 -i " ~ pfile);
             

@@ -52,6 +52,7 @@ private {
             DISTCLEAN,
             INSTALL,
             UNINSTALL,
+            INSTALLED,
             NET,
             GENCONFIG
     }
@@ -127,6 +128,10 @@ int main(char[][] args)
                 commandSet = true;
                 command = cmd_t.UNINSTALL;
                 
+            } else if (arg == "installed") {
+                commandSet = true;
+                command = cmd_t.INSTALLED;
+                
             } else if (arg == "net") {
                 commandSet = true;
                 command = cmd_t.NET;
@@ -152,7 +157,8 @@ int main(char[][] args)
             }
             
         } else if (command == cmd_t.CLEAN ||
-                   command == cmd_t.DISTCLEAN) {
+                   command == cmd_t.DISTCLEAN ||
+                   command == cmd_t.INSTALLED) {
             /* commands that take no options whatsoever */
             if (argIsHelp()) {
                 usage();
@@ -237,6 +243,10 @@ int main(char[][] args)
             return sss.uninstall.uninstall(buildElems);
             break;
             
+        case cmd_t.INSTALLED:
+            return sss.uninstall.installed();
+            break;
+            
         case cmd_t.NET:
             return sss.net.net(buildElems);
             break;
@@ -263,6 +273,7 @@ Usage: dsss [dsss options] <command> [command options]
     distclean: clean up all files from all or some builds
     install:   install all or some binaries or libraries
     uninstall: uninstall a specified tool or library
+    installed: list installed software
     net:       Internet-based installation and package management
     genconfig: generate a config file
   Each command has its own set of options, which are not listed here. To list
@@ -306,16 +317,21 @@ Usage: dsss [dsss options] <command> [command options]
     [none yet]`
             );
         
+    } else if (command == cmd_t.INSTALLED) {
+        writefln(
+`Usage: dsss [dsss options] installed`
+            );
+        
     } else if (command == cmd_t.NET) {
         writefln(
 `Usage: dsss [dsss options] net <net command> <package name>
   Net Commands:
-    deps:    Install (from the network source) dependencies of the present
+    deps:    install (from the network source) dependencies of the present
              package
-    install: Install a package via the network source
-    fetch:   Fetch but do not compile or install a package
-    list:    List all installable packages
-    search:  Find an installable package by name`
+    install: install a package via the network source
+    fetch:   fetch but do not compile or install a package
+    list:    list all installable packages
+    search:  find an installable package by name`
             );
 
         
