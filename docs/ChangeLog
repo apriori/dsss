@@ -1,11 +1,23 @@
+SVN from 0.3:
+        - Fixed a bug causing DSSS not to download mirrors.list (which was
+          fairly docile since there are no working mirrors yet)
+        - Modified to work properly on Mac OS X (hopefully)
+        - Wrote simple install and use documents.
+        - Added version output to the --help output.
+        - dsss net list command implemented.
+        - dsss net search command implemented.
+        - dsss installed command implemented.
+        - unix2dos is now used for all patches on Windows, due to a bug (of
+          sorts) in GNU patch on Windows.
+
 0.3 from 0.2:
         - Switched to curl instead of wget, due to curl's superior support for
           updates based on time.
-        - dsss net fetch command implemented
+        - dsss net fetch command implemented.
         - SVN-based source list system swapped out for an HTTP-based system
           (makes a number of things more efficient)
 
 0.2 from 0.1:
-        - Support for subdir types in dsss.conf
-        - Support for mirrors
+        - Support for subdir types in dsss.conf.
+        - Support for mirrors.
         - $ETC_PREFIX
