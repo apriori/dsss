@@ -1,4 +1,9 @@
-SVN from 0.3:
+0.5 from 0.4:
+        - Fixed rmRecursive to work on Windows.
+        - Fixed installation to work on Mac OS X.
+        - Fixed dependency tracking to work for software with special sections.
+
+0.4 from 0.3:
         - Fixed a bug causing DSSS not to download mirrors.list (which was
           fairly docile since there are no working mirrors yet)
         - Modified to work properly on Mac OS X (hopefully)

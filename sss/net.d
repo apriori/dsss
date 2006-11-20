@@ -369,6 +369,9 @@ char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
             deps ~= sourceToDeps(nconf);
             chdir(origcwd);
             continue;
+        } else {
+            // ignore
+            continue;
         }
         
         // make a uses file
