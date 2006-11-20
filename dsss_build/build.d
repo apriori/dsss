@@ -1219,10 +1219,13 @@ int Build()
 
                 // (4) Gather the libraries names.
                 // Include the default libraries first.
-                lLibraryFiles = lLibraryFiles.reverse;
                 if (vLibraryAction != LibOpt.Shared)
                     lLibraryFiles = vDefaultLibs ~ lLibraryFiles;
-                foreach( string lLib; lLibraryFiles.reverse)
+                // No, I don't understand why this is necessary
+                version (DigitalMars) {
+                    lLibraryFiles = lLibraryFiles.reverse;
+                }
+                foreach( string lLib; lLibraryFiles)
                 {
                     lCommandLine ~= vLinkLibSwitch ~ util.str.enquote(lLib) ~ "\n";
                 }
