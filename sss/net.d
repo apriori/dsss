@@ -104,11 +104,11 @@ int net(char[][] args)
                            mirrorList[sel]);
             char[] mirror = cast(char[]) std.file.read(
                 srcListPrefix ~ std.path.sep ~ "mirror");
-            systemOrDie("curl -sx " ~ mirror ~ "/source.list "
+            systemOrDie("curl -s -k " ~ mirror ~ "/source.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "source.list");
-            systemOrDie("curl -sx " ~ mirror ~ "/pkgs.list "
+            systemOrDie("curl -s -k " ~ mirror ~ "/pkgs.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "pkgs.list");
-            systemOrDie("curl -sx " ~ mirror ~ "/mirrors.list "
+            systemOrDie("curl -s -k " ~ mirror ~ "/mirrors.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "mirrors.list");
         } else {
             char[] mirror = cast(char[]) std.file.read(
@@ -117,13 +117,13 @@ int net(char[][] args)
             char[] pkgsList = srcListPrefix ~ std.path.sep ~ "pkgs.list";
             char[] mirrorsList = srcListPrefix ~ std.path.sep ~ "mirrors.list";
             
-            systemOrDie("curl -sx " ~ mirror ~ "/source.list "
+            systemOrDie("curl -s -k " ~ mirror ~ "/source.list "
                         "-o " ~ srcList ~
                         " -z " ~ srcList);
-            systemOrDie("curl -sx " ~ mirror ~ "/pkgs.list "
+            systemOrDie("curl -s -k " ~ mirror ~ "/pkgs.list "
                         "-o " ~ pkgsList ~
                         " -z " ~ pkgsList);
-            systemOrDie("curl -sx " ~ mirror ~ "/mirrors.list "
+            systemOrDie("curl -s -k " ~ mirror ~ "/mirrors.list "
                         "-o " ~ mirrorsList ~
                         " -z " ~ mirrorsList);
         }
@@ -450,7 +450,7 @@ bool getSources(char[] pkg, NetConfig conf)
                 write("src." ~ srcFormat, dlhttp.read());*/
                 
                 // mango doesn't work properly for me :(
-                systemOrDie("curl -x " ~ conf.srcURL[pkg] ~ " -o src." ~ srcFormat);
+                systemOrDie("curl -k " ~ conf.srcURL[pkg] ~ " -o src." ~ srcFormat);
                 
                 // extract it
                 switch (srcFormat) {
@@ -514,7 +514,7 @@ bool getSources(char[] pkg, NetConfig conf)
             chdir(dir);
             
             // download the patch file
-            saySystemDie("curl -x " ~ conf.mirror ~ "/" ~ pfile ~
+            saySystemDie("curl -k " ~ conf.mirror ~ "/" ~ pfile ~
                          " -o " ~ pfile);
             
             // convert it to DOS line endings if necessary
@@ -546,7 +546,7 @@ bool getSources(char[] pkg, NetConfig conf)
             uint sel = cast(uint) ((cast(double) mirrorsList.length) * (rand() / (uint.max + 1.0)));
             char[] mirror = mirrorsList[sel];
             
-            saySystemDie("curl -x " ~ mirror ~ "/" ~ pkg ~ ".tar.gz " ~
+            saySystemDie("curl -k " ~ mirror ~ "/" ~ pkg ~ ".tar.gz " ~
                          "-o " ~ pkg ~ ".tar.gz");
             
             // extract
