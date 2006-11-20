@@ -104,11 +104,11 @@ int net(char[][] args)
                            mirrorList[sel]);
             char[] mirror = cast(char[]) std.file.read(
                 srcListPrefix ~ std.path.sep ~ "mirror");
-            systemOrDie("curl -s " ~ mirror ~ "/source.list "
+            systemOrDie("curl -sx " ~ mirror ~ "/source.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "source.list");
-            systemOrDie("curl -s " ~ mirror ~ "/pkgs.list "
+            systemOrDie("curl -sx " ~ mirror ~ "/pkgs.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "pkgs.list");
-            systemOrDie("curl -s " ~ mirror ~ "/mirrors.list "
+            systemOrDie("curl -sx " ~ mirror ~ "/mirrors.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "mirrors.list");
         } else {
             char[] mirror = cast(char[]) std.file.read(
@@ -117,13 +117,13 @@ int net(char[][] args)
             char[] pkgsList = srcListPrefix ~ std.path.sep ~ "pkgs.list";
             char[] mirrorsList = srcListPrefix ~ std.path.sep ~ "mirrors.list";
             
-            systemOrDie("curl -s " ~ mirror ~ "/source.list "
+            systemOrDie("curl -sx " ~ mirror ~ "/source.list "
                         "-o " ~ srcList ~
                         " -z " ~ srcList);
-            systemOrDie("curl -s " ~ mirror ~ "/pkgs.list "
+            systemOrDie("curl -sx " ~ mirror ~ "/pkgs.list "
                         "-o " ~ pkgsList ~
                         " -z " ~ pkgsList);
-            systemOrDie("curl -s " ~ mirror ~ "/mirrors.list "
+            systemOrDie("curl -sx " ~ mirror ~ "/mirrors.list "
                         "-o " ~ mirrorsList ~
                         " -z " ~ mirrorsList);
         }
@@ -450,7 +450,7 @@ bool getSources(char[] pkg, NetConfig conf)
                 write("src." ~ srcFormat, dlhttp.read());*/
                 
                 // mango doesn't work properly for me :(
-                systemOrDie("curl " ~ conf.srcURL[pkg] ~ " -o src." ~ srcFormat);
+                systemOrDie("curl -x " ~ conf.srcURL[pkg] ~ " -o src." ~ srcFormat);
                 
                 // extract it
                 switch (srcFormat) {
@@ -458,7 +458,8 @@ bool getSources(char[] pkg, NetConfig conf)
                     case "tgz":
                         version (Windows) {
                             // assume BsdTar
-                            res = sayAndSystem("bsdtar -xf src." ~ srcFormat);
+                            sayAndSystem("bsdtar -xf src." ~ srcFormat);
+                            res = 0;
                         } else {
                             res = sayAndSystem("gunzip -c src." ~ srcFormat ~ " | tar -xf -");
                         }
@@ -467,7 +468,8 @@ bool getSources(char[] pkg, NetConfig conf)
                     case "tar.bz2":
                         version (Windows) {
                             // assume BsdTar
-                            res = sayAndSystem("bsdtar -xf src.tar.bz2");
+                            sayAndSystem("bsdtar -xf src.tar.bz2");
+                            res = 0;
                         } else {
                             res = sayAndSystem("bunzip2 -c src.tar.bz2 | tar -xf -");
                         }
@@ -476,7 +478,8 @@ bool getSources(char[] pkg, NetConfig conf)
                     case "zip":
                         version (Windows) {
                             // assume BsdTar
-                            res = sayAndSystem("bsdtar -xf src.zip");
+                            sayAndSystem("bsdtar -xf src.zip");
+                            res = 0;
                         } else {
                             // assume InfoZip
                             res = sayAndSystem("unzip src.zip");
@@ -511,7 +514,7 @@ bool getSources(char[] pkg, NetConfig conf)
             chdir(dir);
             
             // download the patch file
-            saySystemDie("curl " ~ conf.mirror ~ "/" ~ pfile ~
+            saySystemDie("curl -x " ~ conf.mirror ~ "/" ~ pfile ~
                          " -o " ~ pfile);
             
             // convert it to DOS line endings if necessary
@@ -543,12 +546,12 @@ bool getSources(char[] pkg, NetConfig conf)
             uint sel = cast(uint) ((cast(double) mirrorsList.length) * (rand() / (uint.max + 1.0)));
             char[] mirror = mirrorsList[sel];
             
-            saySystemDie("curl " ~ mirror ~ "/" ~ pkg ~ ".tar.gz " ~
+            saySystemDie("curl -x " ~ mirror ~ "/" ~ pkg ~ ".tar.gz " ~
                          "-o " ~ pkg ~ ".tar.gz");
             
             // extract
             version (Windows) {
-                saySystemDie("bsdtar -xf " ~ pkg ~ ".tar.gz");
+                sayAndSystem("bsdtar -xf " ~ pkg ~ ".tar.gz");
             } else {
                 saySystemDie("gunzip -c " ~ pkg ~ ".tar.gz | tar -xf -");
             }
