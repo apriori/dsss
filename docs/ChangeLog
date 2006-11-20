@@ -1,3 +1,10 @@
+0.6 from 0.5:
+        - Show synchronize commands (had previously hidden them, decided that
+          showing them is the superior option)
+        - Run curl in "insecure" mode (the certs are worthless anyway)
+        - Ignore output from bsdtar, which is almost exclusively false
+          negatives.
+
 0.5 from 0.4:
         - Fixed rmRecursive to work on Windows.
         - Fixed installation to work on Mac OS X.
