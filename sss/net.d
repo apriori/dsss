@@ -104,11 +104,11 @@ int net(char[][] args)
                            mirrorList[sel]);
             char[] mirror = cast(char[]) std.file.read(
                 srcListPrefix ~ std.path.sep ~ "mirror");
-            systemOrDie("curl -s -k " ~ mirror ~ "/source.list "
+            saySystemDie("curl -s -k " ~ mirror ~ "/source.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "source.list");
-            systemOrDie("curl -s -k " ~ mirror ~ "/pkgs.list "
+            saySystemDie("curl -s -k " ~ mirror ~ "/pkgs.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "pkgs.list");
-            systemOrDie("curl -s -k " ~ mirror ~ "/mirrors.list "
+            saySystemDie("curl -s -k " ~ mirror ~ "/mirrors.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "mirrors.list");
         } else {
             char[] mirror = cast(char[]) std.file.read(
@@ -117,16 +117,18 @@ int net(char[][] args)
             char[] pkgsList = srcListPrefix ~ std.path.sep ~ "pkgs.list";
             char[] mirrorsList = srcListPrefix ~ std.path.sep ~ "mirrors.list";
             
-            systemOrDie("curl -s -k " ~ mirror ~ "/source.list "
+            saySystemDie("curl -s -k " ~ mirror ~ "/source.list "
                         "-o " ~ srcList ~
                         " -z " ~ srcList);
-            systemOrDie("curl -s -k " ~ mirror ~ "/pkgs.list "
+            saySystemDie("curl -s -k " ~ mirror ~ "/pkgs.list "
                         "-o " ~ pkgsList ~
                         " -z " ~ pkgsList);
-            systemOrDie("curl -s -k " ~ mirror ~ "/mirrors.list "
+            saySystemDie("curl -s -k " ~ mirror ~ "/mirrors.list "
                         "-o " ~ mirrorsList ~
                         " -z " ~ mirrorsList);
         }
+        
+        writefln("");
     }
     
     // load it
@@ -450,7 +452,8 @@ bool getSources(char[] pkg, NetConfig conf)
                 write("src." ~ srcFormat, dlhttp.read());*/
                 
                 // mango doesn't work properly for me :(
-                systemOrDie("curl -k " ~ conf.srcURL[pkg] ~ " -o src." ~ srcFormat);
+                res = sayAndSystem("curl -k " ~ conf.srcURL[pkg] ~ " -o src." ~ srcFormat);
+                if (res != 0) return false;
                 
                 // extract it
                 switch (srcFormat) {
