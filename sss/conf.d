@@ -64,6 +64,9 @@ char[] dsss_build;
 /** Options added to dsss_build */
 char[] dsss_buildOptions;
 
+/** Is DSSS installed, or is it being run out of the source directory? */
+bool inSourceDir;
+
 /** The prefix to which DSSS was installed */
 char[] installPrefix;
 
@@ -121,6 +124,8 @@ void getPrefix(char[] argvz)
     // using this directory, find include and library directories
     if (exists(installPrefix ~ std.path.sep ~ "sss" ~ std.path.sep ~ "main.d")) {
         // this is probably the build prefix
+        inSourceDir = true;
+        
         if (forcePrefix == "") {
             forcePrefix = installPrefix ~ std.path.sep ~ "inst";
         }
@@ -144,6 +149,8 @@ void getPrefix(char[] argvz)
             static assert(0);
         }
     } else {
+        inSourceDir = false;
+        
         // slightly more complicated for a real install
         if (forcePrefix == "") {
             forcePrefix = getDirName(installPrefix);

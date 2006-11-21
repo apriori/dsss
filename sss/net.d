@@ -52,7 +52,14 @@ import mango.http.client.HttpGet;*/
 /** Entry to the "net" command */
 int net(char[][] args)
 {
-    // first, make sure our sources list is up to date
+    // cannot be used from the source dir
+    if (inSourceDir) {
+        writefln("The 'net' subcommand cannot be used with DSSS running from the source");
+        writefln("directory. You must install DSSS.");
+        return 1;
+    }
+    
+    // make sure our sources list is up to date
     static bool srcListUpdated = false;
     if (!srcListUpdated) {
         srcListUpdated = true;
