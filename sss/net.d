@@ -111,11 +111,11 @@ int net(char[][] args)
                            mirrorList[sel]);
             char[] mirror = cast(char[]) std.file.read(
                 srcListPrefix ~ std.path.sep ~ "mirror");
-            saySystemDie("curl -s -k " ~ mirror ~ "/source.list "
+            sayAndSystem("curl -s -S -k " ~ mirror ~ "/source.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "source.list");
-            saySystemDie("curl -s -k " ~ mirror ~ "/pkgs.list "
+            sayAndSystem("curl -s -S -k " ~ mirror ~ "/pkgs.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "pkgs.list");
-            saySystemDie("curl -s -k " ~ mirror ~ "/mirrors.list "
+            sayAndSystem("curl -s -S -k " ~ mirror ~ "/mirrors.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "mirrors.list");
         } else {
             char[] mirror = cast(char[]) std.file.read(
@@ -124,13 +124,13 @@ int net(char[][] args)
             char[] pkgsList = srcListPrefix ~ std.path.sep ~ "pkgs.list";
             char[] mirrorsList = srcListPrefix ~ std.path.sep ~ "mirrors.list";
             
-            saySystemDie("curl -s -k " ~ mirror ~ "/source.list "
+            sayAndSystem("curl -s -S -k " ~ mirror ~ "/source.list "
                         "-o " ~ srcList ~
                         " -z " ~ srcList);
-            saySystemDie("curl -s -k " ~ mirror ~ "/pkgs.list "
+            sayAndSystem("curl -s -S -k " ~ mirror ~ "/pkgs.list "
                         "-o " ~ pkgsList ~
                         " -z " ~ pkgsList);
-            saySystemDie("curl -s -k " ~ mirror ~ "/mirrors.list "
+            sayAndSystem("curl -s -S -k " ~ mirror ~ "/mirrors.list "
                         "-o " ~ mirrorsList ~
                         " -z " ~ mirrorsList);
         }
