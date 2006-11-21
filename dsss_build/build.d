@@ -189,6 +189,11 @@ private{
         string[]   vCompilerDefs;
         string     vImportPath = "-I";
         bool       vUseModBaseName = false;
+        
+        // circular dependency things
+        bool       vCircularDepsOK = true;
+        bool       vCircularLinkAll = false;
+        string     vCircularOnlyFlag = "";
     }
 
     version(GNU) {
@@ -254,6 +259,11 @@ private{
         string     vSymInfoSwitch = "-g";
         /* GDC places object files in the directory from which it is called */
         bool       vUseModBaseName = true;
+        
+        // circular dependency things
+        bool       vCircularDepsOK = false;
+        bool       vCircularLinkAll = true;
+        string     vCircularOnlyFlag = "-fonly=";
     }
 
     string       vCFGPath = ``;
@@ -302,6 +312,8 @@ private{
     Bool         vConsoleApp;
     Bool         vUseFinal;
     Bool         vEmptyArgs;
+    
+    Bool         vCircularDeps;
 
     string       vUsesOutput;
     string       vSymbolOutName;
@@ -367,6 +379,8 @@ static this()
     vUseResponseFile = False;
     vSymbols = False;
     vConsoleApp = True;
+    
+    vCircularDeps = False;
 
     version(Posix)
     {
@@ -502,6 +516,7 @@ void DisplayUsage(bool pFull = true)
     std.stdio.writefln("  -UMB=<Yes/No> If 'Yes' this forces the utility to expect");
     std.stdio.writefln("            the object file to be created or residing in the current");
     std.stdio.writefln("            directory.");
+    std.stdio.writefln("  -circular Allows circular dependencies to work on some compilers (namely GDC)");
     version(Windows)
     {
     std.stdio.writefln("  -AutoWinLibs=<Yes/No> If 'No' this prevents the tool from");
@@ -1023,36 +1038,74 @@ int Build()
         {
             // Ok, I have some compiling to do!
             string lCommandLine;
-
-            lCommandLine = GatherCompilerArgs(lLinking) ~ lSourcesToCompile;
-
-            if (vUseResponseFile == True)
-            {
-                lDResponseFileName = util.pathex.ReplaceExtension(lTargetName, "rsp");
-                if (vTemporaryPath.length != 0)
+            
+            if (vCircularDeps == False || vCircularDepsOK == true) {
+                lCommandLine = GatherCompilerArgs(lLinking) ~ lSourcesToCompile;
+                
+                if (vUseResponseFile == True)
                 {
-                    lDResponseFileName = vTemporaryPath ~ std.path.getBaseName(lDResponseFileName);
+                    lDResponseFileName = util.pathex.ReplaceExtension(lTargetName, "rsp");
+                    if (vTemporaryPath.length != 0)
+                    {
+                        lDResponseFileName = vTemporaryPath ~ std.path.getBaseName(lDResponseFileName);
+                    }
+                    lDResponseFileName = util.pathex.AbbreviateFileName(lDResponseFileName);
+                    util.fileex.CreateTextFile(lDResponseFileName,lCommandLine);
+                    lCommand = vCompileOnly ~ " @" ~ lDResponseFileName;
                 }
-                lDResponseFileName = util.pathex.AbbreviateFileName(lDResponseFileName);
-                util.fileex.CreateTextFile(lDResponseFileName,lCommandLine);
-                lCommand = vCompileOnly ~ " @" ~ lDResponseFileName;
+                else
+                {   // using commandline; may run into limits
+                    lCommandLine=std.string.replace(lCommandLine, "\n", " ");
+                    lCommand = vCompileOnly ~ " " ~ lCommandLine;
+                }
+                
+                version(BuildVerbose)
+                {
+                    if (vVerbose == True)
+                        std.stdio.writefln("Compiling with ..........\n%s\n", lCommandLine);
+                }
+                
+                // Run Compiler to compile the source files that need it.
+                lRunResult = util.fileex.RunCommand(vCompilerPath ~ vCompilerExe, lCommand);
+                if (lRunResult != 0)
+                    vExecuteProgram = False;
+                
+            } else {
+                // resolve circular dependencies
+                foreach (srcFile; lFilesToCompile) {
+                    lCommandLine = GatherCompilerArgs(lLinking) ~ lSourcesToCompile;
+                    lCommandLine ~= (vCircularOnlyFlag ~ srcFile);
+                    
+                    if (vUseResponseFile == True)
+                    {
+                        lDResponseFileName = util.pathex.ReplaceExtension(lTargetName, "rsp");
+                        if (vTemporaryPath.length != 0)
+                        {
+                            lDResponseFileName = vTemporaryPath ~ std.path.getBaseName(lDResponseFileName);
+                        }
+                        lDResponseFileName = util.pathex.AbbreviateFileName(lDResponseFileName);
+                        util.fileex.CreateTextFile(lDResponseFileName,lCommandLine);
+                        lCommand = vCompileOnly ~ " @" ~ lDResponseFileName;
+                    }
+                    else
+                    {   // using commandline; may run into limits
+                        lCommandLine=std.string.replace(lCommandLine, "\n", " ");
+                        lCommand = vCompileOnly ~ " " ~ lCommandLine;
+                    }
+                
+                    version(BuildVerbose)
+                    {
+                        if (vVerbose == True)
+                            std.stdio.writefln("Compiling with ..........\n%s\n", lCommandLine);
+                    }
+                
+                    // Run Compiler to compile the source files that need it.
+                    lRunResult = util.fileex.RunCommand(vCompilerPath ~ vCompilerExe, lCommand);
+                    if (lRunResult != 0)
+                        vExecuteProgram = False;
+                
+                }
             }
-            else
-            {   // using commandline; may run into limits
-                lCommandLine=std.string.replace(lCommandLine, "\n", " ");
-                lCommand = vCompileOnly ~ " " ~ lCommandLine;
-            }
-
-            version(BuildVerbose)
-            {
-                if (vVerbose == True)
-                    std.stdio.writefln("Compiling with ..........\n%s\n", lCommandLine);
-            }
-
-            // Run Compiler to compile the source files that need it.
-            lRunResult = util.fileex.RunCommand(vCompilerPath ~ vCompilerExe, lCommand);
-            if (lRunResult != 0)
-                vExecuteProgram = False;
         }
 
         // LINK phase ...
@@ -2775,6 +2828,10 @@ void ProcessCmdLineArg( string pArg )
         case "-nomacro":
             vMacroInput = False;
             // Not passed thru.
+            break;
+            
+        case "-circular":
+            vCircularDeps = True;
             break;
 
         case "-usage":
