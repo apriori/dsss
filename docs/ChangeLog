@@ -1,3 +1,7 @@
+0.9 from 0.8:
+        - Improved library link generation to always generate the proper
+          order, even with very complicated builds (such as duit)
+
 0.8 from 0.7:
         - Give a useful error message if dsss net is run from the source dir
           (which is unsupported).
