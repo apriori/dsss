@@ -270,6 +270,7 @@ public class Source {
     bool mIgnore;
     int mBuildNumber;
     string[] mReferencedImports;
+    string[] mLinkedLibs;
     bool[string] mActiveVersions;
     long         mVersionLevel = 0;
     bool[string] mActiveDebugs;
@@ -612,6 +613,13 @@ debug(dtor)
                     }
 
                 }
+            }
+            
+            // Add libraries
+            foreach (lib; mLinkedLibs)
+            {
+                if (AddLink !is null)
+                    AddLink(lib);
             }
 
             // Ensure we get the most recent mod time.
@@ -1270,8 +1278,7 @@ debug(dtor)
                         }
                     }
                     // Add link path to compiler switches.
-                    if (AddLink != null)
-                        AddLink(lPragmaId.dup);
+                    mLinkedLibs ~= lPragmaId.dup;
                     if (lCurrentToken == kCloseParen)
                     {
                         break;

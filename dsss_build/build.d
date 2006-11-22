@@ -332,7 +332,7 @@ private{
     string       vPragmaTargetName;     // Output name from pragma.
     string       vCommandTargetName;    // Output name from switches.
     string[]     vCmdLineSourceFiles;   // List of source files from command line
-    bool[string] vLinkFiles;            // List of non-source files from command line
+    string[]     vLinkFiles;            // List of non-source files from command line
     string[]     vCombinedArgs;         // All the args are gathered here prior to processing.
     string[]     vBuildArgs;            // Arguments passed to build
     string[]     vCompilerArgs;         // Arguments passed to compiler
@@ -593,8 +593,9 @@ util.fdt.FileDateTime GetNewestDateTime()
     );
 
     // Examine any link file dependancies too.
-    foreach(int idx, string lFileName; vLinkFiles.keys)
+    for (int idx = 0; idx < vLinkFiles.length; idx++)
     {
+        string lFileName = vLinkFiles[idx];
         util.fdt.FileDateTime lLinkTime = new util.fdt.FileDateTime(lFileName);
 
         version(BuildVerbose)
@@ -835,7 +836,7 @@ int Build()
 
         // No files to compile, just link files, so collect
         // all the object files to link in.
-        foreach( string lFileName; vLinkFiles.keys)
+        foreach( string lFileName; vLinkFiles)
         {
             // Only include OBJECT files.
             if (util.str.ends(lFileName , vObjExtension) == True)
@@ -1011,7 +1012,7 @@ int Build()
 
     // Add any library and any external object files required.
     lLibraryFiles.length = 0;
-    foreach (string lFileName; vLinkFiles.keys)
+    foreach (string lFileName; vLinkFiles)
     {
         string lCmdItem;
 
@@ -1274,8 +1275,8 @@ int Build()
                 // Include the default libraries first.
                 if (vLibraryAction != LibOpt.Shared)
                     lLibraryFiles = vDefaultLibs ~ lLibraryFiles;
-                // No, I don't understand why this is necessary
-                version (DigitalMars) {
+                // GDC takes libraries in reverse order
+                version (GNU) {
                     lLibraryFiles = lLibraryFiles.reverse;
                 }
                 foreach( string lLib; lLibraryFiles)
@@ -1622,8 +1623,7 @@ void AddLink(string pPath)
 {
     if (pPath.length == 0)
         return;
-    if ((pPath in vLinkFiles) is null)
-        vLinkFiles[pPath] = true;
+    vLinkFiles ~= pPath; // always add it to the end, may be multi-linked
 }
 
 // -------------------------------------------
@@ -2526,7 +2526,7 @@ int main(string[] pArgs)
             DisplayItems(vCmdLineSourceFiles,   "command line files: ...............");
             DisplayItems(source.Source.AllFiles,
                                           "source files: ...............");
-            DisplayItems(vLinkFiles.keys, "link files: ...............");
+            DisplayItems(vLinkFiles, "link files: ...............");
             DisplayItems(source.Externals,"externally built files: ...............");
             DisplayItems(vImportRoots,    "import roots: .................");
             DisplayItems(vModulesToIgnore,"ignored packages: .................");
