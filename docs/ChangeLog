@@ -1,3 +1,12 @@
+0.8 from 0.7:
+        - Give a useful error message if dsss net is run from the source dir
+          (which is unsupported).
+        - Added a -circular flag to dsss_build, which will make circular
+          dependencies work in GDC.
+        - Don't necessarily die on failed sync (though it'll die on failed
+          initial sync)
+        - Report errors from synchronization
+
 0.7 from 0.6:
         - Works on DMD on GNU/Linux.
 
