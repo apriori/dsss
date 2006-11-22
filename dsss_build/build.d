@@ -1275,10 +1275,7 @@ int Build()
                 // Include the default libraries first.
                 if (vLibraryAction != LibOpt.Shared)
                     lLibraryFiles = vDefaultLibs ~ lLibraryFiles;
-                // GDC takes libraries in reverse order
-                version (GNU) {
-                    lLibraryFiles = lLibraryFiles.reverse;
-                }
+                lLibraryFiles = lLibraryFiles.reverse;
                 foreach( string lLib; lLibraryFiles)
                 {
                     lCommandLine ~= vLinkLibSwitch ~ util.str.enquote(lLib) ~ "\n";
