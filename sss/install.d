@@ -50,12 +50,19 @@ int install(char[][] buildElems, char[][]* subManifest = null)
     char[][] manifest;
     char[] manifestFile;
     manifestFile = manifestPrefix ~ std.path.sep ~ conf.settings[""]["name"] ~ ".manifest";
-    manifest ~= manifestFile;
+    manifest ~= "share" ~ std.path.sep ~ "dsss" ~ std.path.sep ~ "manifest" ~ std.path.sep ~
+        conf.settings[""]["name"] ~ ".manifest";
     
     /// Copy in the file and add it to the manifest
     void copyAndManifest(char[] file, char[] prefix, char[] from = "")
     {
         copyInFile(file, prefix, from);
+        
+        // if the prefix starts with the installation prefix, strip it
+        if (prefix.length > forcePrefix.length &&
+            prefix[0..forcePrefix.length] == forcePrefix)
+            prefix = prefix[forcePrefix.length + 1 .. $];
+        
         manifest ~= prefix ~ std.path.sep ~ file;
     }
     
@@ -66,7 +73,7 @@ int install(char[][] buildElems, char[][]* subManifest = null)
         // basic info
         char[] type = settings["type"];
         char[] target = settings["target"];
-
+        
         // say what we're doing
         writefln("Installing %s", target);
         

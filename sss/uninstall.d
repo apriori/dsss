@@ -32,6 +32,7 @@ import sss.clean;
 import sss.conf;
 
 import std.file;
+import std.path;
 import std.stdio;
 import std.string;
 
@@ -57,6 +58,11 @@ int uninstall(char[][] toolList)
         // then delete them
         foreach (file; manifest) {
             if (file != "") {
+                // if it's not absolute, infer the absolute path
+                if (!isabs(file)) {
+                    file = forcePrefix ~ std.path.sep ~ file;
+                }
+                
                 writefln("Removing %s", file);
                 tryRemove(file);
             }

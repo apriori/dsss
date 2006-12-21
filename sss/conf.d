@@ -739,16 +739,22 @@ char[][] dsssScriptedStep(char[] step)
             if (slloc == -1)
                 std.string.rfind(comps[1], '\\');
             
+            // strip off the prefix from our manifest path
+            char[] manifestPath = comps[2] ~ std.path.sep;
+            if (manifestPath.length > forcePrefix.length &&
+                manifestPath[0 .. forcePrefix.length] == forcePrefix)
+                manifestPath = manifestPath[forcePrefix.length + 1 .. $];
+            
             if (slloc != -1) {
                 // path provided
                 char[] f = comps[1][(slloc + 1) .. $];
                 copyInFile(f,
                            comps[2],
                            comps[1][0 .. (slloc + 1)]);
-                manifest ~= (comps[2] ~ std.path.sep ~ f);
+                manifest ~= (manifestPath ~ f);
             } else {
                 copyInFile(comps[1], comps[2]);
-                manifest ~= (comps[2] ~ std.path.sep ~ comps[1]);
+                manifest ~= (manifestPath ~ comps[1]);
             }
          
         } else if (cmd.length > 3 &&
