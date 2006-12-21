@@ -1,3 +1,8 @@
+0.10 from 0.9:
+        - Improved handling of installation manifest.
+        - Improved path handling.
+        - Fixed to work with DMD 0.177
+
 0.9 from 0.8:
         - Improved library link generation to always generate the proper
           order, even with very complicated builds (such as duit)
