@@ -109,7 +109,7 @@ class PStream : Stream {
             
             _PROCESS_INFORMATION pi;
             
-            CreateProcessA(null, command, null, null,
+            CreateProcessA(null, toStringz(command), null, null,
                            1, 0, null, null, &si, &pi);
             CloseHandle(ipr);
             CloseHandle(opw);

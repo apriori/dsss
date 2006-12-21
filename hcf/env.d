@@ -47,9 +47,9 @@ char[] getEnvVar(char[] var)
         buffer[0] = '\0';
         GetEnvironmentVariableA(
                 toStringz(var),
-                buffer,
+                buffer.ptr,
                 1024);
-        return toString(buffer);
+        return toString(buffer.ptr);
     } else {
         static assert(0);
     }
