@@ -119,6 +119,8 @@ void getPrefix(char[] argvz)
         exit(1);
     }
     
+    installPrefix = canonPath(installPrefix);
+    
     // set the prefix to actually install things to
     
     // using this directory, find include and library directories
@@ -128,6 +130,8 @@ void getPrefix(char[] argvz)
         
         if (forcePrefix == "") {
             forcePrefix = installPrefix ~ std.path.sep ~ "inst";
+        } else {
+            forcePrefix = canonPath(forcePrefix);
         }
         
         char[] sssBaseLoc = installPrefix ~ std.path.sep ~ "sss" ~ std.path.sep;

@@ -109,25 +109,46 @@ char[] canonPath(char[] origpath)
         ret = origpath;
     }
     
-    // canonicalise by first removing '..' elements and then multiple '/'s
-    ret = replace(origpath, sep ~ ".." ~ sep, sep);
-    
-    // we may have missed the last path component
-    if (ret.length >= 3 &&
-        ret[($ - 3) .. ($ - 1)] == sep ~ "..") {
-        // missed the last .. component
-        ret = ret[0 .. ($ - 3)];
-    }
-    
-    // now get rid of any duplicate separators
+    // get rid of any duplicate separators
     for (int i = 0; i < ret.length; i++) {
         if (ret[i .. (i + 1)] == sep) {
-            // drop any duplicate separators
+            // drop the duplicate separator
             i++;
             while (i < ret.length &&
                    ret[i .. (i + 1)] == sep) {
                 ret = ret[0 .. i] ~ ret[(i + 1) .. $];
             }
+        }
+    }
+    
+    // make sure we don't miss a .. element
+    if (ret.length > 4 && ret[($-3) .. $] == std.path.sep ~ "..") {
+        ret ~= std.path.sep;
+    }
+    
+    // search for .. elements
+    for (int i = 0; ret.length > 4 && i <= ret.length - 4; i++) {
+        if (ret[i .. (i + 4)] == std.path.sep ~ ".." ~ std.path.sep) {
+            // drop the previous path element
+            int j;
+            for (j = i - 1; j > 0 && ret[j..(j+1)] != std.path.sep; j--) {}
+            if (j > 0) {
+                // cut
+                ret = ret[0..j] ~ ret[(i + 3) .. $];
+            } else {
+                // sort of ridiculous, but cut as best we can
+                ret = std.path.sep ~ ret[(i + 3) .. $];
+            }
+            i = j - 1;
+        }
+    }
+    
+    // search for . elements
+    for (int i = 0; ret.length > 2 && i <= ret.length - 2; i++) {
+        if (ret[i .. (i + 2)] == std.path.sep ~ ".") {
+            // drop this path element
+            ret = ret[0..i] ~ ret[(i + 2) .. $];
+            i--;
         }
     }
     
