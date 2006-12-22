@@ -106,8 +106,11 @@ char[] canonPath(char[] origpath)
     if (altsep.length) {
         ret = replace(origpath, altsep, sep);
     } else {
-        ret = origpath;
+        ret = origpath.dup;
     }
+    
+    // expand tildes
+    ret = expandTilde(ret);
     
     // get rid of any duplicate separators
     for (int i = 0; i < ret.length; i++) {
