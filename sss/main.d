@@ -68,9 +68,6 @@ int main(char[][] args)
     /** Elements to build/install/something */
     char[][] buildElems;
     
-    /** Usedirs (dirs to import both includes and libs from */
-    char[][] useDirs;
-    
     for (int i = 1; i < args.length; i++) {
         char[] arg = args[i];
         
@@ -143,8 +140,7 @@ int main(char[][] args)
             }
             
         } else if (command == cmd_t.GENCONFIG ||
-                   command == cmd_t.UNINSTALL ||
-                   command == cmd_t.NET) {
+                   command == cmd_t.UNINSTALL) {
             /* commands with no special options (put them in their own else-if
              * if they gain options */
             if (argIsHelp()) {
@@ -166,6 +162,32 @@ int main(char[][] args)
                 
             } else {
                 writefln("ERROR: Command takes no arguments.");
+            }
+            
+        } else if (command == cmd_t.NET) {
+            // dsss net takes both --prefix and --use
+            char[] val;
+            
+            if (argIsHelp()) {
+                usage();
+                return 0;
+                
+            } else if (parseArg(arg, "use", true, &val)) {
+                // force a use-dir
+                useDirs ~= val;
+                
+            } else if (parseArg(arg, "prefix", true, &val)) {
+                // force a prefix
+                forcePrefix = val;
+                
+            } else if (arg.length >= 1 &&
+                       arg[0] == '-') {
+                // pass through to build
+                dsss_buildOptions ~= arg ~ " ";
+                
+            } else {
+                buildElems ~= arg;
+                
             }
             
         } else if (command == cmd_t.BUILD) {
@@ -324,14 +346,18 @@ Usage: dsss [dsss options] <command> [command options]
         
     } else if (command == cmd_t.NET) {
         writefln(
-`Usage: dsss [dsss options] net <net command> <package name>
+`Usage: dsss [dsss options] net <net command> [options] <package name>
   Net Commands:
     deps:    install (from the network source) dependencies of the present
              package
     install: install a package via the network source
     fetch:   fetch but do not compile or install a package
     list:    list all installable packages
-    search:  find an installable package by name`
+    search:  find an installable package by name
+  Net Options:
+    --prefix=<prefix>: set the install prefix
+    --use=<directory containing import library includes and libs>
+    All other options are passed through to build and ultimately the compiler.`
             );
 
         

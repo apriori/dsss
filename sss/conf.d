@@ -100,6 +100,9 @@ char[] stubDLoc;
 /** The location of dsssdll.d (used to make DLLs from any library) */
 char[] dsssDllLoc;
 
+/** Usedirs (dirs to import both includes and libs from */
+char[][] useDirs;
+    
 /* It's often useful to know whether we're using GNU and/or Posix, as GNU on
  * Windows tends to do some things Posixly. */
 version (build) {
@@ -192,10 +195,12 @@ void getPrefix(char[] argvz)
         "manifest";
     etcPrefix = forcePrefix ~ std.path.sep ~
         "etc";
-    srcListPrefix = forcePrefix ~ std.path.sep ~
+    srcListPrefix = canonPath(
+        installPrefix ~ std.path.sep ~
+        ".." ~ std.path.sep ~
         "share" ~ std.path.sep ~
         "dsss" ~ std.path.sep ~
-        "sources";
+        "sources");
     
     // set the scratch prefix and some some environment variables
     version (Posix) {
@@ -219,7 +224,9 @@ void getPrefix(char[] argvz)
         }
         setEnvVar("LD_LIBRARY_PATH", ldlibp);
     } else version (Windows) {
-        scratchPrefix = forcePrefix ~ std.path.sep ~ "tmp";
+        scratchPrefix = canonPath(installPrefix ~ std.path.sep ~
+                                  ".." ~ std.path.sep ~
+                                  "tmp");
         
         setEnvVar("DSSS", installPrefix ~ std.path.sep ~ bname);
         setEnvVar("PREFIX", forcePrefix);

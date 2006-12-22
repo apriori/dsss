@@ -170,8 +170,28 @@ int net(char[][] args)
         case "assert":
         {
             // make sure that the tool is installed, install it if not
+            
+            // check for manifest files in every usedir
+            bool found = false;
             char[] manifestFile = manifestPrefix ~ std.path.sep ~ args[1] ~ ".manifest";
             if (exists(manifestFile)) {
+                found = true;
+            } else {
+                
+                foreach (dir; useDirs) {
+                    manifestFile = dir ~ std.path.sep ~
+                        "share" ~ std.path.sep ~
+                        "dsss" ~ std.path.sep ~
+                        "manifest" ~ std.path.sep ~
+                        args[1] ~ ".manifest";
+                    if (exists(manifestFile)) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (found) {
                 writefln("%s is already installed.\n", args[1]);
                 return 0;
             }
