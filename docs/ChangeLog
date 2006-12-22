@@ -1,3 +1,7 @@
+0.11 from 0.10:
+        - Support for --prefix and --use in `dsss net` (by popular demand)
+        - Allow tildes in Unix paths.
+
 0.10 from 0.9:
         - Improved handling of installation manifest.
         - Improved path handling.

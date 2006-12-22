@@ -41,7 +41,7 @@ import sss.install;
 import sss.net;
 import sss.uninstall;
 
-const char[] DSSS_VERSION = "0.10";
+const char[] DSSS_VERSION = "0.11";
 
 private {
     /** Possible commands */
