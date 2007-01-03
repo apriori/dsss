@@ -29,8 +29,10 @@
 module hcf.process;
 
 public import std.process;
+alias std.process.system system;
 
 import std.stdio;
+import std.string;
 import std.stream;
 
 import std.c.stdlib;
@@ -97,7 +99,7 @@ class PStream : Stream {
         
         version (Posix) {
             if (pid == 0) {
-                exit(system(command));
+                exit(std.process.system(command));
             }
         } else version (Windows) {
             _STARTUPINFOA si;
