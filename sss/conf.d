@@ -5,7 +5,7 @@
  *  Gregor Richards
  * 
  * License:
- *  Copyright (c) 2006  Gregor Richards
+ *  Copyright (c) 2006, 2007  Gregor Richards
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a
  *  copy of this software and associated documentation files (the "Software"),
@@ -242,7 +242,8 @@ void getPrefix(char[] argvz)
         static assert(0);
     }
     
-    dsss_build ~= " -I" ~ includePrefix ~ " -LIBPATH=" ~ libPrefix ~ " -LIBPATH=. " ~
+    dsss_build ~= " -I" ~ includePrefix ~ " -LIBPATH=" ~ libPrefix ~ std.path.sep ~
+        " -LIBPATH=." ~ std.path.sep ~ " " ~
         dsss_buildOptions ~ " ";
 }
 
