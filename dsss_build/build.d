@@ -2898,7 +2898,7 @@ void ProcessCmdLineArg( string pArg )
 
                 if (util.str.begins(pArg, "-LIBPATH=") == True)
                 {
-                    vLibPaths ~= vConfigSep ~ pArg[9..$].dup;
+                    vLibPaths ~= vConfigSep ~ `"` ~ pArg[9..$].dup ~ `"`;
                     break;
                 }
 
