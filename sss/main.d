@@ -5,7 +5,7 @@
  *  Gregor Richards
  * 
  * License:
- *  Copyright (c) 2006  Gregor Richards
+ *  Copyright (c) 2006, 2007  Gregor Richards
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a
  *  copy of this software and associated documentation files (the "Software"),
@@ -41,7 +41,7 @@ import sss.install;
 import sss.net;
 import sss.uninstall;
 
-const char[] DSSS_VERSION = "0.11";
+const char[] DSSS_VERSION = "0.12";
 
 private {
     /** Possible commands */
