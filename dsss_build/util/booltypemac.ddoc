@@ -1,2 +1,0 @@
-BU_Extra = If you access a Bool when value is not set,
-           a BoolException is thrown.
