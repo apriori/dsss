@@ -1,5 +1,9 @@
+0.13 from 0.12:
+        - Fixed some tokenizing of dsss.conf .
+
 0.12 from 0.11:
         - A minor update to work with GDC 0.21 and DMD 1.0
+        - Fixed some library linking issues on DMD/Windows.
 
 0.11 from 0.10:
         - Support for --prefix and --use in `dsss net` (by popular demand)
