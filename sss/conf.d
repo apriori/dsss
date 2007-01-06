@@ -282,7 +282,8 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
         }
         
         for (int i = 0; i < line.length; i++) {
-            if (isalnum(line[i])) {
+            if (isalnum(line[i]) ||
+                line[i] == '_') {
                 tok ~= line[i..i+1];
             } else if (iswhite(line[i])) {
                 addToken();
