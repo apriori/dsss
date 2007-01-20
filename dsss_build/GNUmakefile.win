@@ -1,0 +1,25 @@
+DMD=dmd
+DFLAGS=-op -release -inline -version=BuildVerbose
+SOURCES= build.d
+SOURCES+= util/pathex.d
+SOURCES+= source_bn.d
+SOURCES+= util/str.d
+SOURCES+= build_bn.d
+SOURCES+= source.d
+SOURCES+= util/fdt.d
+SOURCES+= util/fileex.d
+SOURCES+= util/linetoken.d
+SOURCES+= util/macro.d
+SOURCES+= util/booltype.d
+SOURCES+= util/file2.d
+
+
+all: dsss_build
+
+dsss_build: $(SOURCES)
+	$(DMD) $(DFLAGS) -of$@ $(SOURCES)
+
+clean:
+	del *.obj
+	del dsss_build.exe
+	del util\*.obj
