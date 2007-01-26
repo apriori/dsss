@@ -150,8 +150,17 @@ version (build) {
             // recurse
             char[] origcwd = getcwd();
             chdir(build);
+            
+            // the one thing that's passed in is build flags
+            char[] orig_dsss_build = dsss_build.dup;
+            if ("buildflags" in settings) {
+                dsss_build ~= " " ~ settings["buildflags"];
+            }
+            
             int buildret = sss.build.build(null);
             chdir(origcwd);
+            
+            dsss_build = orig_dsss_build;
         }
     }
     
@@ -230,7 +239,7 @@ version (build) {
         
             // do the prebuild
             if ("prebuild" in settings) {
-                dsssScriptedStep(settings["prebuild"]);
+                dsssScriptedStep(conf, settings["prebuild"]);
             }
             
             // get the file list
@@ -264,7 +273,7 @@ version (build) {
         
             // do the postbuild
             if ("postbuild" in settings) {
-                dsssScriptedStep(settings["postbuild"]);
+                dsssScriptedStep(conf, settings["postbuild"]);
             }
             
             // unfortunately, at each step we need to move the .di files out of the way, then back
@@ -299,7 +308,7 @@ version (build) {
             
             // do the prebuild
             if ("prebuild" in settings) {
-                dsssScriptedStep(settings["prebuild"]);
+                dsssScriptedStep(conf, settings["prebuild"]);
             }
             
             // build a build line
@@ -318,7 +327,7 @@ version (build) {
             
             // do the postbuild
             if ("postbuild" in settings) {
-                dsssScriptedStep(settings["postbuild"]);
+                dsssScriptedStep(conf, settings["postbuild"]);
             }
             
             // an extra line for clarity
@@ -328,11 +337,11 @@ version (build) {
             // special type, do pre/post
             writefln("%s", target);
             if ("prebuild" in settings) {
-                dsssScriptedStep(settings["prebuild"]);
+                dsssScriptedStep(conf, settings["prebuild"]);
             }
             
             if ("postbuild" in settings) {
-                dsssScriptedStep(settings["postbuild"]);
+                dsssScriptedStep(conf, settings["postbuild"]);
             }
             writefln("");
             

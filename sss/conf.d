@@ -32,6 +32,7 @@ import std.ctype;
 import std.file;
 import std.process;
 import std.stdio;
+import std.stream;
 import std.string;
 
 import std.c.stdlib;
@@ -51,6 +52,7 @@ version (Windows) {
 }
 
 alias std.string.find find;
+alias std.string.iswhite iswhite;
 
 /** The default config file name */
 const char[] configFName = "dsss.conf";
@@ -718,7 +720,7 @@ body {
 
 /** Perform a pre- or post- script step. Returns a list of installed files (if
  * applicable) */
-char[][] dsssScriptedStep(char[] step)
+char[][] dsssScriptedStep(DSSSConf conf, char[] step)
 {
     // list of installed files
     char[][] manifest;
@@ -737,9 +739,10 @@ char[][] dsssScriptedStep(char[] step)
         
         // run it
         char[] ext = std.string.tolower(getExt(cmd));
-        if (ext == "d") {
+        if (find(cmd, ' ') == -1 && ext == "d") {
             // if it's a .d file, -exec it
             saySystemDie(dsss_build ~ "-full -exec " ~ cmd);
+            
         } else if (cmd.length > 8 &&
                    cmd[0..8] == "install ") {
             // doing an install
@@ -769,7 +772,7 @@ char[][] dsssScriptedStep(char[] step)
                 copyInFile(comps[1], comps[2]);
                 manifest ~= (manifestPath ~ comps[1]);
             }
-         
+            
         } else if (cmd.length > 3 &&
                    cmd[0..3] == "cd ") {
             // change directories
@@ -778,7 +781,91 @@ char[][] dsssScriptedStep(char[] step)
             
             // change our directory
             chdir(comps[1]);
-        
+            
+        } else if (cmd.length > 5 &&
+                   cmd[0..5] == "eval ") {
+            // run the command, execute its output
+            PStream proc;
+            
+            cmd = cmd[5..$];
+            if (std.string.tolower(getExt(cmd)) == "d") {
+                proc = new PStream(dsss_build ~ "-full -exec " ~ cmd);
+            } else {
+                proc = new PStream(cmd);
+            }
+            
+            // now catch its output
+            char[] readbuf;
+            char readc;
+            while (true) {
+                try {
+                    proc.read(readc);
+                } catch (ReadException e) {
+                    break;
+                }
+                readbuf ~= readc;
+            }
+            
+            // and run it
+            dsssScriptedStep(conf, readbuf);
+            
+            proc.close();
+            
+        } else if (cmd.length > 4 &&
+                   (cmd[0..4] == "set " ||
+                    cmd[0..4] == "add ")) {
+            int i;
+            
+            bool adding = (cmd[0..4] == "add ");
+            
+            // set <section>.<setting> <value>
+            cmd = cmd[4..$];
+            
+            // 1) get the <section>.<setting>
+            char[] sset = cmd.dup;
+            for (i = 0; i < cmd.length; i++) {
+                if (cmd[i] == ' ') {
+                    sset = sset[0 .. i];
+                    cmd = cmd[i+1 .. $];
+                    i = 0;
+                    break;
+                }
+            }
+            
+            if (i == cmd.length) cmd = "";
+            
+            // 2) divide <section>.<setting>
+            char[] section, setting;
+            int dotloc = find(sset, '.');
+            if (dotloc == -1) {
+                section = "";
+                setting = sset;
+            } else {
+                section = sset[0..dotloc].dup;
+                setting = sset[dotloc+1 .. $].dup;
+            }
+            
+            // 3) perhaps get a list of sections
+            char[][] useSections;
+            if (section == "*") {
+                useSections = conf.sections;
+            } else {
+                useSections ~= section;
+            }
+            
+            // 4) set
+            foreach (sect; useSections) {
+                if (sect in conf.settings) {
+                    // perhaps add
+                    if (adding) {
+                        if (setting in conf.settings[sect]) {
+                            cmd = conf.settings[sect][setting] ~ " " ~ cmd;
+                        }
+                    }
+                    conf.settings[sect][setting] = cmd.dup;
+                }
+            }
+            
         } else {
             // hopefully we can just run it
             saySystemDie(cmd);

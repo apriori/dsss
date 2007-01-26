@@ -79,7 +79,7 @@ int install(char[][] buildElems, char[][]* subManifest = null)
         
         // do preinstall
         if ("preinstall" in settings) {
-            manifest ~= dsssScriptedStep(settings["preinstall"]);
+            manifest ~= dsssScriptedStep(conf, settings["preinstall"]);
         }
         
         // figure out what it is
@@ -162,7 +162,7 @@ int install(char[][] buildElems, char[][]* subManifest = null)
         
         // do postinstall
         if ("postinstall" in settings) {
-            manifest ~= dsssScriptedStep(settings["postinstall"]);
+            manifest ~= dsssScriptedStep(conf, settings["postinstall"]);
         }
         
         // install the manifest itself
