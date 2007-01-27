@@ -1,0 +1,31 @@
+profile=phobos
+
+exeext=.exe
+objext=o
+
+compiler=gdc
+
+compile=gdmd -c $i -of$o
+incflag=-I$i
+compile_libflag=-L-L$i
+compile_flag=$i
+optimizeflag=-O
+versionflag=-version=$i
+
+link=gdmd -q,-rdynamic $i -of$o
+link_libflag=-L-L$i
+link_lib=-L-l$i
+link_flag=-L$i
+
+liblink=ar rc $o $i
+liblink_libdir=
+liblink_lib=
+liblink_flag=
+
+postliblink=ranlib $i
+
+shlibs=yes
+shliblink=gdmd -q,-shared $i -of$o
+shliblink_libdir=-L-L$i
+shliblink_lib=-L-l$i
+shliblink_flag=-L
