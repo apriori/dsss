@@ -90,6 +90,8 @@ founddir:
 // read in a configuration file
 void readConfigFile(const string &dir, const string &fname)
 {
+    string section = "";
+    
     FILE *cfile = fopen(fname.c_str(), "r");
     if (!cfile) {
         cerr << "Failed to open " << fname << endl;
@@ -118,27 +120,36 @@ void readConfigFile(const string &dir, const string &fname)
         if (readLen == 0 ||
             readBuf[0] == '#') continue;
         
-        // separate it into setting=value
-        char *val;
-        if (val = strchr(readBuf, '=')) {
-            *val = '\0';
-            val++;
+        // if it's [...], it's a section
+        if (readBuf[0] == '[' &&
+            readBuf[readLen - 1] == ']') {
+            readBuf[readLen - 1] = '\0';
+            section = readBuf + 1;
             
-            // set it or possibly recurse
-            if (!strcmp(readBuf, "profile")) {
-                // recurse into another profile
-                string subprof = dir + DIRSEP + string(val);
-                if (!exists(subprof.c_str())) {
-                    cerr << "Profile " << subprof << ", required by " << fname << " not found." << endl;
-                    exit(1);
+        } else {
+            // separate it into setting=value
+            char *val;
+            if (val = strchr(readBuf, '=')) {
+                *val = '\0';
+                val++;
+            
+                // set it or possibly recurse
+                if (section == "" &&
+                    !strcmp(readBuf, "profile")) {
+                    // recurse into another profile
+                    string subprof = dir + DIRSEP + string(val);
+                    if (!exists(subprof.c_str())) {
+                        cerr << "Profile " << subprof << ", required by " << fname << " not found." << endl;
+                        exit(1);
+                    }
+                
+                    readConfigFile(dir, subprof);
+                
+                } else {
+                    // set a value
+                    masterConfig[section][readBuf] = val;
+                
                 }
-                
-                readConfigFile(dir, subprof);
-                
-            } else {
-                // set a value
-                masterConfig[readBuf] = val;
-                
             }
         }
     }
@@ -229,14 +240,15 @@ int readCommand(string cmd, char *buf, int len)
 }
 
 // Add a flag, with a default
-void addFlag(std::string &to, const std::string &flag, const std::string &def,
-             const std::string &inp, const std::string &out)
+void addFlag(std::string &to, const std::string &section, const std::string &flag,
+             const std::string &def, const std::string &inp, const std::string &out)
 {
     std::string setfl;
     int varLoc;
     
-    if (masterConfig.find(flag) != masterConfig.end())
-        setfl = masterConfig[flag] + " ";
+    if (masterConfig.find(section) != masterConfig.end() &&
+        masterConfig[section].find(flag) != masterConfig[section].end())
+        setfl = masterConfig[section][flag] + " ";
     else
         setfl = def + " ";
     
@@ -264,13 +276,13 @@ void linkLibrary(const std::string &name)
 {
     string useflag;
     if (global.params.lib) {
-        useflag = "liblink_lib";
+        useflag = "liblink";
     } else if (global.params.shlib) {
-        useflag = "shliblink_lib";
+        useflag = "shliblink";
     } else {
-        useflag = "link_lib";
+        useflag = "link";
     }
     
     // add the flag
-    addFlag(linkFlags, useflag, "$i", name);
+    addFlag(linkFlags, useflag, "lib", "$i", name);
 }

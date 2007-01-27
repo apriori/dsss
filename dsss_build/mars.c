@@ -251,8 +251,9 @@ int main(int argc, char *argv[])
     readConfig(argv[0], chooseProfile);
     
     // get include paths
-    if (masterConfig.find("compiler") != masterConfig.end()) {
-        std::string compiler = masterConfig["compiler"];
+    if (masterConfig.find("") != masterConfig.end() &&
+        masterConfig[""].find("compiler") != masterConfig[""].end()) {
+        std::string compiler = masterConfig[""]["compiler"];
         
         if (compiler == "dmd") {
             // we have this built in
@@ -314,8 +315,9 @@ int main(int argc, char *argv[])
     }
     
     // special configuration options needed here
-    if (masterConfig.find("objext") != masterConfig.end()) {
-        global.obj_ext = strdup(masterConfig["objext"].c_str());
+    if (masterConfig.find("") != masterConfig.end() &&
+        masterConfig[""].find("objext") != masterConfig[""].end()) {
+        global.obj_ext = strdup(masterConfig[""]["objext"].c_str());
     }
     
     getenv_setargv("DFLAGS", &argc, &argv);
@@ -341,12 +343,12 @@ int main(int argc, char *argv[])
 	    else if (strcmp(p + 1, "v") == 0)
             {
 		global.params.verbose = 1;
-                //addFlag(compileFlags, "verboseflag", "-v");
+                //addFlag(compileFlags, "compile", "verbose", "-v");
             }
 	    else if (strcmp(p + 1, "O") == 0)
             {
 		global.params.optimize = 1;
-                addFlag(compileFlags, "optimizeflag", "-O");
+                addFlag(compileFlags, "compile", "optimize", "-O");
             }
 	    else if (p[1] == 'o')
 	    {
@@ -391,7 +393,7 @@ int main(int argc, char *argv[])
 	    else if (strcmp(p + 1, "release") == 0)
             {
 		global.params.release = 1;
-                addFlag(compileFlags, "releaseflag", "-release");
+                addFlag(compileFlags, "compile", "release", "-release");
             }
 	    else if (p[1] == 'I')
 	    {
@@ -399,7 +401,7 @@ int main(int argc, char *argv[])
 		    global.params.imppath = new Array();
 		global.params.imppath->push(p + 2);
                 
-                addFlag(compileFlags, "incflag", "-I$i", p + 2);
+                addFlag(compileFlags, "compile", "incdir", "-I$i", p + 2);
 	    }
 	    else if (memcmp(p + 1, "version", 5) == 0)
 	    {
@@ -408,7 +410,7 @@ int main(int argc, char *argv[])
 		//	-version=identifier
 		if (p[8] == '=')
 		{
-                    addFlag(compileFlags, "versionflag", "-version=$i", p + 9);
+                    addFlag(compileFlags, "compile", "version", "-version=$i", p + 9);
                     
 		    if (isdigit(p[9]))
 		    {	long level;
@@ -434,16 +436,16 @@ int main(int argc, char *argv[])
 	    else if (p[1] == 'L')
 	    {
                 if (global.params.lib) {
-                    addFlag(linkFlags, "liblink_flag", "-L$i", p + 2);
+                    addFlag(linkFlags, "liblink", "flag", "-L$i", p + 2);
                 } else if (global.params.shlib) {
-                    addFlag(linkFlags, "shliblink_flag", "-L$i", p + 2);
+                    addFlag(linkFlags, "shliblink", "flag", "-L$i", p + 2);
                 } else {
-                    addFlag(linkFlags, "link_flag", "-L$i", p + 2);
+                    addFlag(linkFlags, "link", "flag", "-L$i", p + 2);
                 }
 	    }
             else if (p[1] == 'C')
             {
-                addFlag(compileFlags, "compile_flag", "$i", p + 2);
+                addFlag(compileFlags, "compile", "flag", "$i", p + 2);
             }
 	    else if (strcmp(p + 1, "exec") == 0)
             {
@@ -832,8 +834,9 @@ int main(int argc, char *argv[])
                     }
                 }
                 
-                if (masterConfig.find("ignore") != masterConfig.end()) {
-                    std::string modIgnoreList = masterConfig["ignore"];
+                if (masterConfig.find("") != masterConfig.end() &&
+                    masterConfig[""].find("ignore") != masterConfig[""].end()) {
+                    std::string modIgnoreList = masterConfig[""]["ignore"];
                     
                     // split by ' '
                     while (modIgnoreList.length()) {

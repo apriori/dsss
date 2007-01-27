@@ -65,14 +65,15 @@ string linkCommand(const string &i, const string &o, char post = 0)
         linkset = "postliblink";
     
     // compile object files into an executable
-    if (masterConfig.find(linkset) == masterConfig.end()) {
+    if (masterConfig.find(linkset) == masterConfig.end() ||
+        masterConfig[linkset].find("cmd") == masterConfig[linkset].end()) {
         cerr << "No 'link' setting configured." << endl;
         global.errors++;
         return "";
     }
     
     // config: compile=[g]dmd -c $i -o $o
-    string cline = masterConfig[linkset];
+    string cline = masterConfig[linkset]["cmd"];
     
     // replace $i
     while ((varLoc = cline.find("$i", 0)) != string::npos) {
@@ -128,8 +129,9 @@ int runLINK()
         }
         
         // add exeext
-        if (masterConfig.find("exeext") != masterConfig.end()) {
-            out += masterConfig["exeext"];
+        if (masterConfig.find("") != masterConfig.end() &&
+            masterConfig[""].find("exeext") != masterConfig[""].end()) {
+            out += masterConfig[""]["exeext"];
         }
         
 	global.params.exefile = strdup(out.c_str());

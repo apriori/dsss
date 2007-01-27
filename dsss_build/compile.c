@@ -23,14 +23,15 @@ string compileCommand(const string &i, const string &o)
     int varLoc;
     
     // compile a source file into an object file
-    if (masterConfig.find("compile") == masterConfig.end()) {
-        cerr << "No 'compile' setting configured." << endl;
+    if (masterConfig.find("compile") == masterConfig.end() ||
+        masterConfig["compile"].find("cmd") == masterConfig["compile"].end()) {
+        cerr << "No 'compile.cmd' setting configured." << endl;
         global.errors++;
         return "";
     }
     
     // config: compile=[g]dmd -c $i -o $o
-    string cline = masterConfig["compile"];
+    string cline = masterConfig["compile"]["cmd"];
     
     // replace $i
     while ((varLoc = cline.find("$i", 0)) != string::npos) {
