@@ -89,7 +89,7 @@ int distclean(DSSSConf conf = null)
         
         // do the preclean step
         if ("preclean" in settings) {
-            dsssScriptedStep(settings["preclean"]);
+            dsssScriptedStep(conf, settings["preclean"]);
         }
         
         if (type == "library") {
@@ -150,7 +150,7 @@ int distclean(DSSSConf conf = null)
         
         // do the postclean step
         if ("postclean" in settings) {
-            dsssScriptedStep(settings["postclean"]);
+            dsssScriptedStep(conf, settings["postclean"]);
         }
         
         writefln("");

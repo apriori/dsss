@@ -33,6 +33,7 @@ struct Param
     char link;		// perform link
     char lib;           // linking a library
     char shlib;         // linking a shared library
+    char fullbuild;     // build all files, regardless of age
     char fullqobjs;     // use fully-qualified object names
     char trace;		// insert profiling hooks
     char quiet;		// suppress non-error messages

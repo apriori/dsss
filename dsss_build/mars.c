@@ -13,6 +13,9 @@
 #include <ctype.h>
 #include <assert.h>
 #include <limits.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #if _WIN32
 #include <windows.h>
@@ -152,10 +155,14 @@ Usage:\n\
   -c             do not link\n\
   -lib           link a static library\n\
   -shlib         link a dynamic library\n\
+  -shlib-support say 'yes' or 'no' for whether shared libraries are supported\n\
+  -full          compile all source files, regardless of their age\n\
+  x-explicit      only compile files explicitly named, not dependencies\n\
   --help         print help\n\
   -Ipath         where to look for imports\n\
   -Ccompileflag  pass compileflag to compilation\n\
   -Llinkerflag   pass linkerflag to link\n\
+  -Spath         search path for libraries\n\
   -O             optimize\n\
   -oqobjdir      write object files to directory objdir with fully-qualified module names\n\
   -odobjdir      write object files to directory objdir\n\
@@ -167,6 +174,7 @@ Usage:\n\
   -v             verbose\n\
   -version=level compile in version code >= level\n\
   -version=ident compile in version code identified by ident\n\
+  x-circular Allows circular dependencies to work on some compilers (namely GDC) \n\
   All other flags are passed to both the compiler and the linker.\n\
 ",
 #if WIN32
@@ -217,6 +225,7 @@ int main(int argc, char *argv[])
     global.params.link = 1;
     global.params.lib = 0;
     global.params.shlib = 0;
+    global.params.fullbuild = 0;
     global.params.fullqobjs = 0;
     global.params.useAssert = 1;
     global.params.useInvariants = 1;
@@ -340,6 +349,20 @@ int main(int argc, char *argv[])
                 global.params.lib = 1;
             else if (strcmp(p + 1, "shlib") == 0)
                 global.params.shlib = 1;
+            else if (strcmp(p + 1, "shlib-support") == 0)
+            {
+                // just test for support
+                if (masterConfig.find("shliblink") == masterConfig.end() ||
+                    masterConfig["shliblink"].find("shlibs") == masterConfig["shliblink"].end() ||
+                    masterConfig["shliblink"]["shlibs"] != "yes") {
+                    printf("no\n");
+                } else {
+                    printf("yes\n");
+                }
+                exit(0);
+            }
+            else if (strcmp(p + 1, "full") == 0)
+                global.params.fullbuild = 1;
 	    else if (strcmp(p + 1, "v") == 0)
             {
 		global.params.verbose = 1;
@@ -858,6 +881,14 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+            
+            // now check if we should ignore it because of its age
+            struct stat istat, ostat;
+            if (!global.params.fullbuild &&
+                stat(m->srcfile->name->str, &istat) == 0 &&
+                stat(m->objfile->name->str, &ostat) == 0 &&
+                istat.st_mtime <= ostat.st_mtime)
+                ignore = 1;
             
             if (!ignore)
                 m->genobjfile();

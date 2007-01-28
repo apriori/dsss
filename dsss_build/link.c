@@ -16,6 +16,9 @@
 #include	<stdarg.h>
 #include	<string.h>
 #include	<stdlib.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #if __WIN32
 #include <malloc.h>
@@ -97,13 +100,22 @@ string linkCommand(const string &i, const string &o, char post = 0)
 
 int runLINK()
 {
-    // get the list of input files
+    // get the list of input files, as well as the age if they're necessary
     string inp, out;
+    time_t mtime = 0;
+    struct stat sbuf, osbuf;
+    
     for (unsigned int i = 0; i < global.params.objfiles->dim; i++) {
         char *s = (char *) global.params.objfiles->data[i];
         
         inp += s;
         inp += " ";
+        
+        // now check the age
+        if (global.params.fullbuild &&
+            stat(s, &sbuf) == 0 &&
+            sbuf.st_mtime > mtime)
+            mtime = sbuf.st_mtime;
     }
     
     if (global.params.exefile)
@@ -137,29 +149,38 @@ int runLINK()
 	global.params.exefile = strdup(out.c_str());
     }
     
-    string cline = linkCommand(
-        inp, out);
-    
-    if (global.params.verbose)
-        printf("link      %s\n", cline.c_str());
-    
-    // run it
-    if (cline == "" ||
-        system(cline.c_str())) {
-        global.errors++;
-        return -1;
-    }
-    
-    if (global.params.lib) {
-        // do postlib link
-        cline = linkCommand(out, "", 1);
+    // do we even need to do the build?
+    if (global.params.fullbuild ||
+        stat(global.params.exefile, &osbuf) != 0 ||
+        osbuf.st_mtime < mtime) {
+        string cline = linkCommand(
+            inp, out);
+        
         if (global.params.verbose)
-            printf("postlink  %s\n", cline.c_str());
+            printf("link      %s\n", cline.c_str());
+        
+        // run it
         if (cline == "" ||
             system(cline.c_str())) {
             global.errors++;
             return -1;
         }
+        
+        if (global.params.lib) {
+            // do postlib link
+            cline = linkCommand(out, "", 1);
+            if (global.params.verbose)
+                printf("postlink  %s\n", cline.c_str());
+            if (cline == "" ||
+                system(cline.c_str())) {
+                global.errors++;
+                return -1;
+            }
+        }
+        
+    } else {
+        if (global.params.verbose)
+            printf("no link necessary\n");
     }
     
     return 0;
