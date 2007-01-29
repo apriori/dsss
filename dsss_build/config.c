@@ -25,6 +25,7 @@ extern "C" {
 
 #include "config.h"
 #include "mars.h"
+#include "root.h"
 #include "whereami.h"
 
 #define exists(x) (!access((x), F_OK))
@@ -146,7 +147,20 @@ void readConfigFile(const string &dir, const string &fname)
                     }
                 
                     readConfigFile(dir, subprof);
-                
+                    
+                } else if (section == "" &&
+                           !strcmp(readBuf, "version")) {
+                    // predefined version set
+                    if (!global.params.versionids)
+                        global.params.versionids = new Array();
+                    global.params.versionids->push(val);
+                    
+                } else if (section == "" &&
+                           !strcmp(readBuf, "noversion")) {
+                    if (!global.params.versionidsNot)
+                        global.params.versionidsNot = new Array();
+                    global.params.versionidsNot->push(val);
+                    
                 } else {
                     // set a value
                     masterConfig[section][readBuf] = val;

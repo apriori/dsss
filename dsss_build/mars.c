@@ -268,11 +268,17 @@ int main(int argc, char *argv[])
         
         if (compiler == "dmd") {
             // we have this built in
-#if __WIN32
-            inifile("dmd", "sc.ini");
-#else
-            inifile("dmd", "dmd.conf");
-#endif
+            char *inif;
+            
+            if (masterConfig[""].find("inifile") != masterConfig[""].end())
+                inif = mem.strdup(masterConfig[""]["inifile"].c_str());
+            else
+                inif = mem.strdup("sc.ini");
+            
+            inifile("dmd", inif);
+            
+            mem.free(inif);
+            
         } else if (compiler.substr(compiler.length() - 3) == "gdc") {
             // a bit more complicated
 #define READBUFSIZ 1024
@@ -630,34 +636,27 @@ int main(int argc, char *argv[])
 
 	p = (char *) files.data[i];
 
-#if _WIN32
+/*#if _WIN32
 	// Convert / to \ so linker will work
 	for (int j = 0; p[j]; j++)
 	{
 	    if (p[j] == '/')
 		p[j] = '\\';
 	}
-#endif
+#endif */
 
 	p = FileName::name(p);		// strip path
 	ext = FileName::ext(p);
 	if (ext)
 	{
-#if TARGET_LINUX
 	    if (strcmp(ext, global.obj_ext) == 0)
-#else
-	    if (stricmp(ext, global.obj_ext) == 0)
-#endif
 	    {
 		global.params.objfiles->push(files.data[i]);
 		continue;
 	    }
 
-#if TARGET_LINUX
-	    if (strcmp(ext, "a") == 0)
-#else
-	    if (stricmp(ext, "lib") == 0)
-#endif
+	    if (strcmp(ext, "a") == 0 ||
+                stricmp(ext, "lib") == 0)
 	    {
 		global.params.libfiles->push(files.data[i]);
 		continue;
@@ -668,26 +667,6 @@ int main(int argc, char *argv[])
 		global.params.ddocfiles->push(files.data[i]);
 		continue;
 	    }
-
-#if !TARGET_LINUX
-	    if (stricmp(ext, "res") == 0)
-	    {
-		global.params.resfile = (char *)files.data[i];
-		continue;
-	    }
-
-	    if (stricmp(ext, "def") == 0)
-	    {
-		global.params.deffile = (char *)files.data[i];
-		continue;
-	    }
-
-	    if (stricmp(ext, "exe") == 0)
-	    {
-		global.params.exefile = (char *)files.data[i];
-		continue;
-	    }
-#endif
 
 	    if (stricmp(ext, global.mars_ext) == 0 ||
 		stricmp(ext, "htm") == 0 ||

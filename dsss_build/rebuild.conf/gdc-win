@@ -6,6 +6,19 @@ exeext=.exe
 objext=o
 
 
+noversion=DigitalMars
+version=GNU
+noversion=linux
+noversion=Unix
+noversion=Posix
+version=Windows
+version=X86
+noversion=PPC
+noversion=X86_64
+version=LittleEndian
+noversion=BigEndian
+
+
 [compile]
 cmd=gdmd -c $i -of$o
 

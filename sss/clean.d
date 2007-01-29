@@ -100,7 +100,7 @@ int distclean(DSSSConf conf = null)
                 tryRemove(file ~ "i0");
             }
             
-            version (GNU_or_Posix) {
+            if (targetGNUOrPosix()) {
                 // first remove the static library
                 tryRemove("libS" ~ target ~ ".a");
                 
@@ -113,7 +113,7 @@ int distclean(DSSSConf conf = null)
                     tryRemove(ssln);
                 }
                 
-            } else version (Windows) {
+            } else if (targetVersion("Windows")) {
                 // first remove
                 tryRemove("S" ~ target ~ ".lib");
                 
@@ -126,16 +126,16 @@ int distclean(DSSSConf conf = null)
                     tryRemove(ssln);
                 }
             } else {
-                static assert(0);
+                assert(0);
             }
             
         } else if (type == "binary") {
-            version (Posix) {
+            if (targetVersion("Posix")) {
                 tryRemove(target);
-            } else version (Windows) {
+            } else if (targetVersion("Windows")) {
                 tryRemove(target ~ ".exe");
             } else {
-                static assert(0);
+                assert(0);
             }
             
         } else if (type == "subdir") {

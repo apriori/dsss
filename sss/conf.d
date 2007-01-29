@@ -105,6 +105,9 @@ char[] dsssDllLoc;
 /** Usedirs (dirs to import both includes and libs from */
 char[][] useDirs;
     
+/** Tested versions (for the target) */
+bool[char[]] versions;
+    
 /* It's often useful to know whether we're using GNU and/or Posix, as GNU on
  * Windows tends to do some things Posixly. */
 version (build) {
@@ -375,15 +378,12 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
     
     // Normalize it
     confFile = replace(confFile, "\r", "");
-        
+    
     // Split it by lines
     char[][] lines = split(confFile, "\n");
-        
+    
     /// Current section
     char[] section;
-        
-    /// Tested versions
-    bool[char[]] versions;
     
     // set up the defaults for the top-level section
     conf.settings[""] = null;
@@ -488,12 +488,12 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
                     
                     // <compiler>
                     // FIXME: this should check with dsss_build
-                    version (GNU) {
+                    if (targetVersion("GNU")) {
                         lname ~= "G";
-                    } else version (DigitalMars) {
+                    } else if (targetVersion("DigitalMars")) {
                         lname ~= "D";
                     } else {
-                        static assert(0);
+                        lname ~= "O";
                     }
                     lname ~= "-";
                         
@@ -575,29 +575,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
                 vertok = tokens[2];
             }
             
-            if (!(vertok in versions)) {
-                /* now check if this version is defined by making a .d file and
-                 * building it */
-                std.file.write("dsss_tmp.d", cast(void[])
-                               ("version (" ~ vertok ~ ") {\n" ~
-                                "pragma(msg, \"y\");\n" ~
-                                "} else {\n" ~
-                                "pragma(msg, \"n\");\n" ~
-                                "}\n"));
-                PStream comp = new PStream(dsss_build ~ "-p dsss_tmp.d");
-                char yn = '\0';
-                while (yn == '\0')
-                    comp.read(yn);
-                
-                std.file.remove("dsss_tmp.d");
-                
-                if (yn == 'y') {
-                    // true version
-                    versions[vertok] = true;
-                } else {
-                    versions[vertok] = false;
-                }
-            }
+            testVersion(vertok);
             
             // now choose our path
             if (versions[vertok]) valid = !valid;
@@ -644,6 +622,49 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
     }
     
     return conf;
+}
+
+/** Test if a version is set in the target (put into versions array) */
+void testVersion(char[] vertok)
+{
+    if (!(vertok in versions)) {
+        /* now check if this version is defined by making a .d file and
+         * building it */
+        std.file.write("dsss_tmp.d", cast(void[])
+                       ("version (" ~ vertok ~ ") {\n" ~
+                        "pragma(msg, \"y\");\n" ~
+                        "} else {\n" ~
+                        "pragma(msg, \"n\");\n" ~
+                        "}\n"));
+        PStream comp = new PStream(dsss_build ~ "-p dsss_tmp.d");
+        char yn = '\0';
+        while (yn == '\0')
+            comp.read(yn);
+                
+        std.file.remove("dsss_tmp.d");
+                
+        if (yn == 'y') {
+            // true version
+            versions[vertok] = true;
+        } else {
+            versions[vertok] = false;
+        }
+    }
+}
+
+/** Check a target version */
+bool targetVersion(char[] vertok)
+{
+    testVersion(vertok);
+    return versions[vertok];
+}
+
+/** If the target matches GNU OR Posix, this returns true */
+bool targetGNUOrPosix()
+{
+    testVersion("GNU");
+    testVersion("Posix");
+    return (versions["GNU"] || versions["Posix"]);
 }
 
 /** Get a list of files from a target */
@@ -936,14 +957,14 @@ char[] getShLibName(char[][char[]] settings)
 {
     char[] target = settings["target"];
     
-    version (Posix) {
+    if (targetVersion("Posix")) {
         // lib<target>.so.<soversion>
         return "lib" ~ target ~ ".so." ~ getSoversion(settings);
-    } else version (Windows) {
+    } else if (targetVersion("Windows")) {
         // <target>.dll
         return target ~ ".dll";
     } else {
-        static assert(0);
+        assert(0);
     }
 }
 
@@ -952,7 +973,7 @@ char[][] getShortShLibNames(char[][char[]] settings)
 {
     char[] target = settings["target"];
     
-    version (Posix) {
+    if (targetVersion("Posix")) {
         // lib<target>.so.<first part of soversion>
         char[] soversion = getSoversion(settings);
         char[][] res;
@@ -966,11 +987,9 @@ char[][] getShortShLibNames(char[][char[]] settings)
         res ~= "lib" ~ target ~ ".so";
         
         return res;
-    } else version (Windows) {
+    } else {
         // no short version
         return null;
-    } else {
-        static assert(0);
     }
 }
 

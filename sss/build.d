@@ -175,19 +175,17 @@ version (build) {
                 writefln("Building stub shared library for %s", target);
                 
                 // make the stub
-                version (GNU_or_Posix) {
+                if (targetGNUOrPosix()) {
                     char[] stubbl = bl ~ "-fPIC -shlib " ~ stubDLoc ~ " -of" ~ shlibname ~
                         " " ~ shlibflag;
                     saySystemDie(stubbl);
-                    version (Posix) {
+                    if (targetVersion("Posix")) {
                         foreach (ssln; shortshlibnames) {
                             saySystemDie("ln -sf " ~ shlibname ~ " " ~ ssln);
                         }
                     }
-                } else version (Windows) {
-                    assert(0);
                 } else {
-                    static assert(0);
+                    assert(0);
                 }
                 
                 writefln("");
@@ -234,7 +232,7 @@ version (build) {
             // get the file list
             char[] fileList = std.string.join(targetToFiles(build, conf), " ");
             
-            version (GNU_or_Posix) {
+            if (targetGNUOrPosix()) {
                 // first do a static library
                 if (exists("libS" ~ target ~ ".a")) std.file.remove("libS" ~ target ~ ".a");
                 char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -oflibS" ~ target ~ ".a";
@@ -251,13 +249,13 @@ version (build) {
                     saySystemDie(shbl);
                 }
                 
-            } else version (Windows) {
+            } else if (targetVersion("Windows")) {
                 // for the moment, only do a static library
                 if (exists("S" ~ target ~ ".lib")) std.file.remove("S" ~ target ~ ".lib");
                 char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -ofS" ~ target ~ ".lib";
                 saySystemDie(stbl);
             } else {
-                static assert(0);
+                assert(0);
             }
         
             // do the postbuild

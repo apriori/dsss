@@ -1,9 +1,23 @@
 profile=phobos
 
 compiler=dmd
+inifile=dmd.conf
 
 exeext=
 objext=o
+
+
+version=DigitalMars
+noversion=GNU
+version=linux
+noversion=Unix
+version=Posix
+noversion=Windows
+version=X86
+noversion=PPC
+noversion=X86_64
+version=LittleEndian
+noversion=BigEndian
 
 
 [compile]

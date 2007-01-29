@@ -6,6 +6,13 @@ exeext=
 objext=o
 
 
+noversion=DigitalMars
+version=GNU
+version=Unix
+version=Posix
+noversion=Windows
+
+
 [compile]
 cmd=gdmd -version=Posix -c $i -of$o
 

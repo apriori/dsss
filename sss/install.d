@@ -87,7 +87,7 @@ int install(char[][] buildElems, char[][]* subManifest = null)
             // far more complicated
             
             // 1) copy in library files
-            version (GNU_or_Posix) {
+            if (targetGNUOrPosix()) {
                 // copy in the .a and .so/.dll files
                 
                 // 1) .a
@@ -97,7 +97,7 @@ int install(char[][] buildElems, char[][]* subManifest = null)
                 
                 if (shLibSupport() &&
                     ("shared" in settings)) {
-                    version (Posix) {
+                    if (targetVersion("Posix")) {
                         // 2) .so
                         char[][] shortshlibnames = getShortShLibNames(settings);
                 
@@ -111,14 +111,14 @@ int install(char[][] buildElems, char[][]* subManifest = null)
                                          libPrefix ~ std.path.sep ~ ssln);
                             manifest ~= libPrefix ~ std.path.sep ~ ssln;
                         }
-                    } else version (Windows) {
+                    } else if (targetVersion("Windows")) {
                         // 2) .dll
                         copyAndManifest(shlibname, libPrefix);
                     } else {
-                        static assert(0);
+                        assert(0);
                     }
                 }
-            } else version (Windows) {
+            } else if (targetVersion("Windows")) {
                 // copy in the .lib and .dll files
                 
                 // 1) .lib
@@ -132,7 +132,7 @@ int install(char[][] buildElems, char[][]* subManifest = null)
                     copyAndManifest(shlibname, libPrefix);
                 }
             } else {
-                static assert(0);
+                assert(0);
             }
             
             // 2) generate .di files
@@ -146,10 +146,12 @@ int install(char[][] buildElems, char[][]* subManifest = null)
             
         } else if (type == "binary") {
             // fairly easy
-            version (Posix) {
+            if (targetVersion("Posix")) {
                 copyAndManifest(target, binPrefix);
-            } else {
+            } else if (targetVersion("Windows")) {
                 copyAndManifest(target ~ ".exe", binPrefix);
+            } else {
+                assert(0);
             }
         } else if (type == "subdir") {
             // recurse

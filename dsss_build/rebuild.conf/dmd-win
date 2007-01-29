@@ -1,9 +1,23 @@
 profile=phobos
 
 compiler=dmd
+inifile=sc.ini
 
 exeext=.exe
 objext=obj
+
+
+version=DigitalMars
+noversion=GNU
+noversion=linux
+noversion=Unix
+noversion=Posix
+version=Windows
+version=X86
+noversion=PPC
+noversion=X86_64
+version=LittleEndian
+noversion=BigEndian
 
 
 [compile]
