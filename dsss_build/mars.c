@@ -143,7 +143,7 @@ void halt()
 
 void usage()
 {
-    printf("Digital Mars D Compiler %s\n%s %s\n",
+    printf("ReBuild %s\n%s %s\n",
 	global.version, global.copyright, global.written);
     printf("\
 Documentation: www.digitalmars.com/d/index.html\n\
