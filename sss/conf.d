@@ -584,7 +584,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
                                 "} else {\n" ~
                                 "pragma(msg, \"n\");\n" ~
                                 "}\n"));
-                PStream comp = new PStream(dsss_build ~ "-full -obj -clean dsss_tmp.d");
+                PStream comp = new PStream(dsss_build ~ "-p dsss_tmp.d");
                 char yn = '\0';
                 while (yn == '\0')
                     comp.read(yn);
