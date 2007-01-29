@@ -350,12 +350,26 @@ int main(int argc, char *argv[])
                 global.params.obj = 0;
                 global.params.link = 0;
             }
-	    else if (strcmp(p + 1, "c") == 0)
+	    else if (strcmp(p + 1, "c") == 0 ||
+                     strcmp(p + 1, "obj") == 0 /* compat with build */)
 		global.params.link = 0;
             else if (strcmp(p + 1, "lib") == 0)
                 global.params.lib = 1;
             else if (strcmp(p + 1, "shlib") == 0)
                 global.params.shlib = 1;
+            else if (strcmp(p + 1, "link") == 0) /* compat with build */
+            {
+                global.params.link = 1;
+                global.params.lib = 0;
+                global.params.shlib = 0;
+            }
+            else if (strcmp(p + 1, "nolib") == 0) /* compat with build */
+            {
+                global.params.lib = 0;
+                global.params.shlib = 0;
+            }
+            else if (strcmp(p + 1, "nolink") == 0) /* compat with build */
+                global.params.link = 0;
             else if (strcmp(p + 1, "shlib-support") == 0)
             {
                 // just test for support
@@ -378,7 +392,9 @@ int main(int argc, char *argv[])
                 global.params.fullbuild = 1;
             else if (strcmp(p + 1, "explicit") == 0)
                 global.params.expbuild = 1;
-	    else if (strcmp(p + 1, "v") == 0)
+	    else if (strcmp(p + 1, "v") == 0 ||
+                     strcmp(p + 1, "V") == 0 || /* compat with build */
+                     strcmp(p + 1, "names") == 0 /* also build */)
             {
 		global.params.verbose = 1;
                 //addFlag(compileFlags, "compile", "verbose", "-v");
@@ -506,7 +522,16 @@ int main(int argc, char *argv[])
 		    goto Lnoarg;
 		}
 	    }
-            else if (!strncmp(p + 1, "dc=", 3)) {}
+            else if (strncmp(p + 1, "dc=", 3) == 0) {}
+            else if (strncmp(p + 1, "CFPATH", 6) == 0 ||
+                     strncmp(p + 1, "BCFPATH", 7) == 0 ||
+                     strcmp(p + 1, "allobj") == 0 ||
+                     strcmp(p + 1, "cleanup") == 0 ||
+                     strcmp(p + 1, "clean") == 0 ||
+                     strncmp(p + 1, "LIBOPT", 6) == 0 ||
+                     strncmp(p + 1, "SHLIBOPT", 8) == 0 ||
+                     strncmp(p + 1, "LIBPATH", 7) == 0 ||
+                     strcmp(p + 1, "test") == 0) {} /* compat with build */
 	    else
 	    {
                 compileFlags += " ";
