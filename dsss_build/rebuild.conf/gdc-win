@@ -42,4 +42,4 @@ cmd=gdmd -q,-shared $i -of$o
 
 libdir=-L-L$i
 lib=-L-l$i
-flag=-L
+flag=-L$i
