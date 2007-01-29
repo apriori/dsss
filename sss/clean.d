@@ -54,7 +54,7 @@ int clean(DSSSConf conf = null) {
         if (ext == "o" ||
             ext == "obj") {
             writefln("Removing %s", dire);
-            std.file.remove(dire);
+            tryRemove(dire);
         }
     }
     
