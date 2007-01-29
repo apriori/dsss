@@ -986,7 +986,7 @@ char[] getShLibFlag(char[][char[]] settings)
         } else {
             sonver = getShLibName(settings);
         }
-        return "-L-Wl,-soname=" ~ sonver;
+        return "-L-soname=" ~ sonver;
     }
     return "";
 }
