@@ -308,7 +308,8 @@ int NullExp::implicitConvTo(Type *t)
     printf("NullExp::implicitConvTo(this=%s, type=%s, t=%s)\n",
 	toChars(), type->toChars(), t->toChars());
 #endif
-    if (this->type->equals(t))
+    if (!(this->type) ||
+        this->type->equals(t))
 	return MATCHexact;
     // NULL implicitly converts to any pointer type or dynamic array
     if (type->ty == Tpointer && type->next->ty == Tvoid)
