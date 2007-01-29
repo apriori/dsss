@@ -537,6 +537,7 @@ Expression *Type::getProperty(Loc loc, Identifier *ident)
 	    error(loc, ".typeinfo deprecated, use typeid(type)");
 	//e = getTypeInfo(NULL);
         e = new NullExp(loc);
+        e->type = tint32;
     }
     else if (ident == Id::init)
     {
