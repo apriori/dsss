@@ -1756,7 +1756,7 @@ Statement *PragmaStatement::semantic(Scope *sc)
 {   // Should be merged with PragmaDeclaration
     //printf("PragmaStatement::semantic() %s\n", toChars());
     //printf("body = %p\n", body);
-    /*if (ident == Id::msg) // No need for this: The sub-compiler will handle it
+    if (ident == Id::msg && !global.params.obj)
     {
         if (args)
         {
@@ -1770,13 +1770,13 @@ Statement *PragmaStatement::semantic(Scope *sc)
                     StringExp *se = (StringExp *)e;
                     fprintf(stdmsg, "%.*s", (int)se->len, se->string);
                 }
-                / *else
-		    error("string expected for message, not '%s'", e->toChars()); * /
+                else
+		    error("string expected for message, not '%s'", e->toChars());
             }
             fprintf(stdmsg, "\n");
         }
     }
-    else if (ident == Id::lib)
+    /*else if (ident == Id::lib)
     {
 	if (!args || args->dim != 1) {}
 	    //error("string expected for library name");
@@ -1789,8 +1789,8 @@ Statement *PragmaStatement::semantic(Scope *sc)
 	    / *if (e->op != TOKstring)
 		error("string expected for library name, not '%s'", e->toChars()); * /
 	}
-    } */
-    /*else
+    }
+    else
         error("unrecognized pragma(%s)", ident->toChars()); */
     
     if (ident == Id::link)

@@ -710,7 +710,7 @@ void PragmaDeclaration::semantic(Scope *sc)
 {   // Should be merged with PragmaStatement
 
     //printf("\tPragmaDeclaration::semantic '%s'\n",toChars());
-    /*if (ident == Id::msg) // No need for this: The sub-compiler will handle it
+    if (ident == Id::msg && !global.params.obj)
     {
 	if (args)
 	{
@@ -731,7 +731,7 @@ void PragmaDeclaration::semantic(Scope *sc)
 	}
 	goto Lnodecl;
     }
-    else if (ident == Id::lib)
+    /*else if (ident == Id::lib)
     {
 	if (!args || args->dim != 1)
 	    error("string expected for library name");
