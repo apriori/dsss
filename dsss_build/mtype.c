@@ -625,6 +625,7 @@ Expression *Type::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	    error(e->loc, ".typeinfo deprecated, use typeid(type)");
 	//e = getTypeInfo(sc);
         e = new NullExp(e->loc);
+        e->type = tint32;
 	return e;
     }
     return getProperty(e->loc, ident);
@@ -4194,7 +4195,9 @@ Expression *TypeStruct::defaultInit()
     assert(d);
     d->type = this;
     return new VarExp(sym->loc, d);*/
-    return new NullExp(sym->loc);
+    Expression *e = new NullExp(sym->loc);
+    e->type = tint32;
+    return e;
 }
 
 int TypeStruct::isZeroInit()
@@ -4376,7 +4379,9 @@ L1:
 	    if (!global.params.useDeprecated)
 		error(e->loc, ".typeinfo deprecated, use typeid(type)");
 	    //return getTypeInfo(sc);
-            return new NullExp(e->loc);
+            Expression *e2 = new NullExp(e->loc);
+            e2->type = tint32;
+            return e2;
 	}
 	if (ident == Id::outer && sym->vthis)
 	{

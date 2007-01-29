@@ -3524,6 +3524,7 @@ Expression *TypeidExp::semantic(Scope *sc)
     typeidType = typeidType->semantic(loc, sc);
     //e = typeidType->getTypeInfo(sc);
     e = new NullExp(loc);
+    e->type = tint32;
     return e;
 }
 
