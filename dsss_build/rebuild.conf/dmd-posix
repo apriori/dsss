@@ -7,7 +7,7 @@ objext=o
 
 
 [compile]
-cmd=dmd -c $i -of$o
+cmd=dmd -version=Posix -c $i -of$o
 
 flag=$i
 incdir=-I$i

@@ -65,12 +65,9 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
      */
     
     // make the basic build line
-    char[] bl = dsss_build ~ forceFlags;
+    char[] bl = dsss_build ~ forceFlags ~ " ";
     
-    // for DMD, force output files to be generated in this directory
-    version (DigitalMars) {
-        bl ~= "-od. ";
-    }
+    bl ~= "-oq. ";
     
     // 1) Make .di files for everything
     foreach (build; allSources) {
@@ -94,17 +91,9 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
                     /+
                     // FIXME: this should not assume by version()
                     int res;
-                    version (GNU) {
-                        res = system(dsss_build ~
-                                     "-obj -full -fintfc -fintfc-file=" ~
-                                     file ~ "i " ~ file);
-                    } else version (DigitalMars) {
-                        res = system(dsss_build ~
-                                     "-obj -full -H -Hf" ~
-                                     file ~ "i " ~ file);
-                    } else {
-                        static assert(0);
-                    }
+                    res = system(dsss_build ~
+                                 "-c -full -H -Hf" ~
+                                 file ~ "i " ~ file);
                     
                     if (res) {
                         // make sure the .i file is removed
@@ -187,8 +176,8 @@ version (build) {
                 
                 // make the stub
                 version (GNU_or_Posix) {
-                    char[] stubbl = bl ~ "-fPIC -shlib " ~ stubDLoc ~ " -T" ~ shlibname ~
-                    " " ~ shlibflag;
+                    char[] stubbl = bl ~ "-fPIC -shlib " ~ stubDLoc ~ " -of" ~ shlibname ~
+                        " " ~ shlibflag;
                     saySystemDie(stubbl);
                     version (Posix) {
                         foreach (ssln; shortshlibnames) {
@@ -231,7 +220,7 @@ version (build) {
             char[] shlibflag = getShLibFlag(settings);
             char[] bflags;
             if ("buildflags" in settings) {
-                bflags = settings["buildflags"];
+                bflags = settings["buildflags"] ~ " ";
             }
             
             // output what we're building
@@ -248,14 +237,14 @@ version (build) {
             version (GNU_or_Posix) {
                 // first do a static library
                 if (exists("libS" ~ target ~ ".a")) std.file.remove("libS" ~ target ~ ".a");
-                char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -TlibS" ~ target ~ ".a";
+                char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -oflibS" ~ target ~ ".a";
                 saySystemDie(stbl);
                 
                 if (shLibSupport() &&
                     ("shared" in settings)) {
                     // then make the shared library
                     if (exists(shlibname)) std.file.remove(shlibname);
-                    char[] shbl = bl ~ bflags ~ " -fPIC -explicit -shlib -full " ~ fileList ~ " -T" ~ shlibname ~
+                    char[] shbl = bl ~ bflags ~ " -fPIC -explicit -shlib -full " ~ fileList ~ " -of" ~ shlibname ~
                         " " ~ shlibflag;
                     
                     // finally, the shared compile
@@ -265,7 +254,7 @@ version (build) {
             } else version (Windows) {
                 // for the moment, only do a static library
                 if (exists("S" ~ target ~ ".lib")) std.file.remove("S" ~ target ~ ".lib");
-                char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -TS" ~ target ~ ".lib";
+                char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -ofS" ~ target ~ ".lib";
                 saySystemDie(stbl);
             } else {
                 static assert(0);
@@ -314,7 +303,7 @@ version (build) {
             // build a build line
             char[] ext = std.string.tolower(getExt(build));
             if (ext == "d") {
-                bbl ~= build ~ " -T" ~ target ~ " ";
+                bbl ~= build ~ " -of" ~ target ~ " ";
             } else if (ext == "brf") {
                 bbl ~= "@" ~ getName(build) ~ " ";
             } else {

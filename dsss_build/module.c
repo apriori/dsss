@@ -312,9 +312,14 @@ Module *Module::load(Loc loc, Array *packages, Identifier *ident)
     if (result)
 	m->srcfile = new File(result);
 
-    if (!strcmp(m->srcfile->name->ext(), global.mars_ext)) {
+    if (!global.params.expbuild &&
+        !strcmp(m->srcfile->name->ext(), global.mars_ext)) {
         // this module needs to be compiled
         global.cmodules->push(m);
+    }
+    
+    if (global.params.listfiles) {
+        printf("%s\n", sd);
     }
 
     m->read(loc);

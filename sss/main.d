@@ -240,7 +240,7 @@ int main(char[][] args)
     foreach (dir; useDirs) {
         dsss_build ~= "-I" ~ dir ~ std.path.sep ~
             "include" ~ std.path.sep ~
-            "d -L" ~ dir ~ std.path.sep ~
+            "d -S" ~ dir ~ std.path.sep ~
             "lib ";
     }
     

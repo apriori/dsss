@@ -198,6 +198,7 @@ Msgtable msgtable[] =
     { "GNU_asm" },
     
     { "link" },
+    { "export_version" },
 
     // For toHash/toString
     { "tohash", "toHash" },

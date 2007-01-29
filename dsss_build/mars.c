@@ -152,17 +152,19 @@ Usage:\n\
 \n\
   files.d        D source files\n%s\
   -dc=<compiler> use the specified compiler configuration\n\
+  -p             do not compile (or link)\n\
   -c             do not link\n\
   -lib           link a static library\n\
   -shlib         link a dynamic library\n\
   -shlib-support say 'yes' or 'no' for whether shared libraries are supported\n\
+  -files         list files which would be compiled (but don't compile)\n\
   -full          compile all source files, regardless of their age\n\
-  x-explicit      only compile files explicitly named, not dependencies\n\
+  -explicit      only compile files explicitly named, not dependencies\n\
   --help         print help\n\
   -Ipath         where to look for imports\n\
   -Ccompileflag  pass compileflag to compilation\n\
   -Llinkerflag   pass linkerflag to link\n\
-  -Spath         search path for libraries\n\
+  x-Spath         search path for libraries\n\
   -O             optimize\n\
   -oqobjdir      write object files to directory objdir with fully-qualified module names\n\
   -odobjdir      write object files to directory objdir\n\
@@ -175,7 +177,7 @@ Usage:\n\
   -version=level compile in version code >= level\n\
   -version=ident compile in version code identified by ident\n\
   x-circular Allows circular dependencies to work on some compilers (namely GDC) \n\
-  All other flags are passed to both the compiler and the linker.\n\
+  All other flags are passed to the compiler.\n\
 ",
 #if WIN32
 "  @cmdfile       read arguments from cmdfile\n"
@@ -343,7 +345,12 @@ int main(int argc, char *argv[])
 	p = argv[i];
 	if (*p == '-')
 	{
-	    if (strcmp(p + 1, "c") == 0)
+            if (strcmp(p + 1, "p") == 0)
+            {
+                global.params.obj = 0;
+                global.params.link = 0;
+            }
+	    else if (strcmp(p + 1, "c") == 0)
 		global.params.link = 0;
             else if (strcmp(p + 1, "lib") == 0)
                 global.params.lib = 1;
@@ -361,8 +368,16 @@ int main(int argc, char *argv[])
                 }
                 exit(0);
             }
+            else if (strcmp(p + 1, "files") == 0)
+            {
+                global.params.listfiles = 1;
+                global.params.obj = 0;
+                global.params.link = 0;
+            }
             else if (strcmp(p + 1, "full") == 0)
                 global.params.fullbuild = 1;
+            else if (strcmp(p + 1, "explicit") == 0)
+                global.params.expbuild = 1;
 	    else if (strcmp(p + 1, "v") == 0)
             {
 		global.params.verbose = 1;
@@ -470,10 +485,11 @@ int main(int argc, char *argv[])
             {
                 addFlag(compileFlags, "compile", "flag", "$i", p + 2);
             }
+            else if (p[1] == 'S') {}
+                // not yet supported
 	    else if (strcmp(p + 1, "exec") == 0)
             {
-                error("-exec not yet supported");
-                /*global.params.run = 1;
+                global.params.run = 1;
 		global.params.runargs_length = ((i >= argcstart) ? argc : argcstart) - i - 1;
 		if (global.params.runargs_length)
 		{
@@ -485,15 +501,13 @@ int main(int argc, char *argv[])
 		else
 		{   global.params.run = 0;
 		    goto Lnoarg;
-		}*/
+		}
 	    }
             else if (!strncmp(p + 1, "dc=", 3)) {}
 	    else
 	    {
                 compileFlags += " ";
                 compileFlags += p;
-                linkFlags += " ";
-                linkFlags += p;
                 continue;
                 
 	     Lerror:
@@ -681,9 +695,6 @@ int main(int argc, char *argv[])
 	id = new Identifier(name, 0);
 	m = new Module((char *) files.data[i], id, global.params.doDocComments, global.params.doHdrGeneration);
 	global.cmodules->push(m);
-
-	global.params.objfiles->push(m->objfile->name->str);
-        m->objfilenum = global.params.objfiles->dim - 1;
     }
 
 #if _WIN32 && __DMC__
@@ -710,7 +721,7 @@ int main(int argc, char *argv[])
 	    global.cmodules->remove(i);
 	    i--;
 
-	    // Remove m's object file from list of object files
+	    /* Remove m's object file from list of object files
 	    for (int j = 0; j < global.params.objfiles->dim; j++)
 	    {
 		if (m->objfile->name->str == global.params.objfiles->data[j])
@@ -721,7 +732,7 @@ int main(int argc, char *argv[])
 	    }
 
 	    if (global.params.objfiles->dim == 0)
-		global.params.link = 0;
+		global.params.link = 0;*/
 	}
     }
     if (global.errors)
@@ -812,7 +823,7 @@ int main(int argc, char *argv[])
     }
     if (global.errors)
 	fatal();*/
-
+    
     // Generate output files
     for (i = 0; i < global.cmodules->dim; i++)
     {
@@ -840,9 +851,7 @@ int main(int argc, char *argv[])
                     }
                 }
                 
-                m->objfile = new File(FileName::combine(global.params.objdir, ofname));
-                if (global.params.objfiles)
-                    global.params.objfiles->data[m->objfilenum] = (void *) ofname;
+                m->objfile = new File(ofname);
             }
         }
 	if (global.params.obj) {
@@ -882,6 +891,12 @@ int main(int argc, char *argv[])
                 }
             }
             
+            if (!ignore) {
+                if (!global.params.objfiles)
+                    global.params.objfiles = new Array();
+                global.params.objfiles->push(m->objfile->name->str);
+            }
+            
             // now check if we should ignore it because of its age
             struct stat istat, ostat;
             if (!global.params.fullbuild &&
@@ -890,8 +905,9 @@ int main(int argc, char *argv[])
                 istat.st_mtime <= ostat.st_mtime)
                 ignore = 1;
             
-            if (!ignore)
+            if (!ignore) {
                 m->genobjfile();
+            }
         }
 	if (global.params.verbose)
 	    printf("code      %s\n", m->toChars());

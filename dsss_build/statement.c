@@ -1811,6 +1811,28 @@ Statement *PragmaStatement::semantic(Scope *sc)
 		    error("string expected for link, not '%s'", e->toChars());
 	    }
 	}
+        
+    } else if (ident == Id::export_version) {
+	if (args)
+	{
+	    for (size_t i = 0; i < args->dim; i++)
+	    {
+		Expression *e = (Expression *)args->data[i];
+
+		e = e->semantic(sc);
+		if (e->op == TOKstring)
+		{
+		    StringExp *se = (StringExp *)e;
+                    
+                    /* add this version flag to our own idea of versions, as
+                     * well as the compile line */
+                    VersionCondition::addPredefinedGlobalIdent((char *) se->string);
+                    addFlag(compileFlags, "compile", "version", "-version=$i", (char *) se->string);
+                }
+                else
+                    error("string expected for export_version, not '%s'", e->toChars());
+            }
+        }
     }
     
     if (body)

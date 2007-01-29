@@ -403,31 +403,19 @@ char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
             continue;
         }
         
-        // make a uses file
-        char[] usesLine = dsss_build ~ " -test -uses=temp.uses " ~
-            std.string.join(files, " ");
-        saySystemDie(usesLine);
+        // use dsss_build -files to get the list of files
+        PStream usesi = new PStream(dsss_build ~ " -files " ~ std.string.join(files, " "));
         
-        // then read the uses
-        char[] uses = cast(char[]) std.file.read("temp.uses");
-        foreach (use; std.string.split(uses, "\n")) {
-            if (use.length == 0) continue;
-            if (use[$-1] == '\r') use = use[0 .. $-1];
-            if (use.length == 0) continue;
+        // read the uses
+        char[] use;
+        while (!usesi.eof()) {
+            use = usesi.readLine();
             
-            if (use == "[USEDBY]") break;
-            if (use[0] == '[') continue;
-            
-            // OK, we're definitely reading a use - split by " <> "
-            char[][] useinfo = std.string.split(use, " <> ");
-            if (useinfo.length < 2) continue;
+            if (use.length == 0) continue;
             
             // add the dep
-            deps ~= canonicalSource(useinfo[1], nconf);
+            deps ~= canonicalSource(use, nconf);
         }
-        
-        // delete the uses file
-        std.file.remove("temp.uses");
     }
     
     return deps;

@@ -215,6 +215,10 @@ int VersionCondition::include(Scope *sc, ScopeDsymbol *s)
                     exit(1);
                 }
                 
+                // remove temporary files
+                remove("rebuild_tmp.d");
+                remove("rebuild_tmp.o");
+                
                 if (result == 'y') {
                     // yes, it's set
                     inc = 1;

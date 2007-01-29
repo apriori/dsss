@@ -7,7 +7,7 @@ objext=o
 
 
 [compile]
-cmd=gdmd -c $i -of$o
+cmd=gdmd -version=Posix -c $i -of$o
 
 flag=$i
 incdir=-I$i

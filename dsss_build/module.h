@@ -60,7 +60,6 @@ struct Module : Package
     ModuleDeclaration *md; // if !NULL, the contents of the ModuleDeclaration declaration
     File *srcfile;	// input source file
     File *objfile;	// output .obj file
-    int   objfilenum;   // number of the .obj file
     File *hdrfile;	// 'header' file
     File *symfile;	// output symbol file
     File *docfile;	// output documentation file

@@ -244,8 +244,8 @@ void getPrefix(char[] argvz)
         static assert(0);
     }
     
-    dsss_build ~= " -I" ~ includePrefix ~ " -LIBPATH=" ~ libPrefix ~ std.path.sep ~
-        " -LIBPATH=." ~ std.path.sep ~ " " ~
+    dsss_build ~= " -I" ~ includePrefix ~ " -S" ~ libPrefix ~ std.path.sep ~
+        " -S." ~ std.path.sep ~ " " ~
         dsss_buildOptions ~ " ";
 }
 
@@ -986,7 +986,7 @@ char[] getShLibFlag(char[][char[]] settings)
         } else {
             sonver = getShLibName(settings);
         }
-        return "-SHLIBOPT-Wl,-soname=" ~ sonver;
+        return "-L-Wl,-soname=" ~ sonver;
     }
     return "";
 }
