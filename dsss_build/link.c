@@ -93,7 +93,13 @@ string linkCommand(const string &i, const string &o, char post = 0)
     }
     
     // add flags
-    cline += linkFlags;
+    if (global.params.lib) {
+        cline += liblinkFlags;
+    } else if (global.params.shlib) {
+        cline += shliblinkFlags;
+    } else {
+        cline += linkFlags;
+    }
     
     return cline;
 }

@@ -19,8 +19,8 @@ version=-version=$i
 [link]
 cmd=dmd $i -of$o
 
-libdir=-L-L$i
-lib=-L-l$i
+libdir=-L$i
+lib=-L$i.lib
 flag=-L$i
 
 

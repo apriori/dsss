@@ -38,6 +38,8 @@ Config masterConfig;
 
 std::string compileFlags;
 std::string linkFlags;
+std::string liblinkFlags;
+std::string shliblinkFlags;
 
 void readConfigFile(const string &dir, const string &fname);
 
@@ -274,15 +276,7 @@ void addFlag(std::string &to, const std::string &section, const std::string &fla
 // Add a library to linkFlags
 void linkLibrary(const std::string &name)
 {
-    string useflag;
-    if (global.params.lib) {
-        useflag = "liblink";
-    } else if (global.params.shlib) {
-        useflag = "shliblink";
-    } else {
-        useflag = "link";
-    }
-    
-    // add the flag
-    addFlag(linkFlags, useflag, "lib", "$i", name);
+    addFlag(linkFlags, "link", "lib", "$i", name);
+    addFlag(liblinkFlags, "liblink", "lib", "$i", name);
+    addFlag(shliblinkFlags, "shliblink", "lib", "$i", name);
 }

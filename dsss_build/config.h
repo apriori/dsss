@@ -19,6 +19,8 @@ extern Config masterConfig;
 
 extern std::string compileFlags;
 extern std::string linkFlags;
+extern std::string liblinkFlags;
+extern std::string shliblinkFlags;
 
 // Read a configuration file
 void readConfig(char *argvz, const std::string &profile);

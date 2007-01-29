@@ -473,20 +473,23 @@ int main(int argc, char *argv[])
 	    }
 	    else if (p[1] == 'L')
 	    {
-                if (global.params.lib) {
-                    addFlag(linkFlags, "liblink", "flag", "-L$i", p + 2);
-                } else if (global.params.shlib) {
-                    addFlag(linkFlags, "shliblink", "flag", "-L$i", p + 2);
-                } else {
-                    addFlag(linkFlags, "link", "flag", "-L$i", p + 2);
-                }
+                addFlag(linkFlags, "link", "flag", "-L$i", p + 2);
+                addFlag(liblinkFlags, "liblink", "flag", "-L$i", p + 2);
+                addFlag(shliblinkFlags, "shliblink", "flag", "-L$i", p + 2);
 	    }
             else if (p[1] == 'C')
             {
                 addFlag(compileFlags, "compile", "flag", "$i", p + 2);
             }
-            else if (p[1] == 'S') {}
-                // not yet supported
+            else if (p[1] == 'S')
+            {
+                // add a flag both to compile and to link
+                addFlag(compileFlags, "compile", "libdir", "-L-L$i", p + 2);
+
+                addFlag(linkFlags, "link", "libdir", "-L-L$i", p + 2);
+                addFlag(liblinkFlags, "liblink", "libdir", "-L-L$i", p + 2);
+                addFlag(shliblinkFlags, "shliblink", "libdir", "-L-L$i", p + 2);
+            }
 	    else if (strcmp(p + 1, "exec") == 0)
             {
                 global.params.run = 1;
