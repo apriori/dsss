@@ -141,7 +141,7 @@ int install(char[][] buildElems, char[][]* subManifest = null)
                 // install the .di file
                 copyAndManifest(getBaseName(file ~ "i"),
                                 includePrefix ~ std.path.sep ~ getDirName(file),
-                                getDirName(file) ~ std.path.sep);
+                                "dsss_imports" ~ std.path.sep ~ getDirName(file) ~ std.path.sep);
             }
             
         } else if (type == "binary") {
