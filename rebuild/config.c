@@ -7,6 +7,7 @@
 // See the included readme.txt for details.
 
 #include <iostream>
+#include <set>
 using namespace std;
 
 extern "C" {
@@ -257,7 +258,8 @@ int readCommand(string cmd, char *buf, int len)
 
 // Add a flag, with a default
 void addFlag(std::string &to, const std::string &section, const std::string &flag,
-             const std::string &def, const std::string &inp, const std::string &out)
+             const std::string &def, const std::string &inp, const std::string &out,
+             bool pre)
 {
     std::string setfl;
     int varLoc;
@@ -284,13 +286,22 @@ void addFlag(std::string &to, const std::string &section, const std::string &fla
             setfl.substr(varLoc + 2);
     }
     
-    to += " " + setfl;
+    if (pre) {
+        to = " " + setfl + to;
+    } else {
+        to += " " + setfl;
+    }
 }
 
 // Add a library to linkFlags
 void linkLibrary(const std::string &name)
 {
-    addFlag(linkFlags, "link", "lib", "$i", name);
-    addFlag(liblinkFlags, "liblink", "lib", "$i", name);
-    addFlag(shliblinkFlags, "shliblink", "lib", "$i", name);
+    /*static set<string> mapped;
+
+    if (mapped.find(name) == mapped.end()) {
+        mapped.insert(name);*/
+        addFlag(linkFlags, "link", "lib", "$i", name, "", true);
+        addFlag(liblinkFlags, "liblink", "lib", "$i", name, "", true);
+        addFlag(shliblinkFlags, "shliblink", "lib", "$i", name, "", true);
+    //}
 }

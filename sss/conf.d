@@ -149,13 +149,13 @@ void getPrefix(char[] argvz)
         // set build environment variable
         version (Posix) {
             dsss_build = installPrefix ~
-                std.path.sep ~ "dsss_build" ~
-                std.path.sep ~ "dsss_build";
+                std.path.sep ~ "rebuild" ~
+                std.path.sep ~ "rebuild";
             setEnvVar("DSSS_BUILD", dsss_build);
         } else version (Windows) {
             dsss_build = installPrefix ~
-                std.path.sep ~ "dsss_build" ~
-                std.path.sep ~ "dsss_build.exe";
+                std.path.sep ~ "rebuild" ~
+                std.path.sep ~ "rebuild.exe";
             setEnvVar("DSSS_BUILD", dsss_build);
         } else {
             static assert(0);
@@ -178,11 +178,11 @@ void getPrefix(char[] argvz)
         // set build environment variable
         version (Posix) {
             dsss_build = installPrefix ~
-                 std.path.sep ~ "dsss_build";
+                 std.path.sep ~ "rebuild";
             setEnvVar("DSSS_BUILD", dsss_build);
         } else version (Windows) {
             dsss_build = installPrefix ~
-                std.path.sep ~ "dsss_build.exe";
+                std.path.sep ~ "rebuild.exe";
             setEnvVar("DSSS_BUILD", dsss_build);
         } else {
             static assert(0);

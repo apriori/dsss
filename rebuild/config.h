@@ -30,7 +30,8 @@ int readCommand(std::string cmd, char *buf, int len);
 
 // Add a flag, with a default
 void addFlag(std::string &to, const std::string &section, const std::string &flag,
-             const std::string &def, const std::string &inp = "", const std::string &out = "");
+             const std::string &def, const std::string &inp = "", const std::string &out = "",
+             bool pre = false);
 
 // Add a library to linkFlags
 void linkLibrary(const std::string &name);

@@ -58,10 +58,10 @@ utf.o \
 version.o \
 whereami.o
 
-all: dsss_build$(EXEEXT)
+all: rebuild$(EXEEXT)
 
-dsss_build$(EXEEXT): id.c impcnvtab.c $(OBJS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(OBJS) -o dsss_build$(EXEEXT)
+rebuild$(EXEEXT): id.c impcnvtab.c $(OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(OBJS) -o rebuild$(EXEEXT)
 
 id.c: idgen$(EXEEXT)
 	./idgen$(EXEEXT)
@@ -87,6 +87,6 @@ impcnvgen.o: impcnvgen.c
 	$(CXX) $(CXXFLAGS) -D_DH -DIN_REBUILD -c $< -o $@
 
 clean:
-	rm -f dsss_build$(EXEEXT) $(OBJS) \
+	rm -f rebuild$(EXEEXT) $(OBJS) \
 		id.c id.h idgen$(EXEEXT) idgen.o \
 		impcnvtab.c impcnvtab.h impcnvgen$(EXEEXT) impcnvgen.o
