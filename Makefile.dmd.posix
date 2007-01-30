@@ -16,6 +16,7 @@ install: dsss
 
 clean:
 	-`pwd`/dsss distclean
+	rm -rf dsss_objs dsss_imports
 	rm -f *.o
 	rm -f dsss
 	cd dsss_build && \
