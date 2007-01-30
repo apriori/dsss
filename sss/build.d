@@ -67,7 +67,11 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
     // make the basic build line
     char[] bl = dsss_build ~ forceFlags ~ " ";
     
-    bl ~= "-oq. ";
+    // add -oq if we don't have such a setting
+    if (find(forceFlags, "-o") == -1) {
+        mkdirP("dsss_objs");
+        bl ~= "-oqdsss_objs ";
+    }
     
     // 1) Make .di files for everything
     foreach (build; allSources) {
@@ -85,27 +89,13 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
             
             // generate .di files
             foreach (file; srcFiles) {
-                if (!exists(file ~ "i") ||
-                    fileNewer(file, file ~ "i")) {
-                    
-                    /+
-                    // FIXME: this should not assume by version()
-                    int res;
-                    res = system(dsss_build ~
-                                 "-c -full -H -Hf" ~
-                                 file ~ "i " ~ file);
-                    
-                    if (res) {
-                        // make sure the .i file is removed
-                        std.file.remove(file ~ "i");
-                        return res;
-                    }
-                    +/
-                    
+                char[] ifile = "dsss_imports" ~ std.path.sep ~ file ~ "i";
+                if (!exists(ifile) ||
+                    fileNewer(file, ifile)) {
                     /* BIG FAT NOTE slash FIXME:
                      * .di files do NOT include interfaces! So, we need to just
                      * cast .d files as .di until that's fixed */
-                    std.file.copy(file, file ~ "i");
+                    mkdirP(getDirName(ifile));
                     
                     // now edit the .di file to reference the appropriate library
                     
@@ -114,7 +104,7 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
                     
                     if (shLibSupport() &&
                         ("shared" in settings)) {
-                          std.file.write(file ~ "i", std.file.read(file ~ "i") ~ `
+                        std.file.write(ifile, std.file.read(file) ~ `
 version (build) {
     version (DSSS_Static_` ~ usname ~ `) {
         pragma(link, "S` ~ target ~ `");
@@ -124,7 +114,7 @@ version (build) {
 }
 `);
                     } else {
-                        std.file.write(file ~ "i", std.file.read(file ~ "i") ~ `
+                        std.file.write(ifile, std.file.read(file) ~ `
 version (build) {
     pragma(link, "S` ~ target ~ `");
 }
@@ -143,7 +133,7 @@ version (build) {
             // the one thing that's passed in is build flags
             char[] orig_dsss_build = dsss_build.dup;
             if ("buildflags" in settings) {
-                dsss_build ~= " " ~ settings["buildflags"];
+                dsss_build ~= settings["buildflags"] ~ " ";
             }
             
             int buildret = sss.build.build(null);
@@ -207,12 +197,6 @@ version (build) {
             // get the list of files
             char[][] files = targetToFiles(build, conf);
             
-            // unfortunately, at each step we need to move the .di files out of the way, then back
-            // I'd like a switch in build to avoid this, but there isn't one
-            foreach (file; files) {
-                std.file.rename(file ~ "i", file ~ "i0");
-            }
-            
             // and other necessary data
             char[] shlibname = getShLibName(settings);
             char[] shlibflag = getShLibFlag(settings);
@@ -261,11 +245,6 @@ version (build) {
             // do the postbuild
             if ("postbuild" in settings) {
                 dsssScriptedStep(conf, settings["postbuild"]);
-            }
-            
-            // unfortunately, at each step we need to move the .di files out of the way, then back
-            foreach (file; files) {
-                std.file.rename(file ~ "i0", file ~ "i");
             }
             
             // an extra line for clarity

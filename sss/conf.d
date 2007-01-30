@@ -247,8 +247,9 @@ void getPrefix(char[] argvz)
         static assert(0);
     }
     
-    dsss_build ~= " -I" ~ includePrefix ~ " -S" ~ libPrefix ~ std.path.sep ~
-        " -S." ~ std.path.sep ~ " " ~
+    dsss_build ~= " -Idsss_imports" ~ std.path.sep ~
+        " -I. -S." ~ std.path.sep ~
+        " -I" ~ includePrefix ~ " -S" ~ libPrefix ~ std.path.sep ~ " " ~
         dsss_buildOptions ~ " ";
 }
 
@@ -640,9 +641,9 @@ void testVersion(char[] vertok)
         char yn = '\0';
         while (yn == '\0')
             comp.read(yn);
-                
+        
         std.file.remove("dsss_tmp.d");
-                
+        
         if (yn == 'y') {
             // true version
             versions[vertok] = true;

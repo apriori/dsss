@@ -858,6 +858,11 @@ int main(int argc, char *argv[])
                     }
                 }
                 
+                // then add the objdir
+                char *newofname = FileName::combine(global.params.objdir, ofname);
+                mem.free(ofname);
+                ofname = newofname;
+                
                 m->objfile = new File(ofname);
             }
         }
