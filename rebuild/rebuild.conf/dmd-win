@@ -47,7 +47,7 @@ flag=
 
 
 [postliblink]
-cmd=ranlib $i
+cmd=echo $i
 
 
 [shliblink]

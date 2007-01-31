@@ -177,8 +177,8 @@ Expression *CastExp::constFold()
     }
     if (tb->isscalar())
 	return new IntegerExp(loc, e1->toInteger(), type);
-    if (tb->ty != Tvoid)
-	error("cannot cast %s to %s", e1->type->toChars(), to->toChars());
+    /*if (tb->ty != Tvoid)
+	error("cannot cast %s to %s", e1->type->toChars(), to->toChars()); */
     return this;
 }
 

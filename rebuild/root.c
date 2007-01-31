@@ -1578,12 +1578,12 @@ void OutBuffer::vprintf(const char *format, va_list args)
     psize = sizeof(buffer);
     for (;;)
     {
-#if _WIN32
+/*#if _WIN32
 	count = _vsnprintf(p,psize,format,args);
 	if (count != -1)
 	    break;
 	psize *= 2;
-#else
+#else*/
 	count = vsnprintf(p,psize,format,args);
 	if (count == -1)
 	    psize *= 2;
@@ -1591,7 +1591,7 @@ void OutBuffer::vprintf(const char *format, va_list args)
 	    psize = count + 1;
 	else
 	    break;
-#endif
+//#endif
 	p = (char *) alloca(psize);	// buffer too small, try again with larger size
     }
     write(p,count);
@@ -1633,7 +1633,9 @@ void OutBuffer::printf(const char *format, ...)
 {
     va_list ap;
     va_start(ap, format);
+#ifndef __WIN32 // mysterious error ;(
     vprintf(format,ap);
+#endif
     va_end(ap);
 }
 

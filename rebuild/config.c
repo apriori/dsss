@@ -220,12 +220,14 @@ int readCommand(string cmd, char *buf, int len)
     HANDLE ip[2], op[2];
                 
     SECURITY_ATTRIBUTES sa;
+    memset(&sa, 0, sizeof(sa));
     sa.nLength = sizeof(SECURITY_ATTRIBUTES);
     sa.bInheritHandle = 1;
     CreatePipe(ip, ip + 1, &sa, 0);
     CreatePipe(op, op + 1, &sa, 0);
                 
     STARTUPINFOA si;
+    memset(&si, 0, sizeof(si));
     si.cb = sizeof(STARTUPINFOA);
     si.hStdInput = ip[0];
     si.hStdOutput = op[1];
@@ -233,6 +235,7 @@ int readCommand(string cmd, char *buf, int len)
     si.dwFlags = STARTF_USESTDHANDLES;
                 
     PROCESS_INFORMATION pi;
+    memset(&pi, 0, sizeof(pi));
                 
     // start the sub process
     CreateProcess(NULL, (CHAR *) cmd.c_str(), NULL, NULL,
