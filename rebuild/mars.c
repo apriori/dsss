@@ -40,6 +40,7 @@ long __cdecl __ehfilter(LPEXCEPTION_POINTERS ep);
 #include "cond.h"
 #include "expression.h"
 #include "lexer.h"
+#include "whereami.h"
 
 #include "config.h"
 
@@ -275,7 +276,19 @@ int main(int argc, char *argv[])
             else
                 inif = mem.strdup("sc.ini");
             
-            inifile("dmd", inif);
+            // trick whereami into giving us a path
+            char *dir, *fil, *full;
+            whereAmI("dmd", &dir, &fil);
+            full = (char *) mem.malloc(strlen(dir) + 5);
+            sprintf(full, "%s%cdmd", dir,
+#if __WIN32
+                    '\\'
+#else
+                    '/'
+#endif
+                   );
+            inifile(full, inif);
+            mem.free(full);
             
             mem.free(inif);
             
