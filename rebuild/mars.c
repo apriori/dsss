@@ -897,6 +897,12 @@ int main(int argc, char *argv[])
                 char *ofname = (char *) mem.malloc(strlen(mname) + strlen(global.obj_ext) + 2);
                 sprintf(ofname, "%s.%s", mname, global.obj_ext);
                 
+                // figure out what we should really be using to combine them
+                std::string sep = ".";
+                if (masterConfig.find("") != masterConfig.end() &&
+                    masterConfig[""].find("objmodsep") != masterConfig[""].end())
+                    sep = masterConfig[""]["objmodsep"];
+                
                 // now add all the package names
                 Array *packages = m->md->packages;
                 if (packages) {
@@ -904,7 +910,7 @@ int main(int argc, char *argv[])
                         Identifier *id = (Identifier *) packages->data[j];
                         
                         char *newfname = (char *) mem.malloc(strlen(id->string) + strlen(ofname) + 2);
-                        sprintf(newfname, "%s.%s", id->string, ofname);
+                        sprintf(newfname, "%s%s%s", id->string, sep.c_str(), ofname);
                         mem.free(ofname);
                         ofname = newfname;
                     }

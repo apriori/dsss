@@ -5,6 +5,7 @@ inifile=sc.ini
 
 exeext=.exe
 objext=obj
+objmodsep=-
 
 
 version=DigitalMars
@@ -13,6 +14,8 @@ noversion=linux
 noversion=Unix
 noversion=Posix
 version=Windows
+testversion=Win32
+testversion=Win64
 version=X86
 noversion=PPC
 noversion=X86_64
@@ -33,8 +36,8 @@ version=-version=$i
 [link]
 cmd=dmd $i -of$o
 
-libdir=-L$i
-lib=-L$i.lib
+libdir=-L+$i\
+lib=-L+$i
 flag=-L$i
 
 

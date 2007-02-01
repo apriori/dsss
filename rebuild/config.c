@@ -94,6 +94,8 @@ founddir:
     readConfigFile(confdir, conffile, versionFile);
     
     // now run the version tests
+    if (versionFile.length() <= 0) return;
+
     // check with the target compiler by writing a test file
     // FIXME: test file should be better named
     FILE *tmpfile = fopen("rebuild_tmp.d", "w");
@@ -115,7 +117,7 @@ founddir:
     result[VERTESTBUF] = '\0';
     int i;
     char *lastResult;
-                
+    
     if (readCommand(cline, result, VERTESTBUF) < 1) {
         std::cerr << "Could not detect versions." << std::endl;
         exit(1);
@@ -322,7 +324,7 @@ int readCommand(string cmd, char *buf, int len)
     rd = cl;
     
     buf[rd] = '\0';
-                
+    
     CloseHandle(ip[1]);
     CloseHandle(ip[0]);
 #endif

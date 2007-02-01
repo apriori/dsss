@@ -3,15 +3,10 @@ MAKE=make
 
 all: dsss.exe
 
-dsss.exe: rebuild\\rebuild.exe
+dsss.exe:
 	copy rebuild\\defaults\\dmd-win rebuild\\rebuild.conf\\default
 	rebuild\\rebuild.exe -od. -Irebuild sss\\main.d -ofdsss_int
 	dsss_int.exe build
-
-rebuild\\rebuild.exe:
-	cd rebuild
-	$(MAKE) EXEEXT=.exe
-	cd ..
 
 install: dsss.exe
 	dsss.exe install --prefix=$(PREFIX)
