@@ -324,32 +324,21 @@ int main(int argc, char *argv[])
             nloc = cmachine.find('\n', 0);
             if (nloc != std::string::npos) cmachine = cmachine.substr(0, nloc);
             
-            // 3) get the search dirs (which includes the install path)
-            if (readCommand(compiler + " -print-search-dirs", readBuf, READBUFSIZ) < 1) {
-                error("Failed to detect GDC install prefix");
-            }
-            char *instloc = strstr(readBuf, "install: ");
-            if (instloc == NULL) {
-                error("Failed to detect GDC install prefix");
-            }
-            // OK, we have the location of install:, now get the actual directory
-            instloc += 9;
-            // find the newline to end at
-            char *ili;
-            for (ili = instloc; *ili != '\0' && *ili != '\r' && *ili != '\n'; ili++);
-            *ili = '\0';
+            // 3) get the prefix
+            char *gdcdir, *gdcfil;
+            whereAmI("gdc", &gdcdir, &gdcfil);
             
             // 4) make include paths
             if (!global.params.imppath)
                 global.params.imppath = new Array();
             global.params.imppath->push(strdup(
-                (std::string(instloc) + "/../../../../include/d/" + cversion + "/").c_str()));
+                (std::string(gdcdir) + "/../include/d/" + cversion + "/").c_str()));
             global.params.imppath->push(strdup(
-                (std::string(instloc) + "/../../../../include/d/" + cversion + "/" + cmachine + "/").c_str()));
+                (std::string(gdcdir) + "/../include/d/" + cversion + "/" + cmachine + "/").c_str()));
             global.params.imppath->push(strdup(
-                (std::string(instloc) + "/../../../../" + cmachine + "/include/d/" + cversion + "/").c_str()));
+                (std::string(gdcdir) + "/../" + cmachine + "/include/d/" + cversion + "/").c_str()));
             global.params.imppath->push(strdup(
-                (std::string(instloc) + "/../../../../" + cmachine + "/include/d/" + cversion + "/" + cmachine + "/").c_str()));
+                (std::string(gdcdir) + "/../" + cmachine + "/include/d/" + cversion + "/" + cmachine + "/").c_str()));
         }
     }
     

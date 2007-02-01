@@ -3065,6 +3065,7 @@ void TypeQualified::resolveHelper(Loc loc, Scope *sc,
 		return;
 	    }
 	L2:
+            if (!sm) return;
 	    s = sm->toAlias();
 	}
 
