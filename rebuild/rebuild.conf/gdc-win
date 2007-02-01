@@ -6,8 +6,8 @@ exeext=.exe
 objext=o
 
 
-noversion=DigitalMars
-version=GNU
+version=DigitalMars
+noversion=GNU
 noversion=linux
 noversion=Unix
 noversion=Posix
@@ -20,7 +20,7 @@ noversion=BigEndian
 
 
 [compile]
-cmd=gdmd -c $i -of$o
+cmd=gdmd -c $i
 
 flag=$i
 incdir=-I$i

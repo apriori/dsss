@@ -21,7 +21,7 @@ noversion=BigEndian
 
 
 [compile]
-cmd=dmd -c $i -of$o
+cmd=dmd -c $i
 
 flag=$i
 incdir=-I$i

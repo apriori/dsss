@@ -24,8 +24,10 @@ extern "C" {
 #include <unistd.h>
 #endif
 
+#include "compile.h"
 #include "config.h"
 #include "mars.h"
+#include "mem.h"
 #include "root.h"
 #include "whereami.h"
 
@@ -43,7 +45,7 @@ std::string linkFlags;
 std::string liblinkFlags;
 std::string shliblinkFlags;
 
-void readConfigFile(const string &dir, const string &fname);
+void readConfigFile(const string &dir, const string &fname, string &versionFile);
 
 void readConfig(char *argvz, const string &profile)
 {
@@ -88,11 +90,66 @@ founddir:
     }
     
     // OK, read it
-    readConfigFile(confdir, conffile);
+    string versionFile;
+    readConfigFile(confdir, conffile, versionFile);
+    
+    // now run the version tests
+    // check with the target compiler by writing a test file
+    // FIXME: test file should be better named
+    FILE *tmpfile = fopen("rebuild_tmp.d", "w");
+    if (!tmpfile) {
+        perror("rebuild_tmp.d");
+        exit(1);
+    }
+                
+    // write the test file
+    fprintf(tmpfile, "%s", versionFile.c_str());
+    fclose(tmpfile);
+    
+    // get the compile line
+    string cline = compileCommand("rebuild_tmp.d");
+    
+    // test it
+#define VERTESTBUF 1024
+    char result[VERTESTBUF + 1];
+    result[VERTESTBUF] = '\0';
+    int i;
+    char *lastResult;
+                
+    if (readCommand(cline, result, VERTESTBUF) < 1) {
+        std::cerr << "Could not detect versions." << std::endl;
+        exit(1);
+    }
+    
+    // remove temporary files
+    remove("rebuild_tmp.d");
+    remove("rebuild_tmp.o");
+    remove("rebuild_tmp.obj");
+    
+    // then go result-by-result
+    lastResult = result;
+    int len = strlen(result);
+    for (i = 0; i <= len; i++) {
+        if (result[i] == '\r') {
+            result[i] = '\0';
+            
+        } else if (result[i] == '\n' ||
+                   result[i] == '\0') {
+            result[i] = '\0';
+            
+            // add a version
+            if (!global.params.versionids)
+                global.params.versionids = new Array();
+            global.params.versionids->push(mem.strdup(lastResult));
+            
+            lastResult = result + i + 1;
+            
+        }
+    }
 }
 
 // read in a configuration file
-void readConfigFile(const string &dir, const string &fname)
+void readConfigFile(const string &dir, const string &fname, string &versionFile)
 {
     string section = "";
     
@@ -147,20 +204,29 @@ void readConfigFile(const string &dir, const string &fname)
                         exit(1);
                     }
                 
-                    readConfigFile(dir, subprof);
+                    readConfigFile(dir, subprof, versionFile);
                     
                 } else if (section == "" &&
                            !strcmp(readBuf, "version")) {
                     // predefined version set
                     if (!global.params.versionids)
                         global.params.versionids = new Array();
-                    global.params.versionids->push(val);
+                    global.params.versionids->push(mem.strdup(val));
                     
                 } else if (section == "" &&
                            !strcmp(readBuf, "noversion")) {
                     if (!global.params.versionidsNot)
                         global.params.versionidsNot = new Array();
-                    global.params.versionidsNot->push(val);
+                    global.params.versionidsNot->push(mem.strdup(val));
+                    
+                } else if (section == "" &&
+                           !strcmp(readBuf, "testversion")) {
+                    // add to the test
+                    versionFile += "version(";
+                    versionFile += val;
+                    versionFile += ") { pragma(msg, \"";
+                    versionFile += val;
+                    versionFile += "\"); }\n";
                     
                 } else {
                     // set a value
@@ -170,14 +236,13 @@ void readConfigFile(const string &dir, const string &fname)
             }
         }
     }
-    
     fclose(cfile);
 }
 
 // Read from a command
 int readCommand(string cmd, char *buf, int len)
 {
-    int rd;
+    int rd = -1;
 
 #ifndef __WIN32
     int ip[2], op[2];
@@ -205,10 +270,14 @@ int readCommand(string cmd, char *buf, int len)
                 
     close(ip[0]);
     close(op[1]);
-                
-    if ((rd = read(op[0], buf, len)) < 1) {
-        return -1;
+    
+    // read repeatedly until there's no data left
+    int cl = 0;
+    while ((rd = read(op[0], buf + cl, len - cl)) > 0)
+    {
+        cl += rd;
     }
+    rd = cl;
     
     buf[rd] = '\0';
                 
@@ -244,11 +313,13 @@ int readCommand(string cmd, char *buf, int len)
     CloseHandle(op[1]);
     CloseHandle(pi.hThread);
                 
-    // now read it
-    if (!ReadFile(op[0], buf, len, (DWORD *) &rd, NULL) ||
-        rd < 1) {
-        return -1;
-    }
+    // read repeatedly until there's no data left
+    int cl = 0;
+    do {
+        ReadFile(op[0], buf + cl, len - cl, (DWORD *) &rd, NULL);
+        if (rd > 0) cl += rd;
+    } while (rd > 0);
+    rd = cl;
     
     buf[rd] = '\0';
                 

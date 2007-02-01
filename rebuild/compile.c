@@ -18,7 +18,7 @@ extern "C" {
 #include "mars.h"
 #include "module.h"
 
-string compileCommand(const string &i, const string &o)
+string compileCommand(const string &i)
 {
     int varLoc;
     
@@ -40,24 +40,15 @@ string compileCommand(const string &i, const string &o)
             cline.substr(varLoc + 2);
     }
     
-    // replace $o
-    while ((varLoc = cline.find("$o", 0)) != string::npos) {
-        cline = cline.substr(0, varLoc) +
-            o +
-            cline.substr(varLoc + 2);
-    }
-    
     // add flags
     cline += compileFlags;
     
     return cline;
 }
 
-void Module::genobjfile()
+void runCompile(const std::string &files)
 {
-    string cline = compileCommand(
-        srcfile->name->str,
-        objfile->name->str);
+    string cline = compileCommand(files);
     
     if (global.params.verbose)
         printf("compile   %s\n", cline.c_str());

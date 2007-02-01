@@ -33,6 +33,7 @@ long __cdecl __ehfilter(LPEXCEPTION_POINTERS ep);
 #include "mem.h"
 #include "root.h"
 
+#include "compile.h"
 #include "mars.h"
 #include "module.h"
 #include "mtype.h"
@@ -186,6 +187,14 @@ Usage:\n\
 ""
 #endif
 );
+}
+
+bool stringInArray(Array *arr, char *str)
+{
+    for (unsigned int i = 0; i < arr->dim; i++) {
+        if (!strcmp((char *) arr->data[i], str)) return true;
+    }
+    return false;
 }
 
 int main(int argc, char *argv[])
@@ -433,12 +442,14 @@ int main(int argc, char *argv[])
                         else
                             global.params.objdir = p + 3;
                         global.params.fullqobjs = 1;
+                        addFlag(compileFlags, "compile", "od", "-od$i", p + 3);
                         break;
                     
 		    case 'd':
 			if (!p[3])
 			    goto Lnoarg;
 			global.params.objdir = p + 3;
+                        addFlag(compileFlags, "compile", "od", "-od$i", p + 3);
 			break;
 
 		    case 'f':
@@ -451,6 +462,7 @@ int main(int argc, char *argv[])
 			if (p[3])
 			    goto Lerror;
 			global.params.preservePaths = 1;
+                        addFlag(compileFlags, "compile", "op", "-op");
 			break;
 
 		    case 0:
@@ -844,12 +856,39 @@ int main(int argc, char *argv[])
     if (global.errors)
 	fatal();*/
     
-    // Generate output files
+    class GroupedCompile {
+        public:
+        Array imodules, ofiles;
+        Array origonames, newonames;
+    };
+    Array GroupedCompiles;
+    GroupedCompiles.push((void *) new GroupedCompile);
+    
+    // Generate compile commands
     for (i = 0; i < global.cmodules->dim; i++)
     {
 	m = (Module *)global.cmodules->data[i];
+        GroupedCompile *gc;
+        
         if (global.params.fullqobjs)
         {
+            // find the right compile to add this to
+            unsigned int cmp;
+            for (cmp = 0; cmp < GroupedCompiles.dim; cmp++) {
+                gc = (GroupedCompile *) GroupedCompiles.data[cmp];
+                
+                if (!stringInArray(&(gc->ofiles), m->objfile->name->str)) {
+                    // add it
+                    gc->ofiles.push((void *) m->objfile->name->str);
+                    break;
+                }
+            }
+            if (cmp == GroupedCompiles.dim) {
+                gc = new GroupedCompile;
+                GroupedCompiles.push(gc);
+                gc->ofiles.push((void *) m->objfile->name->str);
+            }
+            
             // the output file name is guessable now that we have the module name
             if (m->md) {
                 const char *mname = m->md->id->string;
@@ -876,9 +915,18 @@ int main(int argc, char *argv[])
                 mem.free(ofname);
                 ofname = newofname;
                 
+                // make sure the name gets changed later
+                gc->origonames.push((void *) m->objfile->name->str);
+                gc->newonames.push((void *) ofname);
+                
                 m->objfile = new File(ofname);
             }
+        } else {
+            // just add it
+            gc = (GroupedCompile *) GroupedCompiles.data[0];
+            gc->ofiles.push((void *) m->objfile->name->str);
         }
+        
 	if (global.params.obj) {
             // don't generate if we should ignore this module
             char ignore = 0;
@@ -931,19 +979,40 @@ int main(int argc, char *argv[])
                 ignore = 1;
             
             if (!ignore) {
-                m->genobjfile();
+                gc->imodules.push((void *) m);
             }
         }
 	if (global.params.verbose)
 	    printf("code      %s\n", m->toChars());
-	if (global.errors)
-	    m->deleteObjFile();
-	else
-	{
-	    if (global.params.doDocComments)
-		m->gendocfile();
-	}
+        
+        if (global.params.doDocComments)
+            m->gendocfile();
     }
+    
+    // Now do the actual compilation
+    for (unsigned int j = 0; j < GroupedCompiles.dim; j++) {
+        GroupedCompile *gc = (GroupedCompile *) GroupedCompiles.data[j];
+        
+        if (gc->imodules.dim == 0) continue;
+        
+        // make a string of the file names
+        std::string infiles;
+        for (unsigned int k = 0; k < gc->imodules.dim; k++) {
+            Module *m = (Module *) gc->imodules.data[k];
+            infiles += m->srcfile->name->str;
+            infiles += " ";
+        }
+        
+        // then compile
+        runCompile(infiles);
+        
+        // and rename
+        for (unsigned int k = 0; k < gc->origonames.dim; k++) {
+            rename((char *) gc->origonames.data[k],
+                   (char *) gc->newonames.data[k]); // ignore errors
+        }
+    }
+    
 #if _WIN32 && __DMC__
   }
   __except (__ehfilter(GetExceptionInformation()))

@@ -189,52 +189,9 @@ int VersionCondition::include(Scope *sc, ScopeDsymbol *s)
             else if (findCondition(global.params.versionidsNot, ident)) {}
 	    else
 	    {
-                // check with the target compiler by writing a test file
-                // FIXME: test file should be better named
-                FILE *tmpfile = fopen("rebuild_tmp.d", "w");
-                if (!tmpfile) {
-                    perror("rebuild_tmp.d");
-                    exit(1);
-                }
-                
-                // write the test file
-                fprintf(tmpfile,
-                        "version(%s) { pragma(msg, \"y\"); } else { pragma(msg, \"n\"); }\n",
-                        ident->string);
-                fclose(tmpfile);
-                
-                // get the compile line
-                std::string cline = compileCommand(
-                    "rebuild_tmp.d", "rebuild_tmp.o");
-                
-                // test it
-                char result;
-                
-                if (readCommand(cline, &result, 1) < 1) {
-                    std::cerr << "Could not detect versions." << std::endl;
-                    exit(1);
-                }
-                
-                // remove temporary files
-                remove("rebuild_tmp.d");
-                remove("rebuild_tmp.o");
-                
-                if (result == 'y') {
-                    // yes, it's set
-                    inc = 1;
-                    global.params.versionids->push(ident->toChars());
-                } else {
-                    inc = 0;
-                    if (!global.params.versionidsNot)
-                        global.params.versionidsNot = new Array();
-                    global.params.versionidsNot->push(ident->toChars());
-                }
-                
-                if (!inc) {
-                    if (!mod->versionidsNot)
-                        mod->versionidsNot = new Array();
-                    mod->versionidsNot->push(ident->toChars());
-                }
+                if (!mod->versionidsNot)
+                    mod->versionidsNot = new Array();
+                mod->versionidsNot->push(ident->toChars());
 	    }
 	}
 	else if (level <= global.params.versionlevel || level <= mod->versionlevel)

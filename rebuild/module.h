@@ -125,7 +125,6 @@ struct Module : Package
 #ifdef _DH
     void genhdrfile();  // generate D import file
 #endif
-    void genobjfile();
     void gensymfile();
     void gendocfile();
     int needModuleInfo();

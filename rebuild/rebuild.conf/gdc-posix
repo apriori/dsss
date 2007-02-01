@@ -8,13 +8,19 @@ objext=o
 
 noversion=DigitalMars
 version=GNU
+testversion=linux
 version=Unix
 version=Posix
 noversion=Windows
+testversion=X86
+testversion=PPC
+testversion=X86_64
+testversion=LittleEndian
+testversion=BigEndian
 
 
 [compile]
-cmd=gdmd -version=Posix -c $i -of$o
+cmd=gdmd -version=Posix -c $i
 
 flag=$i
 incdir=-I$i

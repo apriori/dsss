@@ -11,6 +11,8 @@
 
 #include <string>
 
-std::string compileCommand(const std::string &i, const std::string &o);
+std::string compileCommand(const std::string &i);
+
+void runCompile(const std::string &files);
 
 #endif

@@ -21,7 +21,7 @@ noversion=BigEndian
 
 
 [compile]
-cmd=dmd -version=Posix -c $i -of$o
+cmd=dmd -version=Posix -c $i
 
 flag=$i
 incdir=-I$i
