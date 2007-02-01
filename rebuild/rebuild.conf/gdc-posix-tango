@@ -1,4 +1,4 @@
-profile=phobos
+profile=tango
 
 compiler=gdc
 
@@ -23,6 +23,7 @@ testversion=D_InlineAsm_PPC
 testversion=D_InlineAsm_X86_64
 testversion=LittleEndian
 testversion=BigEndian
+version=Tango
 
 
 [compile]

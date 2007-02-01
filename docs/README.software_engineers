@@ -17,7 +17,12 @@ brackets, like so:
 Each section is named by a source file or directory. In general, sections named
 for source files will generate binaries, and sections named for directories
 will generate libraries, which are set up through DSSS to be equivalent to D
-packages.
+packages. However, you can manually specify a binary, library or sourcelibrary
+(like a library, but not compiled until it's used in a binary) with the type
+setting:
+type=binary
+type=library
+type=sourcelibrary
 
 In each section, there can be any number of settings. Each setting is a
 keyword, possibly followed by = or += and a value. For example, the "target"

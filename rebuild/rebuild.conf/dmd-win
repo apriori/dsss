@@ -19,6 +19,10 @@ testversion=Win64
 version=X86
 noversion=PPC
 noversion=X86_64
+version=D_InlineAsm
+version=D_InlineAsm_X86
+noversion=D_InlineAsm_PPC
+noversion=D_InlineAsm_X86_64
 version=LittleEndian
 noversion=BigEndian
 

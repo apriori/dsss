@@ -5,7 +5,7 @@
  *  Gregor Richards
  * 
  * License:
- *  Copyright (c) 2006  Gregor Richards
+ *  Copyright (c) 2006, 2007  Gregor Richards
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a
  *  copy of this software and associated documentation files (the "Software"),
@@ -153,6 +153,16 @@ int install(char[][] buildElems, char[][]* subManifest = null)
             } else {
                 assert(0);
             }
+            
+        } else if (type == "sourcelibrary") {
+            // also fairly easy
+            char[][] srcFiles = targetToFiles(build, conf);
+            foreach (file; srcFiles) {
+                copyAndManifest(getBaseName(file),
+                                includePrefix ~ std.path.sep ~ getDirName(file),
+                                getDirName(file) ~ std.path.sep);
+            }
+            
         } else if (type == "subdir") {
             // recurse
             char[] origcwd = getcwd();

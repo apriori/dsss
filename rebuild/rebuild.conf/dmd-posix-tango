@@ -1,32 +1,34 @@
-profile=phobos
+profile=tango
 
-compiler=gdc
+compiler=dmd
+inifile=dmd.conf
 
-exeext=.exe
+exeext=
 objext=o
 
 
 version=DigitalMars
 noversion=GNU
-noversion=linux
+version=linux
 noversion=Unix
-noversion=Posix
-version=Windows
-testversion=Win32
-testversion=Win64
+version=Posix
+noversion=Windows
+noversion=Win32
+noversion=Win64
 version=X86
 noversion=PPC
 noversion=X86_64
-testversion=D_InlineAsm
-testversion=D_InlineAsm_X86
+version=D_InlineAsm
+version=D_InlineAsm_X86
 noversion=D_InlineAsm_PPC
 noversion=D_InlineAsm_X86_64
 version=LittleEndian
 noversion=BigEndian
+version=Tango
 
 
 [compile]
-cmd=gdmd -c $i
+cmd=dmd -version=Posix -c $i
 
 flag=$i
 incdir=-I$i
@@ -36,7 +38,7 @@ version=-version=$i
 
 
 [link]
-cmd=gdmd $i -of$o
+cmd=dmd $i -of$o
 
 libdir=-L-L$i
 lib=-L-l$i
@@ -56,9 +58,4 @@ cmd=ranlib $i
 
 
 [shliblink]
-shlibs=yes
-cmd=gdmd -q,-shared $i -of$o
-
-libdir=-L-L$i
-lib=-L-l$i
-flag=-L$i
+shlibs=no
