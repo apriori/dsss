@@ -411,11 +411,13 @@ char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
         while (!usesi.eof()) {
             use = usesi.readLine();
             
-            if (use.length == 0) continue;
+            if (use.length == 0) break;
             
             // add the dep
             deps ~= canonicalSource(use, nconf);
         }
+        
+        usesi.close();
     }
     
     return deps;
