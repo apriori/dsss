@@ -154,7 +154,7 @@ version (build) {
             // the one thing that's passed in is build flags
             char[] orig_dsss_build = dsss_build.dup;
             if ("buildflags" in settings) {
-                dsss_build ~= " " ~ settings["buildflags"];
+                dsss_build ~= settings["buildflags"] ~ " ";
             }
             
             int buildret = sss.build.build(null);
