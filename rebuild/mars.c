@@ -969,12 +969,38 @@ int main(int argc, char *argv[])
                 global.params.objfiles->push(m->objfile->name->str);
             }
             
+            // figure out the most recent dependency
+            struct stat sbuf;
+            time_t newest = 0;
+            Array modsToTest;
+            if (!global.params.fullbuild) {
+                modsToTest.push((void *) m);
+                for (unsigned int j = 0; j < modsToTest.dim; j++) {
+                    Module *mtest = (Module *) modsToTest.data[j];
+                    
+                    // test this dependency
+                    if (stat(mtest->srcfile->name->str, &sbuf) == 0) {
+                        if (sbuf.st_mtime > newest)
+                            newest = sbuf.st_mtime;
+                    }
+                    
+                    // now add its dependencies
+                    for (unsigned int k = 0; k < mtest->aimports.dim; k++) {
+                        // check if it's already there
+                        for (unsigned int l = 0; l < modsToTest.dim; l++) {
+                            if (mtest->aimports.data[k] ==
+                                modsToTest.data[l]) goto noAddDep;
+                        }
+                        modsToTest.push(mtest->aimports.data[k]);
+                        noAddDep: 0;
+                    }
+                }
+            }
+            
             // now check if we should ignore it because of its age
-            struct stat istat, ostat;
             if (!global.params.fullbuild &&
-                stat(m->srcfile->name->str, &istat) == 0 &&
-                stat(m->objfile->name->str, &ostat) == 0 &&
-                istat.st_mtime <= ostat.st_mtime)
+                stat(m->objfile->name->str, &sbuf) == 0 &&
+                newest < sbuf.st_mtime)
                 ignore = 1;
             
             if (!ignore) {
