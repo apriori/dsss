@@ -166,7 +166,7 @@ Usage:\n\
   -Ipath         where to look for imports\n\
   -Ccompileflag  pass compileflag to compilation\n\
   -Llinkerflag   pass linkerflag to link\n\
-  x-Spath         search path for libraries\n\
+  -Spath         search path for libraries\n\
   -O             optimize\n\
   -oqobjdir      write object files to directory objdir with fully-qualified module names\n\
   -odobjdir      write object files to directory objdir\n\
@@ -178,7 +178,7 @@ Usage:\n\
   -v             verbose\n\
   -version=level compile in version code >= level\n\
   -version=ident compile in version code identified by ident\n\
-  x-circular Allows circular dependencies to work on some compilers (namely GDC) \n\
+  -circular      Allows circular dependencies to work on some compilers (namely GDC) \n\
   All other flags are passed to the compiler.\n\
 ",
 #if WIN32
@@ -431,7 +431,7 @@ int main(int argc, char *argv[])
                         else
                             global.params.objdir = p + 3;
                         global.params.fullqobjs = 1;
-                        addFlag(compileFlags, "compile", "od", "-od$i", p + 3);
+                        addFlag(compileFlags, "compile", "od", "-od$i", global.params.objdir);
                         break;
                     
 		    case 'd':
@@ -542,6 +542,10 @@ int main(int argc, char *argv[])
 		    goto Lnoarg;
 		}
 	    }
+            else if (strcmp(p + 1, "circular") == 0)
+            {
+                addFlag(compileFlags, "compile", "circular", "");
+            }
             else if (strncmp(p + 1, "dc=", 3) == 0) {}
             else if (strncmp(p + 1, "CFPATH", 6) == 0 ||
                      strncmp(p + 1, "BCFPATH", 7) == 0 ||

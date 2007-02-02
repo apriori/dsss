@@ -32,6 +32,7 @@ cmd=gdmd -c $i
 flag=$i
 incdir=-I$i
 libdir=-L-L$i
+circular=-fall-sources
 optimize=-O
 version=-version=$i
 
