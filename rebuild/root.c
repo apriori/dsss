@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <assert.h>
 
-#if __WIN32
+#if _MSC_VER || ( __WIN32 && __GNUC__ )
 #include <malloc.h>
 #endif
 
@@ -23,7 +23,7 @@
 #include <direct.h>
 #endif
 
-#if linux
+#ifndef __WIN32
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -371,7 +371,8 @@ Array *FileName::splitPath(const char *path)
 
 #if MACINTOSH
 		    case ',':
-#elif _WIN32
+#endif
+#if _WIN32
 		    case ';':
 #else
 		    case ':':
@@ -387,7 +388,7 @@ Array *FileName::splitPath(const char *path)
 		    case '\r':
 			continue;	// ignore carriage returns
 
-#if _POSIX_VERSION
+#ifndef __WIN32
 		    case '~':
 			buf.writestring(getenv("HOME"));
 			continue;
@@ -550,7 +551,7 @@ char *FileName::name(const char *str)
 		return e + 1;
 #else
 	    case '/':
-	       return e + 1;
+                return e + 1;
 #endif
 	    default:
 		if (e == str)
@@ -866,7 +867,7 @@ int File::read()
 
     name = this->name->toChars();
     h = CreateFileA(name,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,
-                    FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,0);
+	FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,0);
     if (h == INVALID_HANDLE_VALUE)
 	goto err1;
 
@@ -901,14 +902,14 @@ int File::read()
     buffer[size + 1] = 0;
     return 0;
 
-    err2:
+err2:
     CloseHandle(h);
-    err:
+err:
     mem.free(buffer);
     buffer = NULL;
     len = 0;
 
-    err1:
+err1:
     result = 1;
     return result;
 #else
@@ -969,14 +970,14 @@ int File::read()
     buffer[size + 1] = 0;
     return 0;
 
-err2:
+    err2:
     close(fd);
-err:
+    err:
     mem.free(buffer);
     buffer = NULL;
     len = 0;
 
-err1:
+    err1:
     result = 1;
     return result;
 #endif
@@ -996,8 +997,8 @@ int File::mmread()
 
     name = this->name->toChars();
     hFile = CreateFile(name, GENERIC_READ,
-                       FILE_SHARE_READ, NULL,
-                       OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			FILE_SHARE_READ, NULL,
+			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE)
 	goto Lerr;
     size = GetFileSize(hFile, NULL);
@@ -1026,7 +1027,7 @@ int File::mmread()
 
     return 0;
 
-    Lerr:
+Lerr:
     return GetLastError();			// failure
 #else
     return read();
@@ -1048,7 +1049,7 @@ int File::write()
 
     name = this->name->toChars();
     h = CreateFileA(name,GENERIC_WRITE,0,NULL,CREATE_ALWAYS,
-                    FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+	FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,NULL);
     if (h == INVALID_HANDLE_VALUE)
 	goto err;
 
@@ -1065,10 +1066,10 @@ int File::write()
 	goto err;
     return 0;
 
-    err2:
+err2:
     CloseHandle(h);
     DeleteFileA(name);
-    err:
+err:
     return 1;
 #else
     int fd;
@@ -1097,10 +1098,10 @@ int File::write()
     }
     return 0;
 
-err2:
+    err2:
     close(fd);
     ::remove(name);
-err:
+    err:
     return 1;
 #endif
 }
@@ -1120,7 +1121,7 @@ int File::append()
 
     name = this->name->toChars();
     h = CreateFileA(name,GENERIC_WRITE,0,NULL,OPEN_ALWAYS,
-                    FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+	FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,NULL);
     if (h == INVALID_HANDLE_VALUE)
 	goto err;
 
@@ -1144,9 +1145,9 @@ int File::append()
 	goto err;
     return 0;
 
-    err2:
+err2:
     CloseHandle(h);
-    err:
+err:
     return 1;
 #else
     return 1;

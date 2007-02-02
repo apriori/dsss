@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#if __WIN32
+#if _MSC_VER || ( __WIN32 && __GNUC__ )
 #include <malloc.h>
 #endif
 

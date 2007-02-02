@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#if _WIN32 || IN_GCC || IN_REBUILD
+#if _WIN32 || IN_GCC || IN_DMDFE
 #include "mem.h"
 #else
 #include "../root/mem.h"

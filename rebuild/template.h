@@ -290,6 +290,7 @@ struct TemplateMixin : TemplateInstance
     void inlineScan();
     char *kind();
     int oneMember(Dsymbol **ps);
+    int hasPointers();
     char *toChars();
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 

@@ -20,7 +20,7 @@
 #include <assert.h>
 #include <sys/time.h>
 
-#if IN_GCC || IN_REBUILD
+#if IN_GCC || IN_DMDFE
 
 #include <time.h>
 #include "mem.h"

@@ -3503,11 +3503,11 @@ LabelDsymbol *LabelDsymbol::isLabel()		// is this a LabelDsymbol()?
 
 AsmStatement::AsmStatement(Loc loc, Token *tokens) : Statement(loc)
 {
-    // stub
+    this->loc = loc;
+    this->tokens = tokens;
 }
 
 Statement *AsmStatement::syntaxCopy() { return new Statement(Loc()); }
 Statement *AsmStatement::semantic(Scope *sc) { return new Statement(Loc()); }
 int AsmStatement::comeFrom() { return 0; }
-
 void AsmStatement::toCBuffer(OutBuffer *buf, HdrGenState *hgs) {}

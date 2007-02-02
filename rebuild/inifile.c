@@ -10,7 +10,7 @@
 #include	<stdlib.h>
 #include	<ctype.h>
 
-#if __WIN32
+#if __WIN32 && __GNUC__
 #include <malloc.h>
 #endif
 
@@ -79,7 +79,7 @@ void inifile(char *argv0, char *inifile)
 		filename = FileName::replaceName(argv0, inifile);
 		if (!FileName::exists(filename))
 		{
-#if !__WIN32
+#ifndef __WIN32
 		    // Search PATH for argv0
 		    const char *p = getenv("PATH");
 		    Array *paths = FileName::splitPath(p);

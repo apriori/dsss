@@ -18,7 +18,7 @@
 #define integer_t dmd_integer_t
 #endif
 
-#if IN_GCC || IN_REBUILD
+#if IN_GCC || IN_DMDFE
 #include "mem.h"
 #elif linux
 #include "../root/mem.h"

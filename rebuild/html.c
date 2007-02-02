@@ -23,11 +23,7 @@
 
 #include <assert.h>
 #include "root.h"
-#if IN_REBUILD
 #include "mars.h"
-#else
-#include "../mars/mars.h"
-#endif
 
 extern int HtmlNamedEntity(unsigned char *p, int length);
 

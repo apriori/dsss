@@ -22,6 +22,7 @@
 #include "id.h"
 #include "expression.h"
 #include "hdrgen.h"
+#include "dsymbol.h"
 
 /********************************* Declaration ****************************/
 
@@ -1224,4 +1225,11 @@ Dsymbol *ThisDeclaration::syntaxCopy(Dsymbol *s)
     return NULL;
 }
 
-
+SymbolDeclaration::SymbolDeclaration(Loc loc, Symbol *s, StructDeclaration *dsym)
+: Declaration(new Identifier(s->Sident, TOKidentifier))
+{
+    this->loc = loc;
+    sym = s;
+    this->dsym = dsym;
+    storage_class |= STCconst;
+}

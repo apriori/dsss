@@ -15,12 +15,12 @@
 #include <complex>
 #include <math.h>
 
-#if __WIN32
-#define isnan _isnan
-#endif
-
 #if _WIN32 && __DMC__
 extern "C" char * __cdecl __locale_decpoint;
+#endif
+
+#if __WIN32 && __GNUC__
+#define isnan _isnan
 #endif
 
 #if IN_GCC
@@ -32,7 +32,7 @@ extern "C" char * __cdecl __locale_decpoint;
 #define integer_t dmd_integer_t
 #endif
 
-#if IN_GCC || IN_REBUILD
+#if IN_GCC || IN_DMDFE
 #include "mem.h"
 #elif _WIN32
 #include "..\root\mem.h"
@@ -58,7 +58,7 @@ extern "C" char * __cdecl __locale_decpoint;
 #include "attrib.h"
 #include "hdrgen.h"
 
-Expression *createTypeInfoArray(Scope *sc, Expression *args[], int dim);
+//Expression *createTypeInfoArray(Scope *sc, Expression *args[], int dim);
 
 #define LOGSEMANTIC	0
 
@@ -567,15 +567,18 @@ void functionArguments(Loc loc, Scope *sc, TypeFunction *tf, Expressions *argume
 	    break;
     }
 
-    /* If D linkage and variadic, add _arguments[] as first argument
+    // If D linkage and variadic, add _arguments[] as first argument
     if (tf->linkage == LINKd && tf->varargs == 1)
     {
 	Expression *e;
 
-	e = createTypeInfoArray(sc, (Expression **)&arguments->data[nparams],
+	/*e = createTypeInfoArray(sc, (Expression **)&arguments->data[nparams],
 		arguments->dim - nparams);
-	arguments->insert(0, e);
-    }*/
+	arguments->insert(0, e);*/
+        
+        e = new NullExp(loc);
+        e->type = Type::tint32;
+    }
 }
 
 /**************************************************
@@ -3522,9 +3525,7 @@ Expression *TypeidExp::semantic(Scope *sc)
     printf("TypeidExp::semantic()\n");
 #endif
     typeidType = typeidType->semantic(loc, sc);
-    //e = typeidType->getTypeInfo(sc);
-    e = new NullExp(loc);
-    e->type = new Type(Tint32, NULL);
+    e = typeidType->getTypeInfo(sc);
     return e;
 }
 

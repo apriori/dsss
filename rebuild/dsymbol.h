@@ -201,6 +201,10 @@ struct Dsymbol : Object
     virtual AttribDeclaration *isAttribDeclaration() { return NULL; }
 };
 
+struct Symbol {
+    char *Sident;
+};
+
 // Dsymbol that generates a scope
 
 struct ScopeDsymbol : Dsymbol

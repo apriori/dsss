@@ -16,7 +16,7 @@
 #include <ctype.h>
 #include <assert.h>
 
-#if IN_GCC || IN_REBUILD
+#if IN_GCC || IN_DMDFE
 #include "mem.h"
 #else
 #if _WIN32

@@ -58,9 +58,9 @@ Global::Global()
     ddoc_ext = "ddoc";
     obj_ext  = "o";
     
-    copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards";
+    copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards,";
     written = "written by Walter Bright and Gregor Richards";
-    version = "version 0.1 (based on DMD 1.003)";
+    version = "version 0.1 (based on DMD 1.004)";
     global.structalign = 8;
     cmodules = NULL;
 
@@ -225,6 +225,8 @@ int main(int argc, char *argv[])
     Module::init();
     initPrecedence();
 
+    //backend_init();
+
 #if __DMC__	// DMC unique support for response files
     if (response_expand(&argc,&argv))	// expand response files
 	error("can't open response file");
@@ -326,7 +328,10 @@ int main(int argc, char *argv[])
             
             // 3) get the prefix
             char *gdcdir, *gdcfil;
-            whereAmI("gdc", &gdcdir, &gdcfil);
+            if (!whereAmI("gdc", &gdcdir, &gdcfil)) {
+                error("gdc is not in $PATH");
+                exit(1);
+            }
             
             // 4) make include paths
             if (!global.params.imppath)
@@ -1046,6 +1051,7 @@ int main(int argc, char *argv[])
     fatal();
   }
 #endif
+    //backend_term();
     if (global.errors)
 	fatal();
 

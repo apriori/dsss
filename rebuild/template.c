@@ -3634,6 +3634,21 @@ int TemplateMixin::oneMember(Dsymbol **ps)
     return Dsymbol::oneMember(ps);
 }
 
+int TemplateMixin::hasPointers()
+{
+    //printf("TemplateMixin::hasPointers() %s\n", toChars());
+    for (size_t i = 0; i < members->dim; i++)
+    {
+	Dsymbol *s = (Dsymbol *)members->data[i];
+	//printf(" s = %s %s\n", s->kind(), s->toChars());
+	if (s->hasPointers())
+	{
+	    return 1;
+	}
+    }
+    return 0;
+}
+
 char *TemplateMixin::toChars()
 {
     OutBuffer buf;
@@ -3690,5 +3705,3 @@ void TemplateMixin::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
     buf->writebyte(';');
     buf->writenl();
 }
-
-

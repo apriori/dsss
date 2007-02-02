@@ -525,9 +525,7 @@ Expression *Type::getProperty(Loc loc, Identifier *ident)
     {
 	if (!global.params.useDeprecated)
 	    error(loc, ".typeinfo deprecated, use typeid(type)");
-	//e = getTypeInfo(NULL);
-        e = new NullExp(loc);
-        e->type = tint32;
+	e = getTypeInfo(NULL);
     }
     else if (ident == Id::init)
     {
@@ -613,9 +611,7 @@ Expression *Type::dotExp(Scope *sc, Expression *e, Identifier *ident)
     {
 	if (!global.params.useDeprecated)
 	    error(e->loc, ".typeinfo deprecated, use typeid(type)");
-	//e = getTypeInfo(sc);
-        e = new NullExp(e->loc);
-        e->type = tint32;
+	e = getTypeInfo(sc);
 	return e;
     }
     return getProperty(e->loc, ident);
@@ -1490,6 +1486,8 @@ Expression *TypeArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	ec = new VarExp(0, fd);
 	e = e->castTo(sc, n->arrayOf());	// convert to dynamic array
 	arguments = new Expressions();
+	if (dup)
+	    arguments->push(getTypeInfo(sc));
 	arguments->push(e);
 	if (!dup)
 	    arguments->push(new IntegerExp(0, size, Type::tint32));
@@ -1508,6 +1506,10 @@ Expression *TypeArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	e = e->castTo(sc, n->arrayOf());	// convert to dynamic array
 	arguments = new Expressions();
 	arguments->push(e);
+	if (next->ty != Tbit)
+	    arguments->push(n->ty == Tsarray
+			? n->getTypeInfo(sc)	// don't convert to dynamic array
+			: n->getInternalTypeInfo(sc));
 	e = new CallExp(e->loc, ec, arguments);
 	e->type = next->arrayOf();
     }
@@ -2166,6 +2168,7 @@ Expression *TypeAArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	ec = new VarExp(0, fd);
 	arguments = new Expressions();
 	arguments->push(e->addressOf(sc));
+	arguments->push(key->getInternalTypeInfo(sc));
 	e = new CallExp(e->loc, ec, arguments);
 	e->type = this;
     }
@@ -4186,7 +4189,7 @@ Expression *TypeStruct::defaultInit()
     assert(d);
     d->type = this;
     return new VarExp(sym->loc, d);*/
-    Expression *e = new NullExp(sym->loc);
+    Expression *e = new NullExp(Loc());
     e->type = tint32;
     return e;
 }
@@ -4369,10 +4372,7 @@ L1:
 	{
 	    if (!global.params.useDeprecated)
 		error(e->loc, ".typeinfo deprecated, use typeid(type)");
-	    //return getTypeInfo(sc);
-            Expression *e2 = new NullExp(e->loc);
-            e2->type = tint32;
-            return e2;
+	    return getTypeInfo(sc);
 	}
 	if (ident == Id::outer && sym->vthis)
 	{
@@ -5023,4 +5023,18 @@ Argument *Argument::getNth(Arguments *args, size_t nth, size_t *pn)
     if (pn)
 	*pn += n;
     return NULL;
+}
+
+Expression *Type::getTypeInfo(Scope *sc)
+{
+    TypeInfoDeclaration *tid = new TypeInfoDeclaration(this, 0);
+    Expression *e = new VarExp(0, tid);
+    e = e->addressOf(sc);
+    e->type = tid->type;
+    return e;
+}
+
+Expression *Type::getInternalTypeInfo(Scope *sc)
+{
+    return getTypeInfo(sc);
 }

@@ -147,7 +147,8 @@ struct Module : Package
     Symbol *massert;		// module assert function
 
     Symbol *marray;		// module array bounds function
-    
+
+
     static Symbol *gencritsec();
     elem *toEfilename();
     elem *toEmodulename();

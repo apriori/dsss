@@ -13,16 +13,12 @@
 #include <string.h>
 #include <assert.h>
 
-#if _MSC_VER
+#if _MSC_VER || ( __WIN32 && __GNUC__ )
 #include <malloc.h>
 #endif
 
 #if IN_GCC
 #include "gdc_alloca.h"
-#endif
-
-#if IN_REBUILD
-#include <malloc.h>
 #endif
 
 #if _WIN32

@@ -233,6 +233,8 @@ struct Type : Object
     Identifier *getTypeInfoIdent(int internal);
     virtual MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Array *atypes);
     virtual void resolve(Loc loc, Scope *sc, Expression **pe, Type **pt, Dsymbol **ps);
+    Expression *getInternalTypeInfo(Scope *sc);
+    Expression *getTypeInfo(Scope *sc);
     virtual Type *reliesOnTident();
     virtual Expression *toExpression();
     virtual int hasPointers();
@@ -409,7 +411,6 @@ struct TypeDelegate : Type
     Expression *defaultInit();
     int isZeroInit();
     int checkBoolean();
-    TypeInfoDeclaration *getTypeInfoDeclaration();
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     int hasPointers();
 };
@@ -493,7 +494,6 @@ struct TypeStruct : Type
     int isZeroInit();
     int checkBoolean();
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Array *atypes);
-    TypeInfoDeclaration *getTypeInfoDeclaration();
     int hasPointers();
 };
 
@@ -521,7 +521,6 @@ struct TypeEnum : Type
     Expression *defaultInit();
     int isZeroInit();
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Array *atypes);
-    TypeInfoDeclaration *getTypeInfoDeclaration();
     int hasPointers();
 };
 
@@ -554,7 +553,6 @@ struct TypeTypedef : Type
     Expression *defaultInit();
     int isZeroInit();
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Array *atypes);
-    TypeInfoDeclaration *getTypeInfoDeclaration();
     int hasPointers();
 };
 
@@ -579,7 +577,6 @@ struct TypeClass : Type
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Array *atypes);
     int isauto();
     int checkBoolean();
-    TypeInfoDeclaration *getTypeInfoDeclaration();
     int hasPointers();
 };
 
@@ -596,7 +593,6 @@ struct TypeTuple : Type
     void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
     void toDecoBuffer(OutBuffer *buf);
     Expression *getProperty(Loc loc, Identifier *ident);
-    TypeInfoDeclaration *getTypeInfoDeclaration();
 };
 
 struct TypeSlice : Type
