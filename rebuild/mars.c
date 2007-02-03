@@ -150,7 +150,7 @@ void usage()
     printf("\
 Documentation: www.digitalmars.com/d/index.html\n\
 Usage:\n\
-  dmd files.d ... { -switch }\n\
+  rebuild files.d ... { -switch }\n\
 \n\
   files.d        D source files\n%s\
   -dc=<compiler> use the specified compiler configuration\n\
@@ -289,8 +289,10 @@ int main(int argc, char *argv[])
             
             // trick whereami into giving us a path
             char *dir, *fil, *full;
-            whereAmI("dmd", &dir, &fil);
-            full = (char *) mem.malloc(strlen(dir) + 5);
+            if (!whereAmI("dmd", &dir, &fil)) {
+                error("dmd is not in $PATH");
+                exit(1);
+            }
             sprintf(full, "%s%cdmd", dir,
 #if __WIN32
                     '\\'

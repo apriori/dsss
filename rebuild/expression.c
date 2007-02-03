@@ -1053,7 +1053,8 @@ integer_t IntegerExp::toInteger()
 	    default:
 		print();
 		type->print();
-		assert(0);
+		//assert(0);
+                return 0;
 		break;
 	}
 	break;
