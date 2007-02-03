@@ -293,6 +293,7 @@ int main(int argc, char *argv[])
                 error("dmd is not in $PATH");
                 exit(1);
             }
+            full = (char *) mem.malloc(strlen(dir) + 5);
             sprintf(full, "%s%cdmd", dir,
 #if __WIN32
                     '\\'
