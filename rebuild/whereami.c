@@ -156,7 +156,13 @@ char *whereAmI(const char *argvz, char **dir, char **fil)
             continue;
         }
         
-        if (sbuf.st_mode & S_IXUSR) {
+        if (
+#ifndef __WIN32
+            sbuf.st_mode & S_IXUSR
+#else
+            1
+#endif
+            ) {
             dirAndFil(retname, dir, fil);
             free(argvzd);
             return retname;
