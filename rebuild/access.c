@@ -252,7 +252,7 @@ void AggregateDeclaration::accessCheck(Loc loc, Scope *sc, Dsymbol *smember)
     }
     if (!result)
     {
-	error(loc, "member %s is not accessible", smember->toChars());
+	//error(loc, "member %s is not accessible", smember->toChars());
     }
 }
 
@@ -391,11 +391,11 @@ void accessCheck(Loc loc, Scope *sc, Expression *e, Declaration *d)
 #endif
     if (!e)
     {
-	if (d->prot() == PROTprivate && d->getModule() != sc->module ||
+	/*if (d->prot() == PROTprivate && d->getModule() != sc->module ||
 	    d->prot() == PROTpackage && !hasPackageAccess(sc, d))
 
 	    error(loc, "%s %s.%s is not accessible from %s",
-		d->kind(), d->getModule()->toChars(), d->toChars(), sc->module->toChars());
+		d->kind(), d->getModule()->toChars(), d->toChars(), sc->module->toChars());*/
     }
     else if (e->type->ty == Tclass)
     {   // Do access check

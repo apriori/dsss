@@ -56,12 +56,12 @@ int DebugSymbol::addMember(Scope *sc, ScopeDsymbol *sd, int memnum)
     m = sd->isModule();
     if (ident)
     {
-	if (!m)
-	    error("declaration must be at module level");
+	if (!m) {}
+	    //error("declaration must be at module level");
 	else
 	{
-	    if (findCondition(m->debugidsNot, ident))
-		error("defined after use");
+	    /*if (findCondition(m->debugidsNot, ident))
+		error("defined after use"); */
 	    if (!m->debugids)
 		m->debugids = new Array();
 	    m->debugids->push(ident->toChars());
@@ -69,8 +69,8 @@ int DebugSymbol::addMember(Scope *sc, ScopeDsymbol *sd, int memnum)
     }
     else
     {
-	if (!m)
-	    error("level declaration must be at module level");
+	if (!m) {}
+	    //error("level declaration must be at module level");
 	else
 	    m->debuglevel = level;
     }
@@ -137,12 +137,12 @@ int VersionSymbol::addMember(Scope *sc, ScopeDsymbol *sd, int memnum)
     if (ident)
     {
 	VersionCondition::checkPredefined(loc, ident->toChars());
-	if (!m)
-	    error("declaration must be at module level");
+	if (!m) {}
+	    //error("declaration must be at module level");
 	else
 	{
-	    if (findCondition(m->versionidsNot, ident))
-		error("defined after use");
+	    if (findCondition(m->versionidsNot, ident)) {}
+		//error("defined after use");
 	    if (!m->versionids)
 		m->versionids = new Array();
 	    m->versionids->push(ident->toChars());
@@ -150,8 +150,8 @@ int VersionSymbol::addMember(Scope *sc, ScopeDsymbol *sd, int memnum)
     }
     else
     {
-	if (!m)
-	    error("level declaration must be at module level");
+	if (!m) {}
+	    //error("level declaration must be at module level");
 	else
 	    m->versionlevel = level;
     }

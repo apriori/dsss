@@ -105,7 +105,7 @@ char *Declaration::mangle()
 		    return ident->toChars();
 
 		case LINKdefault:
-		    error("forward declaration");
+		    //error("forward declaration");
 		    return ident->toChars();
 
 		default:

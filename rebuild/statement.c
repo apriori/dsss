@@ -477,8 +477,8 @@ int CompoundStatement::fallOffEnd()
 
 	if (!falloff && global.params.warnings && !s->comeFrom())
 	{
-	    fprintf(stdmsg, "warning - ");
-	    s->error("statement is not reachable");
+	    //fprintf(stdmsg, "warning - ");
+	    //s->error("statement is not reachable");
 	}
 	falloff = s->fallOffEnd();
     }
@@ -599,8 +599,8 @@ int UnrolledLoopStatement::fallOffEnd()
 
 	if (!falloff && global.params.warnings && !s->comeFrom())
 	{
-	    fprintf(stdmsg, "warning - ");
-	    s->error("statement is not reachable");
+	    //fprintf(stdmsg, "warning - ");
+	    //s->error("statement is not reachable");
 	}
 	falloff = s->fallOffEnd();
     }
@@ -1962,7 +1962,7 @@ Statement *SwitchStatement::semantic(Scope *sc)
 
 	if (!gcs->exp)
 	{
-	    gcs->error("no case statement following goto case;");
+	    //gcs->error("no case statement following goto case;");
 	    break;
 	}
 
@@ -1981,7 +1981,7 @@ Statement *SwitchStatement::semantic(Scope *sc)
 		}
 	    }
 	}
-	gcs->error("case %s not found", gcs->exp->toChars());
+	//gcs->error("case %s not found", gcs->exp->toChars());
 
      Lfoundcase:
 	;
@@ -3054,7 +3054,7 @@ void Catch::semantic(Scope *sc)
 	 * To fix, have the compiler automatically convert the finally
 	 * body into a nested function.
 	 */
-	error(loc, "cannot put catch statement inside finally block");
+	//error(loc, "cannot put catch statement inside finally block");
     }
 #endif
 

@@ -62,8 +62,8 @@ ClassDeclaration::ClassDeclaration(Loc loc, Identifier *id, BaseClasses *basecla
     if (id)
     {	// Look for special class names
 
-	if (id == Id::__sizeof || id == Id::alignof || id == Id::mangleof)
-	    error("illegal class name");
+	/*if (id == Id::__sizeof || id == Id::alignof || id == Id::mangleof)
+	    error("illegal class name");*/
 
 	// BUG: What if this is the wrong TypeInfo, i.e. it is nested?
 	if (id->toChars()[0] == 'T')
@@ -695,10 +695,10 @@ int ClassDeclaration::isBaseOf(ClassDeclaration *cd, int *poffset)
 
 	/* cd->baseClass might not be set if cd is forward referenced.
 	 */
-	if (!cd->baseClass && cd->baseclasses.dim && !cd->isInterfaceDeclaration())
+	/*if (!cd->baseClass && cd->baseclasses.dim && !cd->isInterfaceDeclaration())
 	{
 	    cd->error("base class is forward referenced by %s", toChars());
-	}
+	}*/
 
 	cd = cd->baseClass;
     }
@@ -714,7 +714,7 @@ Dsymbol *ClassDeclaration::search(Loc loc, Identifier *ident, int flags)
 	semantic(scope);
 
     if (!members || !symtab || scope)
-    {	error("is forward referenced when looking for '%s'", ident->toChars());
+    {	//error("is forward referenced when looking for '%s'", ident->toChars());
 	//*(char*)0=0;
 	return NULL;
     }
@@ -732,8 +732,8 @@ Dsymbol *ClassDeclaration::search(Loc loc, Identifier *ident, int flags)
 
 	    if (b->base)
 	    {
-		if (!b->base->symtab)
-		    error("base %s is forward referenced", b->base->ident->toChars());
+		if (!b->base->symtab) {}
+		    //error("base %s is forward referenced", b->base->ident->toChars());
 		else
 		{
 		    s = b->base->search(loc, ident, flags);
@@ -1206,15 +1206,15 @@ int BaseClass::fillVtbl(ClassDeclaration *cd, Array *vtbl, int newinstance)
 	{
 	    //printf("            found\n");
 	    // Check that calling conventions match
-	    if (fd->linkage != ifd->linkage)
-		fd->error("linkage doesn't match interface function");
+	    /*if (fd->linkage != ifd->linkage)
+		fd->error("linkage doesn't match interface function"); */
 
 	    // Check that it is current
 	    if (newinstance &&
 		fd->toParent() != cd &&
 		ifd->toParent() == base)
-		cd->error("interface function %s.%s is not implemented",
-		    id->toChars(), ifd->ident->toChars());
+		/*cd->error("interface function %s.%s is not implemented",
+		    id->toChars(), ifd->ident->toChars()); */
 
 	    if (fd->toParent() == cd)
 		result = 1;
@@ -1223,9 +1223,9 @@ int BaseClass::fillVtbl(ClassDeclaration *cd, Array *vtbl, int newinstance)
 	{
 	    //printf("            not found\n");
 	    // BUG: should mark this class as abstract?
-	    if (!cd->isAbstract())
+	    /*if (!cd->isAbstract())
 		cd->error("interface function %s.%s isn't implemented",
-		    id->toChars(), ifd->ident->toChars());
+		    id->toChars(), ifd->ident->toChars()); */
 	    fd = NULL;
 	}
 	if (vtbl)

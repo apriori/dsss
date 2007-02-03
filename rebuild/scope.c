@@ -182,8 +182,8 @@ void Scope::mergeCallSuper(Loc loc, unsigned cs)
 	{
 	    a = (cs        & (CSXthis_ctor | CSXsuper_ctor)) != 0;
 	    b = (callSuper & (CSXthis_ctor | CSXsuper_ctor)) != 0;
-	    if (a != b)
-		error(loc, "one path skips constructor");
+	    /*if (a != b)
+		error(loc, "one path skips constructor"); */
 	    callSuper |= cs;
 	}
     }
@@ -231,7 +231,7 @@ Dsymbol *Scope::search(Loc loc, Identifier *ident, Dsymbol **pscopesym)
 		    sc->enclosing->search(loc, ident, NULL))
 		{
 		    fprintf(stdmsg, "warning - ");
-		    error("array 'length' hides other 'length' name in outer scope");
+		    //error("array 'length' hides other 'length' name in outer scope");
 		}
 
 		//printf("\tfound %s.%s, kind = '%s'\n", s->parent ? s->parent->toChars() : "", s->toChars(), s->kind());

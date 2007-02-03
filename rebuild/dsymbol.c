@@ -241,7 +241,7 @@ int Dsymbol::isAnonymous()
 
 void Dsymbol::semantic(Scope *sc)
 {
-    error("%p has no semantic routine", this);
+    //error("%p has no semantic routine", this);
 }
 
 void Dsymbol::semantic2(Scope *sc)
@@ -280,7 +280,7 @@ void Dsymbol::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 
 unsigned Dsymbol::size(Loc loc)
 {
-    error("Dsymbol '%s' has no size\n", toChars());
+    //error("Dsymbol '%s' has no size\n", toChars());
     return 0;
 }
 
@@ -363,8 +363,8 @@ int Dsymbol::addMember(Scope *sc, ScopeDsymbol *sd, int memnum)
 	}
 	if (sd->isAggregateDeclaration() || sd->isEnumDeclaration())
 	{
-	    if (ident == Id::__sizeof || ident == Id::alignof || ident == Id::mangleof)
-		error(".%s property cannot be redefined", ident->toChars());
+	    /*if (ident == Id::__sizeof || ident == Id::alignof || ident == Id::mangleof)
+		error(".%s property cannot be redefined", ident->toChars());*/
 	}
 	return 1;
     }
@@ -444,7 +444,7 @@ void Dsymbol::checkDeprecated(Loc loc, Scope *sc)
 		return;
 	}
 
-	error(loc, "is deprecated");
+	//error(loc, "is deprecated");
     }
 }
 
@@ -613,8 +613,8 @@ Dsymbol *ScopeDsymbol::search(Loc loc, Identifier *ident, int flags)
 	if (s)
 	{
 	    Declaration *d = s->isDeclaration();
-	    if (d && d->protection == PROTprivate && !d->parent->isTemplateMixin())
-		error("%s is private", d->toPrettyChars());
+	    /*if (d && d->protection == PROTprivate && !d->parent->isTemplateMixin())
+		error("%s is private", d->toPrettyChars()); */
 	}
     }
     return s;
@@ -670,7 +670,7 @@ void ScopeDsymbol::multiplyDefined(Loc loc, Dsymbol *s1, Dsymbol *s2)
     printf("s1 = %p, '%s' kind = '%s', parent = %s\n", s1, s1->toChars(), s1->kind(), s1->parent ? s1->parent->toChars() : "");
     printf("s2 = %p, '%s' kind = '%s', parent = %s\n", s2, s2->toChars(), s2->kind(), s2->parent ? s2->parent->toChars() : "");
 #endif
-    if (loc.filename)
+    /*if (loc.filename)
     {	::error(loc, "%s at %s conflicts with %s at %s",
 	    s1->toPrettyChars(),
 	    s1->locToChars(),
@@ -682,7 +682,7 @@ void ScopeDsymbol::multiplyDefined(Loc loc, Dsymbol *s1, Dsymbol *s2)
 	s1->error(loc, "conflicts with %s at %s",
 	    s2->toPrettyChars(),
 	    s2->locToChars());
-    }
+    } */
 //*(char*)0=0;
 }
 

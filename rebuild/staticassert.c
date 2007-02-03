@@ -46,7 +46,7 @@ void StaticAssert::semantic(Scope *sc)
 
 void StaticAssert::semantic2(Scope *sc)
 {
-    Expression *e;
+    /*Expression *e;
 
     e = exp->semantic(sc);
     e = e->optimize(WANTvalue);
@@ -69,7 +69,7 @@ void StaticAssert::semantic2(Scope *sc)
     else if (!e->isBool(TRUE))
     {
 	error("(%s) is not evaluatable at compile time", exp->toChars());
-    }
+    }*/
 }
 
 int StaticAssert::oneMember(Dsymbol **ps)

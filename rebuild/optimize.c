@@ -131,8 +131,8 @@ Expression *AddrExp::optimize(int result)
 	    {
 		TypeSArray *ts = (TypeSArray *)ve->type;
 		integer_t dim = ts->dim->toInteger();
-		if (index < 0 || index >= dim)
-		    error("array index %jd is out of bounds [0..%jd]", index, dim);
+		/*if (index < 0 || index >= dim)
+		    error("array index %jd is out of bounds [0..%jd]", index, dim); */
 		e = new SymOffExp(loc, ve->var, index * ts->next->size());
 		e->type = type;
 		return e;
@@ -232,7 +232,7 @@ Expression *ShlExp::optimize(int result)
 	e2 = e2->constFold();
 	integer_t i2 = e2->toInteger();
 	if (i2 < 0 || i2 > e1->type->size() * 8)
-	{   error("shift left by %jd exceeds " ZU, i2, e2->type->size() * 8);
+	{   //error("shift left by %jd exceeds " ZU, i2, e2->type->size() * 8);
 	    e2 = new IntegerExp(0);
 	}
 	if (e1->isConst() == 1)
@@ -385,8 +385,8 @@ Expression *IndexExp::optimize(int result)
     {	StringExp *es1 = (StringExp *)e1;
 	uinteger_t i = e2->toInteger();
 
-	if (i >= es1->len)
-	    error("string index %ju is out of bounds [0 .. %ju]", i, es1->len);
+	if (i >= es1->len) {}
+	    //error("string index %ju is out of bounds [0 .. %ju]", i, es1->len);
 	else
 	{   integer_t value;
 
@@ -417,7 +417,7 @@ Expression *IndexExp::optimize(int result)
 	uinteger_t i = e2->toInteger();
 
 	if (i >= length)
-	{   error("array index %ju is out of bounds [0 .. %ju]", i, length);
+	{   //error("array index %ju is out of bounds [0 .. %ju]", i, length);
 	}
 	else if (e1->op == TOKarrayliteral && !e1->checkSideEffect(2))
 	{   ArrayLiteralExp *ale = (ArrayLiteralExp *)e1;
@@ -450,8 +450,8 @@ Expression *SliceExp::optimize(int result)
 	uinteger_t ilwr = lwr->toInteger();
 	uinteger_t iupr = upr->toInteger();
 
-	if (iupr > es1->len || ilwr > iupr)
-	    error("string slice [%ju .. %ju] is out of bounds", ilwr, iupr);
+	if (iupr > es1->len || ilwr > iupr) {}
+	    //error("string slice [%ju .. %ju] is out of bounds", ilwr, iupr);
 	else
 	{   integer_t value;
 	    void *s;
@@ -477,8 +477,8 @@ Expression *SliceExp::optimize(int result)
 	uinteger_t ilwr = lwr->toInteger();
 	uinteger_t iupr = upr->toInteger();
 
-	if (iupr > es1->elements->dim || ilwr > iupr)
-	    error("array slice [%ju .. %ju] is out of bounds", ilwr, iupr);
+	if (iupr > es1->elements->dim || ilwr > iupr) {}
+	    //error("array slice [%ju .. %ju] is out of bounds", ilwr, iupr);
 	else
 	{
 	    memmove(es1->elements->data,
@@ -506,8 +506,8 @@ Expression *AndAndExp::optimize(int result)
     else
     {
 	e2 = e2->optimize(WANTflags);
-	if (result && e2->type->toBasetype()->ty == Tvoid && !global.errors)
-	    error("void has no value");
+	if (result && e2->type->toBasetype()->ty == Tvoid && !global.errors) {}
+	    //error("void has no value");
 	if (e1->isConst())
 	{
 	    if (e2->isConst())
@@ -533,8 +533,8 @@ Expression *OrOrExp::optimize(int result)
     else
     {
 	e2 = e2->optimize(WANTflags);
-	if (result && e2->type->toBasetype()->ty == Tvoid && !global.errors)
-	    error("void has no value");
+	if (result && e2->type->toBasetype()->ty == Tvoid && !global.errors) {}
+	    //error("void has no value");
 	if (e1->isConst())
 	{
 	    if (e2->isConst())

@@ -54,7 +54,7 @@ void AggregateDeclaration::semantic2(Scope *sc)
 {
     //printf("AggregateDeclaration::semantic2(%s)\n", toChars());
     if (scope)
-    {	error("has forward references");
+    {	//error("has forward references");
 	return;
     }
     if (members)
@@ -103,12 +103,12 @@ void AggregateDeclaration::inlineScan()
 unsigned AggregateDeclaration::size(Loc loc)
 {
     //printf("AggregateDeclaration::size() = %d\n", structsize);
-    if (!members)
+    /*if (!members)
 	error(loc, "unknown size");
     if (sizeok != 1)
     {	error(loc, "no size yet for forward reference");
 	//*(char*)0=0;
-    }
+    } */
     return structsize;
 }
 

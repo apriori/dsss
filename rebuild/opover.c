@@ -295,10 +295,10 @@ Expression *BinExp::op_overload(Scope *sc)
 	if (m.count > 1)
 	{
 	    // Error, ambiguous
-	    error("overloads %s and %s both match argument list for %s",
+	    /*error("overloads %s and %s both match argument list for %s",
 		    m.lastf->type->toChars(),
 		    m.nextf->type->toChars(),
-		    m.lastf->toChars());
+		    m.lastf->toChars()); */
 	}
 	else if (m.last == MATCHnomatch)
 	{
@@ -383,10 +383,10 @@ Expression *BinExp::op_overload(Scope *sc)
 	    if (m.count > 1)
 	    {
 		// Error, ambiguous
-		error("overloads %s and %s both match argument list for %s",
+		/*error("overloads %s and %s both match argument list for %s",
 			m.lastf->type->toChars(),
 			m.nextf->type->toChars(),
-			m.lastf->toChars());
+			m.lastf->toChars()); */
 	    }
 	    else if (m.last == MATCHnomatch)
 	    {
@@ -645,7 +645,7 @@ static void inferApplyArgTypesX(FuncDeclaration *fstart, Arguments *arguments)
 		break;
 	}
 	else
-	{   d->error("is aliased to a function");
+	{   //d->error("is aliased to a function");
 	    break;
 	}
     }

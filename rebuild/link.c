@@ -241,8 +241,8 @@ int executecmd(char *cmd, char *args, int useenv)
 	    args = envname;
 	else
 	{
-	L1:
-	    error("command line length of %d is too long",len);
+        L1: 0;
+	    //error("command line length of %d is too long",len);
 	}
     }
 

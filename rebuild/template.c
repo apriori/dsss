@@ -110,7 +110,7 @@ int match(Object *o1, Object *o2, TemplateDeclaration *tempdecl, Scope *sc)
 		{
 		    if (sc1->scopesym == ti1)
 		    {
-			error("recursive template expansion for template argument %s", t1->toChars());
+			//error("recursive template expansion for template argument %s", t1->toChars());
 			return 1;	// fake a match
 		    }
 		}
@@ -731,8 +731,8 @@ Lmatch:
 	{
 	    if (o)
 	    {
-		if (tp->specialization())
-		    error("specialization not allowed for deduced parameter %s", tp->ident->toChars());
+		/*if (tp->specialization())
+		    error("specialization not allowed for deduced parameter %s", tp->ident->toChars()); */
 	    }
 	    else
 	    {	o = tp->defaultArg(paramscope);
@@ -809,8 +809,8 @@ void TemplateDeclaration::declareParameter(Scope *sc, TemplateParameter *tp, Obj
 #endif
 	assert(0);
     }
-    if (!sc->insert(s))
-	error("declaration %s is already defined", tp->ident->toChars());
+    /*if (!sc->insert(s))
+	error("declaration %s is already defined", tp->ident->toChars()); */
     s->semantic(sc);
 }
 
@@ -872,12 +872,12 @@ FuncDeclaration *TemplateDeclaration::deduce(Scope *sc, Loc loc,
     {
 	if (!td->scope)
 	{
-	    error("forward reference to template %s", td->toChars());
+	    //error("forward reference to template %s", td->toChars());
 	    goto Lerror;
 	}
 	if (!td->onemember || !td->onemember->toAlias()->isFuncDeclaration())
 	{
-	    error("is not a function template");
+	    //error("is not a function template");
 	    goto Lerror;
 	}
 
@@ -927,13 +927,13 @@ FuncDeclaration *TemplateDeclaration::deduce(Scope *sc, Loc loc,
     }
     if (!td_best)
     {
-	error(loc, "does not match any template declaration");
+	//error(loc, "does not match any template declaration");
 	goto Lerror;
     }
     if (td_ambig)
     {
-	error(loc, "%s matches more than one template declaration, %s and %s",
-		toChars(), td_best->toChars(), td_ambig->toChars());
+	/*error(loc, "%s matches more than one template declaration, %s and %s",
+		toChars(), td_best->toChars(), td_ambig->toChars()); */
     }
 
     /* The best match is td_best with arguments tdargs.
@@ -953,8 +953,8 @@ FuncDeclaration *TemplateDeclaration::deduce(Scope *sc, Loc loc,
 	HdrGenState hgs;
 
 	argExpTypesToCBuffer(&buf, fargs, &hgs);
-	error(loc, "cannot deduce template function from argument types (%s)",
-		buf.toChars());
+	/*error(loc, "cannot deduce template function from argument types (%s)",
+		buf.toChars()); */
 	return NULL;
     }
 }
@@ -1840,8 +1840,8 @@ Object *TemplateAliasParameter::defaultArg(Scope *sc)
     if (defaultAlias)
     {
 	s = defaultAlias->toDsymbol(sc);
-	if (!s)
-	    error("%s is not a symbol", defaultAlias->toChars());
+	/*if (!s)
+	    error("%s is not a symbol", defaultAlias->toChars()); */
     }
     return s;
 }
@@ -2745,7 +2745,7 @@ TemplateDeclaration *TemplateInstance::findTemplateDeclaration(Scope *sc)
 	    }
 	}
 	if (!s)
-	{   error("identifier '%s' is not defined", id->toChars());
+	{   //error("identifier '%s' is not defined", id->toChars());
 	    return NULL;
 	}
 
@@ -2760,7 +2760,7 @@ TemplateDeclaration *TemplateInstance::findTemplateDeclaration(Scope *sc)
 	    {	Dsymbol *s2 = s->getType()->toDsymbol(sc);
 		if (!s2)
 		{
-		    error("%s is not a template declaration, it is a %s", id->toChars(), s->kind());
+		    //error("%s is not a template declaration, it is a %s", id->toChars(), s->kind());
 		    return NULL;
 		}
 		s = s2;
@@ -2784,7 +2784,7 @@ TemplateDeclaration *TemplateInstance::findTemplateDeclaration(Scope *sc)
 	    }
 	    else
 	    {
-		error("%s is not a template declaration, it is a %s", id->toChars(), s->kind());
+		//error("%s is not a template declaration, it is a %s", id->toChars(), s->kind());
 		return NULL;
 	    }
 	}
@@ -2817,7 +2817,7 @@ TemplateDeclaration *TemplateInstance::findTemplateDeclaration(Scope *sc)
 	dedtypes.setDim(td->parameters->dim);
 	if (!td->scope)
 	{
-	    error("forward reference to template declaration %s", td->toChars());
+	    //error("forward reference to template declaration %s", td->toChars());
 	    return NULL;
 	}
 	m = td->matchWithInstance(this, &dedtypes, 0);
@@ -2866,14 +2866,14 @@ TemplateDeclaration *TemplateInstance::findTemplateDeclaration(Scope *sc)
 
     if (!td_best)
     {
-	error("%s does not match any template declaration", toChars());
+	//error("%s does not match any template declaration", toChars());
 	return NULL;
     }
-    if (td_ambig)
+    /*if (td_ambig)
     {
 	error("%s matches more than one template declaration, %s and %s",
 		toChars(), td_best->toChars(), td_ambig->toChars());
-    }
+    } */
 
     /* The best match is td_best
      */
@@ -2948,8 +2948,8 @@ int TemplateInstance::isNested(Objects *args)
 		{   isnested = 1;
 		    return 1;
 		}
-		else
-		    error("cannot use local '%s' as template parameter", d->toChars());
+		/*else
+		    error("cannot use local '%s' as template parameter", d->toChars()); */
 	    }
 	}
 	else if (va)
@@ -3015,7 +3015,7 @@ Identifier *TemplateInstance::genIdent()
 	    }
 	    buf.writeByte('V');
 	    if (ea->op == TOKtuple)
-	    {	ea->error("tuple is not a valid template value argument");
+	    {	//ea->error("tuple is not a valid template value argument");
 		continue;
 	    }
 #if 1
@@ -3035,8 +3035,8 @@ Identifier *TemplateInstance::genIdent()
 	  Lsa:
 	    buf.writeByte('S');
 	    Declaration *d = sa->isDeclaration();
-	    if (d && !d->type->deco)
-		error("forward reference of %s", d->toChars());
+	    if (d && !d->type->deco) {}
+		//error("forward reference of %s", d->toChars());
 	    else
 	    {
 		char *p = sa->mangle();
@@ -3216,7 +3216,7 @@ Dsymbol *TemplateInstance::toAlias()
     printf("TemplateInstance::toAlias()\n");
 #endif
     if (!inst)
-    {	error("cannot resolve forward reference");
+    {	//error("cannot resolve forward reference");
 	return this;
     }
 

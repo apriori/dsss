@@ -1080,7 +1080,7 @@ int HtmlNamedEntity(unsigned char *p, int length)
 		}
 	}
     }
-    error("unrecognized character entity \"%.*s\"", length, p);
+    //error("unrecognized character entity \"%.*s\"", length, p);
     return -1;
 }
 

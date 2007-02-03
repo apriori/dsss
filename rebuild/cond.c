@@ -150,8 +150,8 @@ void VersionCondition::checkPredefined(Loc loc, char *ident)
 
     return;
 
-  Lerror:
-    error(loc, "version identifier '%s' is reserved and cannot be set", ident);
+    Lerror: 0;
+    //error(loc, "version identifier '%s' is reserved and cannot be set", ident);
 }
 
 void VersionCondition::addGlobalIdent(char *ident)
@@ -235,7 +235,7 @@ int StaticIfCondition::include(Scope *sc, ScopeDsymbol *s)
     {
 	if (!sc)
 	{
-	    error(loc, "static if conditional cannot be at global scope");
+	    //error(loc, "static if conditional cannot be at global scope");
 	    inc = 2;
 	    return 0;
 	}
@@ -252,7 +252,7 @@ int StaticIfCondition::include(Scope *sc, ScopeDsymbol *s)
 	    inc = 2;
 	else
 	{
-	    e->error("expression %s is not constant or does not evaluate to a bool", e->toChars());
+	    //e->error("expression %s is not constant or does not evaluate to a bool", e->toChars());
 	    inc = 2;
 	}
     }
@@ -294,7 +294,7 @@ int IftypeCondition::include(Scope *sc, ScopeDsymbol *sd)
     {
 	if (!sc)
 	{
-	    error(loc, "iftype conditional cannot be at global scope");
+	    //error(loc, "iftype conditional cannot be at global scope");
 	    inc = 2;
 	    return 0;
 	}

@@ -564,8 +564,8 @@ void FuncDeclaration::semantic3(Scope *sc)
 	    Type *t = (Type *)fthrows->data[i];
 
 	    t = t->semantic(loc, sc);
-	    if (!t->isClassHandle())
-		error("can only throw classes, not %s", t->toChars());
+	    /*if (!t->isClassHandle())
+		error("can only throw classes, not %s", t->toChars()); */
 	}
     }
 
@@ -602,7 +602,7 @@ void FuncDeclaration::semantic3(Scope *sc)
 
 	    if (isFuncLiteralDeclaration() && isNested())
 	    {
-		error("literals cannot be class members");
+		//error("literals cannot be class members");
 		return;
 	    }
 	    else
@@ -721,8 +721,8 @@ void FuncDeclaration::semantic3(Scope *sc)
 		    default: assert(0);
 		}
 		v->semantic(sc2);
-		if (!sc2->insert(v))
-		    error("parameter %s.%s is already defined", toChars(), v->toChars());
+		if (!sc2->insert(v)) {}
+		    //error("parameter %s.%s is already defined", toChars(), v->toChars());
 		else
 		    parameters->push(v);
 		localsymtab->insert(v);
@@ -756,8 +756,8 @@ void FuncDeclaration::semantic3(Scope *sc)
 		    TupleDeclaration *v = new TupleDeclaration(0, arg->ident, exps);
 		    //printf("declaring tuple %s\n", v->toChars());
 		    v->isexp = 1;
-		    if (!sc2->insert(v))
-			error("parameter %s.%s is already defined", toChars(), v->toChars());
+		    /*if (!sc2->insert(v))
+			error("parameter %s.%s is already defined", toChars(), v->toChars()); */
 		    localsymtab->insert(v);
 		    v->parent = this;
 		}
@@ -787,8 +787,8 @@ void FuncDeclaration::semantic3(Scope *sc)
 	    assert(type->next);
 	    if (type->next->ty == Tvoid)
 	    {
-		if (outId)
-		    error("void functions have no result");
+		/*if (outId)
+		    error("void functions have no result"); */
 	    }
 	    else
 	    {
@@ -809,8 +809,8 @@ void FuncDeclaration::semantic3(Scope *sc)
 		sc2->incontract--;
 		v->semantic(sc2);
 		sc2->incontract++;
-		if (!sc2->insert(v))
-		    error("out result %s is already defined", v->toChars());
+		/*if (!sc2->insert(v))
+		    error("out result %s is already defined", v->toChars()); */
 		v->parent = this;
 		vresult = v;
 
@@ -934,8 +934,8 @@ void FuncDeclaration::semantic3(Scope *sc)
 		    for (int i = 0; i < cd->fields.dim; i++)
 		    {   VarDeclaration *v = (VarDeclaration *)cd->fields.data[i];
 
-			if (v->ctorinit == 0 && v->isCtorinit())
-			    error("missing initializer for const field %s", v->toChars());
+			/*if (v->ctorinit == 0 && v->isCtorinit())
+			    error("missing initializer for const field %s", v->toChars()); */
 		    }
 		}
 
@@ -952,8 +952,8 @@ void FuncDeclaration::semantic3(Scope *sc)
 		    global.gag++;
 		    e = e->semantic(sc2);
 		    global.gag--;
-		    if (errors != global.errors)
-			error("no match for implicit super() call in constructor");
+		    /*if (errors != global.errors)
+			error("no match for implicit super() call in constructor"); */
 
 		    Statement *s = new ExpStatement(0, e);
 		    fbody = new CompoundStatement(0, s, fbody);
@@ -966,8 +966,8 @@ void FuncDeclaration::semantic3(Scope *sc)
 		fbody = new CompoundStatement(0, fbody, s);
 		assert(!returnLabel);
 	    }
-	    else if (!hasReturnExp && type->next->ty != Tvoid)
-		error("expected to return a value of type %s", type->next->toChars());
+	    else if (!hasReturnExp && type->next->ty != Tvoid) {}
+		//error("expected to return a value of type %s", type->next->toChars());
 	    else if (!inlineAsm)
 	    {
 		if (type->next->ty == Tvoid)
@@ -985,7 +985,7 @@ void FuncDeclaration::semantic3(Scope *sc)
 
 			if (global.params.warnings)
 			{   fprintf(stdmsg, "warning - ");
-			    error("no return at end of function");
+			    //error("no return at end of function");
 			}
 
 			if (global.params.useAssert &&
@@ -1391,7 +1391,7 @@ void overloadResolveX(Match *m, FuncDeclaration *fstart, Expressions *arguments)
 		break;
 	}
 	else
-	{   d->error("is aliased to a function");
+	{   //d->error("is aliased to a function");
 	    break;
 	}
     }
@@ -1453,15 +1453,15 @@ if (arguments)
 	    TypeFunction *t1 = (TypeFunction *)m.lastf->type;
 	    TypeFunction *t2 = (TypeFunction *)m.nextf->type;
 
-	    error(loc, "called with argument types:\n\t(%s)\nmatches both:\n\t%s%s\nand:\n\t%s%s",
+	    /*error(loc, "called with argument types:\n\t(%s)\nmatches both:\n\t%s%s\nand:\n\t%s%s",
 		    buf.toChars(),
 		    m.lastf->toPrettyChars(), Argument::argsTypesToChars(t1->parameters, t1->varargs),
-		    m.nextf->toPrettyChars(), Argument::argsTypesToChars(t2->parameters, t2->varargs));
+		    m.nextf->toPrettyChars(), Argument::argsTypesToChars(t2->parameters, t2->varargs)); */
 #else
-	    error(loc, "overloads %s and %s both match argument list for %s",
+	    /*error(loc, "overloads %s and %s both match argument list for %s",
 		    m.lastf->type->toChars(),
 		    m.nextf->type->toChars(),
-		    m.lastf->toChars());
+		    m.lastf->toChars()); */
 #endif
 	    return m.lastf;
 	}
@@ -1569,7 +1569,7 @@ int FuncDeclaration::getLevel(Loc loc, FuncDeclaration *fd)
     return level;
 
 Lerr:
-    error(loc, "cannot access frame of function %s", fd->toChars());
+    //error(loc, "cannot access frame of function %s", fd->toChars());
     return 1;
 }
 

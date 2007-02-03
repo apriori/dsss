@@ -678,7 +678,7 @@ void Module::semantic2()
 	{
 	    Dsymbol *sd = (Dsymbol *)deferred.data[i];
 
-	    sd->error("unable to resolve forward reference in definition");
+	    //sd->error("unable to resolve forward reference in definition");
 	}
 	return;
     }
@@ -963,7 +963,7 @@ DsymbolTable *Package::resolve(Array *packages, Dsymbol **pparent, Package **ppk
 	    {
 		assert(p->isPackage());
 		if (p->isModule())
-		{   p->error("module and package have the same name");
+		{   //p->error("module and package have the same name");
 		    fatal();
 		    break;
 		}

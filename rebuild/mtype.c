@@ -234,7 +234,7 @@ d_uns64 Type::size()
 
 d_uns64 Type::size(Loc loc)
 {
-    error(loc, "no size for type %s", toChars());
+    //error(loc, "no size for type %s", toChars());
     return 1;
 }
 
@@ -514,7 +514,7 @@ Expression *Type::getProperty(Loc loc, Identifier *ident)
     }
     else if (ident == Id::size)
     {
-	error(loc, ".size property should be replaced with .sizeof");
+	//error(loc, ".size property should be replaced with .sizeof");
 	e = new IntegerExp(loc, size(loc), Type::tsize_t);
     }
     else if (ident == Id::alignof)
@@ -523,8 +523,8 @@ Expression *Type::getProperty(Loc loc, Identifier *ident)
     }
     else if (ident == Id::typeinfo)
     {
-	if (!global.params.useDeprecated)
-	    error(loc, ".typeinfo deprecated, use typeid(type)");
+	/*if (!global.params.useDeprecated)
+	    error(loc, ".typeinfo deprecated, use typeid(type)"); */
 	e = getTypeInfo(NULL);
     }
     else if (ident == Id::init)
@@ -541,7 +541,7 @@ Expression *Type::getProperty(Loc loc, Identifier *ident)
     }
     else
     {
-	error(loc, "no property '%s' for type '%s'", ident->toChars(), toChars());
+	//error(loc, "no property '%s' for type '%s'", ident->toChars(), toChars());
 	e = new IntegerExp(loc, 1, Type::tint32);
     }
     return e;
@@ -567,8 +567,8 @@ Expression *Type::dotExp(Scope *sc, Expression *e, Identifier *ident)
     {
 	if (ident == Id::offset)
 	{
-	    if (!global.params.useDeprecated)
-		error(e->loc, ".offset deprecated, use .offsetof");
+	    /*if (!global.params.useDeprecated)
+		error(e->loc, ".offset deprecated, use .offsetof"); */
 	    goto Loffset;
 	}
 	else if (ident == Id::offsetof)
@@ -584,8 +584,8 @@ Expression *Type::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	{
 	    if (v->init)
 	    {
-		if (v->init->isVoidInitializer())
-		    error(e->loc, "%s.init is void", v->toChars());
+		if (v->init->isVoidInitializer()) {}
+		    //error(e->loc, "%s.init is void", v->toChars());
 		else
 		{   e = v->init->toExpression();
 		    if (e->op == TOKassign)
@@ -609,8 +609,8 @@ Expression *Type::dotExp(Scope *sc, Expression *e, Identifier *ident)
     }
     if (ident == Id::typeinfo)
     {
-	if (!global.params.useDeprecated)
-	    error(e->loc, ".typeinfo deprecated, use typeid(type)");
+	/*if (!global.params.useDeprecated)
+	    error(e->loc, ".typeinfo deprecated, use typeid(type)"); */
 	e = getTypeInfo(sc);
 	return e;
     }
@@ -1614,7 +1614,7 @@ d_uns64 TypeSArray::size(Loc loc)
     return sz;
 
 Loverflow:
-    error(loc, "index %jd overflow for static array", sz);
+    //error(loc, "index %jd overflow for static array", sz);
     return 1;
 }
 
@@ -2047,8 +2047,8 @@ Type *TypeAArray::semantic(Loc loc, Scope *sc)
 	}
 	else if (t)
 	    index = t;
-	else
-	    index->error(loc, "index is not a type or an expression");
+	/*else
+	    index->error(loc, "index is not a type or an expression"); */
     }
     else
 	index = index->semantic(loc,sc);
@@ -2325,8 +2325,8 @@ int TypePointer::hasPointers()
 TypeReference::TypeReference(Type *t)
     : Type(Treference, t)
 {
-    if (t->ty == Tbit)
-	error(0,"cannot make reference to a bit");
+    /*if (t->ty == Tbit)
+	error(0,"cannot make reference to a bit"); */
     // BUG: what about references to static arrays?
 }
 
@@ -2950,7 +2950,7 @@ void TypeQualified::toCBuffer2Helper(OutBuffer *buf, Identifier *ident, HdrGenSt
 
 d_uns64 TypeQualified::size(Loc loc)
 {
-    error(this->loc, "size of type %s is not known", toChars());
+    //error(this->loc, "size of type %s is not known", toChars());
     return 1;
 }
 
@@ -2999,14 +2999,14 @@ void TypeQualified::resolveHelper(Loc loc, Scope *sc,
 		id = (Identifier *)ti->idents.data[0];
 		sm = s->search(loc, id, 0);
 		if (!sm)
-		{   error(loc, "template identifier %s is not a member of %s", id->toChars(), s->toChars());
+		{   //error(loc, "template identifier %s is not a member of %s", id->toChars(), s->toChars());
 		    return;
 		}
 		sm = sm->toAlias();
 		td = sm->isTemplateDeclaration();
 		if (!td)
 		{
-		    error(loc, "%s is not a template", id->toChars());
+		    //error(loc, "%s is not a template", id->toChars());
 		    return;
 		}
 		ti->tempdecl = td;
@@ -3127,7 +3127,7 @@ L1:
 	    return;
 	}
 	if (t->ty == Tinstance && t != this && !t->deco)
-	{   error(loc, "forward reference to '%s'", t->toChars());
+	{   //error(loc, "forward reference to '%s'", t->toChars());
 	    return;
 	}
 
@@ -3140,7 +3140,7 @@ L1:
 		for (scx = sc; 1; scx = scx->enclosing)
 		{
 		    if (!scx)
-		    {   error(loc, "forward reference to '%s'", t->toChars());
+		    {   //error(loc, "forward reference to '%s'", t->toChars());
 			return;
 		    }
 		    if (scx->scopesym == scopesym)
@@ -3252,14 +3252,14 @@ Dsymbol *TypeIdentifier::toDsymbol(Scope *sc)
 		id = (Identifier *)ti->idents.data[0];
 		sm = s->search(loc, id, 0);
 		if (!sm)
-		{   error(loc, "template identifier %s is not a member of %s", id->toChars(), s->toChars());
+		{   //error(loc, "template identifier %s is not a member of %s", id->toChars(), s->toChars());
 		    break;
 		}
 		sm = sm->toAlias();
 		td = sm->isTemplateDeclaration();
 		if (!td)
 		{
-		    error(loc, "%s is not a template", id->toChars());
+		    //error(loc, "%s is not a template", id->toChars());
 		    break;
 		}
 		ti->tempdecl = td;
@@ -3564,7 +3564,7 @@ d_uns64 TypeEnum::size(Loc loc)
 {
     if (!sym->memtype)
     {
-	error(loc, "enum %s is forward referenced", sym->toChars());
+	//error(loc, "enum %s is forward referenced", sym->toChars());
 	return 4;
     }
     return sym->memtype->size(loc);
@@ -3577,7 +3577,7 @@ unsigned TypeEnum::alignsize()
 #ifdef DEBUG
 	printf("1: ");
 #endif
-	error(0, "enum %s is forward referenced", sym->toChars());
+	//error(0, "enum %s is forward referenced", sym->toChars());
 	return 4;
     }
     return sym->memtype->alignsize();
@@ -3595,7 +3595,7 @@ Type *TypeEnum::toBasetype()
 #ifdef DEBUG
 	printf("2: ");
 #endif
-	error(sym->loc, "enum %s is forward referenced", sym->toChars());
+	//error(sym->loc, "enum %s is forward referenced", sym->toChars());
 	return tint32;
     }
     return sym->memtype->toBasetype();
@@ -3674,7 +3674,7 @@ Expression *TypeEnum::getProperty(Loc loc, Identifier *ident)
     return e;
 
 Lfwd:
-    error(loc, "forward reference of %s.%s", toChars(), ident->toChars());
+    //error(loc, "forward reference of %s.%s", toChars(), ident->toChars());
     return new IntegerExp(0, 0, this);
 }
 
@@ -3814,8 +3814,8 @@ Expression *TypeTypedef::dotExp(Scope *sc, Expression *e, Identifier *ident)
 
 	    assert(v);
 	    if (v->init)
-	    {	if (v->init->isVoidInitializer())
-		    error(e->loc, "%s.init is void", v->toChars());
+	    {	if (v->init->isVoidInitializer()) {}
+		    //error(e->loc, "%s.init is void", v->toChars());
 		else
 		    return v->init->toExpression();
 	    }
@@ -3877,7 +3877,7 @@ Type *TypeTypedef::toBasetype()
 {
     if (sym->inuse)
     {
-	sym->error("circular definition");
+	//sym->error("circular definition");
 	sym->basetype = Type::terror;
 	return Type::terror;
     }
@@ -4037,7 +4037,7 @@ Expression *TypeStruct::dotExp(Scope *sc, Expression *e, Identifier *ident)
 #endif
     if (!sym->members)
     {
-	error(e->loc, "struct %s is forward referenced", sym->toChars());
+	//error(e->loc, "struct %s is forward referenced", sym->toChars());
 	return new IntegerExp(e->loc, 0, Type::tint32);
     }
 
@@ -4153,8 +4153,8 @@ L1:
 
     if (v)
     {
-	if (v->toParent() != sym)
-	    sym->error(e->loc, "'%s' is not a member", v->toChars());
+	/*if (v->toParent() != sym)
+	    sym->error(e->loc, "'%s' is not a member", v->toChars()); */
 
 	// *(&e + offset)
 	accessCheck(e->loc, sc, e, d);
@@ -4357,8 +4357,8 @@ L1:
 		e->type = t->pointerTo();
 		if (sym->isInterfaceDeclaration())
 		{
-		    if (sym->isCOMclass())
-			error(e->loc, "no .classinfo for COM interface objects");
+		    /*if (sym->isCOMclass())
+			error(e->loc, "no .classinfo for COM interface objects"); */
 		    e->type = e->type->pointerTo();
 		    e = new PtrExp(e->loc, e);
 		    e->type = t->pointerTo();
@@ -4370,8 +4370,8 @@ L1:
 
 	if (ident == Id::typeinfo)
 	{
-	    if (!global.params.useDeprecated)
-		error(e->loc, ".typeinfo deprecated, use typeid(type)");
+	    /*if (!global.params.useDeprecated)
+		error(e->loc, ".typeinfo deprecated, use typeid(type)"); */
 	    return getTypeInfo(sc);
 	}
 	if (ident == Id::outer && sym->vthis)
@@ -4430,7 +4430,7 @@ L1:
     d = s->isDeclaration();
     if (!d)
     {
-	e->error("%s.%s is not a declaration", e->toChars(), ident->toChars());
+	//e->error("%s.%s is not a declaration", e->toChars(), ident->toChars());
 	return new IntegerExp(e->loc, 1, Type::tint32);
     }
 
@@ -4457,9 +4457,9 @@ L1:
 			e = de->semantic(sc);
 			return e;
 		    }
-		    else if ((!cd || !cd->isBaseOf(thiscd, NULL)) &&
+		    /*else if ((!cd || !cd->isBaseOf(thiscd, NULL)) &&
 			     !d->isFuncDeclaration())
-			e->error("'this' is required, but %s is not a base class of %s", e->type->toChars(), thiscd->toChars());
+			e->error("'this' is required, but %s is not a base class of %s", e->type->toChars(), thiscd->toChars()); */
 		}
 	    }
 
@@ -4601,8 +4601,8 @@ TypeTuple::TypeTuple(Expressions *exps)
 	arguments->setDim(exps->dim);
 	for (size_t i = 0; i < exps->dim; i++)
 	{   Expression *e = (Expression *)exps->data[i];
-	    if (e->type->ty == Ttuple)
-		e->error("cannot form tuple of tuples");
+	    /*if (e->type->ty == Ttuple)
+		e->error("cannot form tuple of tuples"); */
 	    Argument *arg = new Argument(In, e->type, NULL, NULL);
 	    arguments->data[i] = (void *)arg;
 	}
@@ -4703,7 +4703,7 @@ Expression *TypeTuple::getProperty(Loc loc, Identifier *ident)
     }
     else
     {
-	error(loc, "no property '%s' for tuple '%s'", ident->toChars(), toChars());
+	//error(loc, "no property '%s' for tuple '%s'", ident->toChars(), toChars());
 	e = new IntegerExp(loc, 1, Type::tint32);
     }
     return e;

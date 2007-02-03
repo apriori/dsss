@@ -523,7 +523,7 @@ Expression *DivExp::constFold()
 	n1 = e1->toInteger();
 	n2 = e2->toInteger();
 	if (n2 == 0)
-	{   error("divide by 0");
+	{   //error("divide by 0");
 	    e2 = new IntegerExp(0, 1, e2->type);
 	    n2 = 1;
 	}
@@ -587,7 +587,7 @@ Expression *ModExp::constFold()
 	n1 = e1->toInteger();
 	n2 = e2->toInteger();
 	if (n2 == 0)
-	{   error("divide by 0");
+	{   //error("divide by 0");
 	    e2 = new IntegerExp(0, 1, e2->type);
 	    n2 = 1;
 	}

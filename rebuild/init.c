@@ -41,7 +41,7 @@ Initializer *Initializer::semantic(Scope *sc, Type *t)
 
 Type *Initializer::inferType(Scope *sc)
 {
-    error(loc, "cannot infer type from initializer");
+    //error(loc, "cannot infer type from initializer");
     return Type::terror;
 }
 
@@ -97,7 +97,7 @@ Initializer *VoidInitializer::semantic(Scope *sc, Type *t)
 
 Expression *VoidInitializer::toExpression()
 {
-    error(loc, "void initializer has no value");
+    //error(loc, "void initializer has no value");
     return new IntegerExp(0);
 }
 
@@ -188,7 +188,7 @@ Initializer *StructInitializer::semantic(Scope *sc, Type *t)
 		{
 		    if (fieldi >= ad->fields.dim)
 		    {
-			s->error("is not a per-instance initializable field");
+			//s->error("is not a per-instance initializable field");
 			break;
 		    }
 		    if (s == (Dsymbol *)ad->fields.data[fieldi])
@@ -376,7 +376,7 @@ Expression *ArrayInitializer::toExpression()
 
 Lno:
     delete elements;
-    error(loc, "array initializers as expressions are not allowed");
+    //error(loc, "array initializers as expressions are not allowed");
     return NULL;
 }
 
@@ -400,7 +400,7 @@ Type *ArrayInitializer::inferType(Scope *sc)
     }
 
 Lno:
-    error(loc, "cannot infer type from this array initializer");
+    //error(loc, "cannot infer type from this array initializer");
     return Type::terror;
 }
 

@@ -267,10 +267,10 @@ Expression *resolveProperties(Scope *sc, Expression *e)
 	    }
 	}
 
-	else if (e->op == TOKdotexp)
+	/*else if (e->op == TOKdotexp)
 	{
 	    e->error("expression has no value");
-	}
+	} */
     }
     return e;
 }
@@ -336,7 +336,7 @@ void preFunctionArguments(Loc loc, Scope *sc, Expressions *exps)
 		if (!global.gag)
 		    printf("1: \n");
 #endif
-		arg->error("%s is not an expression", arg->toChars());
+		//arg->error("%s is not an expression", arg->toChars());
 		arg = new IntegerExp(arg->loc, 0, Type::tint32);
 	    }
 
@@ -377,8 +377,8 @@ void functionArguments(Loc loc, Scope *sc, TypeFunction *tf, Expressions *argume
     size_t nargs = arguments ? arguments->dim : 0;
     size_t nparams = Argument::dim(tf->parameters);
 
-    if (nargs > nparams && tf->varargs == 0)
-	error(loc, "expected " ZU " arguments, not " ZU, nparams, nargs);
+    /*if (nargs > nparams && tf->varargs == 0)
+	error(loc, "expected " ZU " arguments, not " ZU, nparams, nargs); */
 
     n = (nargs > nparams) ? nargs : nparams;	// n = max(nargs, nparams)
 
@@ -402,7 +402,7 @@ void functionArguments(Loc loc, Scope *sc, TypeFunction *tf, Expressions *argume
 		{
 		    if (tf->varargs == 2 && i + 1 == nparams)
 			goto L2;
-		    error(loc, "expected " ZU " arguments, not " ZU, nparams, nargs);
+		    //error(loc, "expected " ZU " arguments, not " ZU, nparams, nargs);
 		    break;
 		}
 		arg = p->defaultArg->copy();
@@ -415,8 +415,8 @@ void functionArguments(Loc loc, Scope *sc, TypeFunction *tf, Expressions *argume
 		//printf("\t\tvarargs == 2, p->type = '%s'\n", p->type->toChars());
 		if (arg->implicitConvTo(p->type))
 		{
-		    if (nargs != nparams)
-		        error(loc, "expected " ZU " arguments, not " ZU, nparams, nargs);
+		    /*if (nargs != nparams)
+		        error(loc, "expected " ZU " arguments, not " ZU, nparams, nargs); */
 		    goto L1;
 		}
 	     L2:
@@ -482,7 +482,7 @@ void functionArguments(Loc loc, Scope *sc, TypeFunction *tf, Expressions *argume
 		    }
 		    default:
 			if (!arg)
-			{   error(loc, "not enough arguments");
+			{   //error(loc, "not enough arguments");
 			    return;
 		        }
 			break;
@@ -506,9 +506,9 @@ void functionArguments(Loc loc, Scope *sc, TypeFunction *tf, Expressions *argume
 		    //arg->error("cannot modify slice %s", arg->toChars());
 
 		// Don't have a way yet to do a pointer to a bit in array
-		if (arg->op == TOKarray &&
+		/*if (arg->op == TOKarray &&
 		    arg->type->toBasetype()->ty == Tbit)
-		    error("cannot have out or inout argument of bit in array");
+		    error("cannot have out or inout argument of bit in array"); */
 	    }
 
 	    // Convert static arrays to pointers
@@ -712,7 +712,7 @@ void Expression::error(const char *format, ...)
 void Expression::rvalue()
 {
     if (type && type->toBasetype()->ty == Tvoid)
-    {	error("expression %s is void and has no value", toChars());
+    {	//error("expression %s is void and has no value", toChars());
 #if 0
 	dump(0);
 	halt();
@@ -738,7 +738,7 @@ Expression *Expression::combine(Expression *e1, Expression *e2)
 integer_t Expression::toInteger()
 {
     //printf("Expression %s\n", Token::toChars(op));
-    error("Integer constant expression expected instead of %s", toChars());
+    //error("Integer constant expression expected instead of %s", toChars());
     return 0;
 }
 
@@ -750,19 +750,19 @@ uinteger_t Expression::toUInteger()
 
 real_t Expression::toReal()
 {
-    error("Floating point constant expression expected instead of %s", toChars());
+    //error("Floating point constant expression expected instead of %s", toChars());
     return 0;
 }
 
 real_t Expression::toImaginary()
 {
-    error("Floating point constant expression expected instead of %s", toChars());
+    //error("Floating point constant expression expected instead of %s", toChars());
     return 0;
 }
 
 complex_t Expression::toComplex()
 {
-    error("Floating point constant expression expected instead of %s", toChars());
+    //error("Floating point constant expression expected instead of %s", toChars());
 #ifdef IN_GCC
     return complex_t(real_t(0)); // %% nicer
 #else
@@ -777,7 +777,7 @@ void Expression::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 
 void Expression::toMangleBuffer(OutBuffer *buf)
 {
-    error("expression %s is not a valid template value argument", toChars());
+    //error("expression %s is not a valid template value argument", toChars());
 }
 
 /*******************************
@@ -812,20 +812,20 @@ void Expression::checkEscape()
 
 void Expression::checkScalar()
 {
-    if (!type->isscalar())
-	error("'%s' is not a scalar, it is a %s", toChars(), type->toChars());
+    /*if (!type->isscalar())
+	error("'%s' is not a scalar, it is a %s", toChars(), type->toChars()); */
 }
 
 void Expression::checkNoBool()
 {
-    if (type->toBasetype()->ty == Tbool)
-	error("operation not allowed on bool '%s'", toChars());
+    /*if (type->toBasetype()->ty == Tbool)
+	error("operation not allowed on bool '%s'", toChars()); */
 }
 
 Expression *Expression::checkIntegral()
 {
     if (!type->isintegral())
-    {	error("'%s' is not of integral type, it is a %s", toChars(), type->toChars());
+    {	//error("'%s' is not of integral type, it is a %s", toChars(), type->toChars());
 	return new IntegerExp(0);
     }
     return this;
@@ -833,8 +833,8 @@ Expression *Expression::checkIntegral()
 
 void Expression::checkArithmetic()
 {
-    if (!type->isintegral() && !type->isfloating())
-	error("'%s' is not an arithmetic type", toChars());
+    /*if (!type->isintegral() && !type->isfloating())
+	error("'%s' is not an arithmetic type", toChars()); */
 }
 
 void Expression::checkDeprecated(Scope *sc, Dsymbol *s)
@@ -855,9 +855,9 @@ void Expression::checkDeprecated(Scope *sc, Dsymbol *s)
 
 int Expression::checkSideEffect(int flag)
 {
-    if (flag == 0)
+    /*if (flag == 0)
 	error("%s has no effect in expression (%s)",
-		Token::toChars(op), toChars());
+		Token::toChars(op), toChars()); */
     return 0;
 }
 
@@ -876,7 +876,7 @@ Expression *Expression::checkToBoolean()
 
     if (!type->checkBoolean())
     {
-	error("expression %s of type %s does not have a boolean value", toChars(), type->toChars());
+	//error("expression %s of type %s does not have a boolean value", toChars(), type->toChars());
     }
     return this;
 }
@@ -980,7 +980,7 @@ IntegerExp::IntegerExp(Loc loc, integer_t value, Type *type)
     //printf("IntegerExp(value = %lld, type = '%s')\n", value, type ? type->toChars() : "");
     if (type && !type->isscalar())
     {
-	error("integral constant must be scalar type, not %s", type->toChars());
+	//error("integral constant must be scalar type, not %s", type->toChars());
 	type = Type::terror;
     }
     this->type = type;
@@ -2675,7 +2675,7 @@ void TemplateExp::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 
 void TemplateExp::rvalue()
 {
-    error("template %s has no value", toChars());
+    //error("template %s has no value", toChars());
 }
 
 /********************** NewExp **************************************/
@@ -3044,8 +3044,8 @@ SymOffExp::SymOffExp(Loc loc, Declaration *var, unsigned offset)
     this->var = var;
     this->offset = offset;
     VarDeclaration *v = var->isVarDeclaration();
-    if (v && v->needThis())
-	error("need 'this' for address of %s", v->toChars());
+    /*if (v && v->needThis())
+	error("need 'this' for address of %s", v->toChars()); */
 }
 
 Expression *SymOffExp::semantic(Scope *sc)
@@ -3072,8 +3072,8 @@ void SymOffExp::checkEscape()
     VarDeclaration *v = var->isVarDeclaration();
     if (v)
     {
-	if (!v->isDataseg())
-	    error("escaping reference to local %s", v->toChars());
+	/*if (!v->isDataseg())
+	    error("escaping reference to local %s", v->toChars()); */
     }
 }
 
@@ -3168,10 +3168,10 @@ void VarExp::checkEscape()
 	// if reference type
 	if (tb->ty == Tarray || tb->ty == Tsarray || tb->ty == Tclass)
 	{
-	    if ((v->isAuto() || v->isScope()) && !v->noauto)
+	    /*if ((v->isAuto() || v->isScope()) && !v->noauto)
 		error("escaping reference to auto local %s", v->toChars());
 	    else if (v->storage_class & STCvariadic)
-		error("escaping reference to variadic parameter %s", v->toChars());
+		error("escaping reference to variadic parameter %s", v->toChars()); */
 	}
     }
 }
@@ -3185,22 +3185,22 @@ Expression *VarExp::toLvalue(Scope *sc, Expression *e)
 	  tym == TYarray && e->Eoper == TOKaddr))
 	    synerr(EM_lvalue);	// lvalue expected
 #endif
-    if (var->storage_class & STClazy)
-	error("lazy variables cannot be lvalues");
+    /*if (var->storage_class & STClazy)
+	error("lazy variables cannot be lvalues"); */
     return this;
 }
 
 Expression *VarExp::modifiableLvalue(Scope *sc, Expression *e)
 {
     //printf("VarExp::modifiableLvalue('%s')\n", var->toChars());
-    if (sc->incontract && var->isParameter())
+    /*if (sc->incontract && var->isParameter())
 	error("cannot modify parameter '%s' in contract", var->toChars());
 
     if (type && type->toBasetype()->ty == Tsarray)
 	error("cannot change reference to static array '%s'", var->toChars());
 
     if (var->isConst())
-	error("cannot modify const variable '%s'", var->toChars());
+	error("cannot modify const variable '%s'", var->toChars()); */
 
     if (var->isCtorinit())
     {	// It's only modifiable if inside the right constructor
@@ -3230,8 +3230,8 @@ Expression *VarExp::modifiableLvalue(Scope *sc, Expression *e)
 		else
 		{
 		    const char *p = var->isStatic() ? "static " : "";
-		    error("can only initialize %sconst %s inside %sconstructor",
-			p, var->toChars(), p);
+		    /*error("can only initialize %sconst %s inside %sconstructor",
+			p, var->toChars(), p); */
 		}
 	    }
 	    break;
@@ -3904,16 +3904,16 @@ Expression *BinExp::commonSemanticAssign(Scope *sc)
 	e1 = e1->modifiableLvalue(sc, NULL);
 	e1->checkScalar();
 	type = e1->type;
-	if (type->toBasetype()->ty == Tbool)
+	/*if (type->toBasetype()->ty == Tbool)
 	{
 	    error("operator not allowed on bool expression %s", toChars());
-	}
+	} */
 	typeCombine(sc);
 	e1->checkArithmetic();
 	e2->checkArithmetic();
 
 	if (op == TOKmodass && e2->type->iscomplex())
-	{   error("cannot perform modulo complex arithmetic");
+	{   //error("cannot perform modulo complex arithmetic");
 	    return new IntegerExp(0);
 	}
     }
@@ -3986,9 +3986,9 @@ int BinExp::isunsigned()
 
 void BinExp::incompatibleTypes()
 {
-    error("incompatible types for ((%s) %s (%s)): '%s' and '%s'",
+    /*error("incompatible types for ((%s) %s (%s)): '%s' and '%s'",
          e1->toChars(), Token::toChars(op), e2->toChars(),
-         e1->type->toChars(), e2->type->toChars());
+         e1->type->toChars(), e2->type->toChars()); */
 }
 
 /************************************************************/
@@ -4468,8 +4468,8 @@ Expression *DotVarExp::modifiableLvalue(Scope *sc, Expression *e)
 		else
 		{
 		    const char *p = var->isStatic() ? "static " : "";
-		    error("can only initialize %sconst member %s inside %sconstructor",
-			p, var->toChars(), p);
+		    /*error("can only initialize %sconst member %s inside %sconstructor",
+			p, var->toChars(), p); */
 		}
 	    }
 	    break;
@@ -5241,7 +5241,7 @@ Expression *AddrExp::semantic(Scope *sc)
 	e1 = e1->toLvalue(sc, NULL);
 	if (!e1->type)
 	{
-	    error("cannot take address of %s", e1->toChars());
+	    //error("cannot take address of %s", e1->toChars());
 	    type = Type::tint32;
 	    return this;
 	}
@@ -5564,7 +5564,7 @@ int DeleteExp::checkSideEffect(int flag)
 
 Expression *DeleteExp::checkToBoolean()
 {
-    error("delete does not give a boolean result");
+    //error("delete does not give a boolean result");
     return this;
 }
 
@@ -5848,7 +5848,7 @@ Expression *SliceExp::toLvalue(Scope *sc, Expression *e)
 
 Expression *SliceExp::modifiableLvalue(Scope *sc, Expression *e)
 {
-    error("slice expression %s is not a modifiable lvalue", toChars());
+    //error("slice expression %s is not a modifiable lvalue", toChars());
     return this;
 }
 
@@ -5958,8 +5958,8 @@ Expression *ArrayExp::semantic(Scope *sc)
 
 Expression *ArrayExp::toLvalue(Scope *sc, Expression *e)
 {
-    if (type && type->toBasetype()->ty == Tvoid)
-	error("voids have no value");
+    /*if (type && type->toBasetype()->ty == Tvoid)
+	error("voids have no value"); */
     return this;
 }
 
@@ -6198,8 +6198,8 @@ Expression *IndexExp::modifiableLvalue(Scope *sc, Expression *e)
 {
     //printf("IndexExp::modifiableLvalue(%s)\n", toChars());
     modifiable = 1;
-    if (e1->op == TOKstring)
-	error("string literals are immutable");
+    /*if (e1->op == TOKstring)
+	error("string literals are immutable"); */
     if (e1->type->toBasetype()->ty == Taarray)
 	e1 = e1->modifiableLvalue(sc, e1);
     return toLvalue(sc, e);
@@ -6474,7 +6474,7 @@ Expression *AssignExp::checkToBoolean()
     //	if (a = b) ...
     // are usually mistakes.
 
-    error("'=' does not give a boolean result");
+    //error("'=' does not give a boolean result");
     return this;
 }
 
@@ -7951,7 +7951,7 @@ Expression *CondExp::toLvalue(Scope *sc, Expression *ex)
 
 Expression *CondExp::modifiableLvalue(Scope *sc, Expression *e)
 {
-    error("conditional expression %s is not a modifiable lvalue", toChars());
+    //error("conditional expression %s is not a modifiable lvalue", toChars());
     return this;
 }
 

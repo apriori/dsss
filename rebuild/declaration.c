@@ -463,7 +463,7 @@ Dsymbol *AliasDeclaration::toAlias()
     assert(this != aliassym);
     //static int count; if (++count == 10) *(char*)0=0;
     if (inSemantic)
-    {	error("recursive alias declaration");
+    {	//error("recursive alias declaration");
 //	return this;
     }
     Dsymbol *s = aliassym ? aliassym->toAlias() : this;
@@ -977,8 +977,8 @@ int VarDeclaration::isImportedSymbol()
 
 void VarDeclaration::checkCtorConstInit()
 {
-    if (ctorinit == 0 && isCtorinit() && !(storage_class & STCfield))
-	error("missing initializer in static constructor for const variable");
+    /*if (ctorinit == 0 && isCtorinit() && !(storage_class & STCfield))
+	error("missing initializer in static constructor for const variable"); */
 }
 
 /************************************
@@ -1017,7 +1017,7 @@ int VarDeclaration::isDataseg()
 #endif
     Dsymbol *parent = this->toParent();
     if (!parent && !(storage_class & (STCstatic | STCconst)))
-    {	error("forward referenced");
+    {	//error("forward referenced");
 	type = Type::terror;
 	return 0;
     }

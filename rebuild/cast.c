@@ -44,8 +44,8 @@ Expression *Expression::implicitCastTo(Scope *sc, Type *t)
 		return e->implicitCastTo(sc, t);
 
 	    fprintf(stdmsg, "warning - ");
-	    error("implicit conversion of expression (%s) of type %s to %s can cause loss of data",
-		toChars(), type->toChars(), t->toChars());
+	    /*error("implicit conversion of expression (%s) of type %s to %s can cause loss of data",
+		toChars(), type->toChars(), t->toChars());*/
 	}
 	return castTo(sc, t);
     }
@@ -88,7 +88,7 @@ int Expression::implicitConvTo(Type *t)
 	toChars(), type->toChars(), t->toChars());
 #endif
     if (!type)
-    {	error("%s is not an expression", toChars());
+    {	//error("%s is not an expression", toChars());
 	type = Type::terror;
     }
     if (t->ty == Tbit && isBit())
@@ -621,10 +621,10 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 
     //printf("StringExp::castTo(t = %s), '%s' committed = %d\n", t->toChars(), toChars(), committed);
 
-    if (!committed && t->ty == Tpointer && t->next->ty == Tvoid)
+    /*if (!committed && t->ty == Tpointer && t->next->ty == Tvoid)
     {
 	error("cannot convert string literal to void*");
-    }
+    }*/
 
     tb = t->toBasetype();
     if (tb->ty == Tdelegate && type->toBasetype()->ty != Tdelegate)
@@ -1324,7 +1324,7 @@ Expression *Expression::integralPromotions(Scope *sc)
     switch (type->toBasetype()->ty)
     {
 	case Tvoid:
-	    error("void has no value");
+	    //error("void has no value");
 	    break;
 
 	case Tint8:

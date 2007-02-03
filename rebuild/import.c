@@ -45,8 +45,8 @@ Import::Import(Loc loc, Array *packages, Identifier *id, Identifier *aliasId,
 
 void Import::addAlias(Identifier *name, Identifier *alias)
 {
-    if (isstatic)
-	error("cannot have an import bind list");
+    /*if (isstatic)
+	error("cannot have an import bind list"); */
 
     if (!aliasId)
 	this->ident = NULL;	// make it an anonymous import
@@ -92,8 +92,8 @@ void Import::load(Scope *sc)
     {
 	if (s->isModule())
 	    mod = (Module *)s;
-	else
-	    error("package and module have the same name");
+	/*else
+	    error("package and module have the same name"); */
     }
 
     if (!mod)
