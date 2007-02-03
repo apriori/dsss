@@ -642,7 +642,7 @@ void VarDeclaration::semantic(Scope *sc)
 	{   Argument *arg = Argument::getNth(tt->arguments, i);
 
 	    OutBuffer buf;
-	    buf.printf("_%s_field_%zu", ident->toChars(), i);
+	    buf.printf("_%s_field_" ZU, ident->toChars(), i);
 	    buf.writeByte(0);
 	    char *name = (char *)buf.extractData();
 	    Identifier *id = new Identifier(name, TOKidentifier);

@@ -378,7 +378,7 @@ void functionArguments(Loc loc, Scope *sc, TypeFunction *tf, Expressions *argume
     size_t nparams = Argument::dim(tf->parameters);
 
     if (nargs > nparams && tf->varargs == 0)
-	error(loc, "expected %zu arguments, not %zu", nparams, nargs);
+	error(loc, "expected " ZU " arguments, not " ZU, nparams, nargs);
 
     n = (nargs > nparams) ? nargs : nparams;	// n = max(nargs, nparams)
 
@@ -402,7 +402,7 @@ void functionArguments(Loc loc, Scope *sc, TypeFunction *tf, Expressions *argume
 		{
 		    if (tf->varargs == 2 && i + 1 == nparams)
 			goto L2;
-		    error(loc, "expected %zu arguments, not %zu", nparams, nargs);
+		    error(loc, "expected " ZU " arguments, not " ZU, nparams, nargs);
 		    break;
 		}
 		arg = p->defaultArg->copy();
@@ -416,7 +416,7 @@ void functionArguments(Loc loc, Scope *sc, TypeFunction *tf, Expressions *argume
 		if (arg->implicitConvTo(p->type))
 		{
 		    if (nargs != nparams)
-		        error(loc, "expected %zu arguments, not %zu", nparams, nargs);
+		        error(loc, "expected " ZU " arguments, not " ZU, nparams, nargs);
 		    goto L1;
 		}
 	     L2:
@@ -6171,7 +6171,7 @@ Expression *IndexExp::semantic(Scope *sc)
 	    }
 	    else
 	    {
-		/*error("array index [%ju] is outside array bounds [0 .. %zu]",
+		/*error("array index [%ju] is outside array bounds [0 .. " ZU "]",
 			index, length); */
 		e = e1;
 	    }

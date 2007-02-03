@@ -206,7 +206,7 @@ char *Dsymbol::mangle()
 	    p += 2;
 	buf.writestring(p);
     }
-    buf.printf("%zu%s", strlen(id), id);
+    buf.printf(ZU "%s", strlen(id), id);
     id = buf.toChars();
     buf.data = NULL;
     return id;

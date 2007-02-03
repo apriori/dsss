@@ -232,7 +232,7 @@ Expression *ShlExp::optimize(int result)
 	e2 = e2->constFold();
 	integer_t i2 = e2->toInteger();
 	if (i2 < 0 || i2 > e1->type->size() * 8)
-	{   error("shift left by %jd exceeds %zu", i2, e2->type->size() * 8);
+	{   error("shift left by %jd exceeds " ZU, i2, e2->type->size() * 8);
 	    e2 = new IntegerExp(0);
 	}
 	if (e1->isConst() == 1)

@@ -18,6 +18,12 @@
 #pragma once
 #endif
 
+#if __WIN32 && __GNUC__
+#define ZU "%u" // no %z on Win+GCC
+#else
+#define ZU "%zu"
+#endif
+
 typedef size_t hash_t;
 
 #include "dchar.h"

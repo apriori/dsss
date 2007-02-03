@@ -703,7 +703,7 @@ void FuncDeclaration::semantic3(Scope *sc)
 		{
 		    //error("no identifier for parameter %d of %s", i + 1, toChars());
 		    OutBuffer buf;
-		    buf.printf("_param_%zu", i);
+		    buf.printf("_param_" ZU, i);
 		    char *name = (char *)buf.extractData();
 		    id = new Identifier(name, TOKidentifier);
 		    arg->ident = id;
