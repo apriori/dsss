@@ -126,12 +126,13 @@ char *whereAmI(const char *argvz, char **dir, char **fil)
     /* always have . on Win32 */
     pathelem[0] = ".";
     pathelem[1] = path;
+    i = 2;
 #define SEP ';'
 #else
     pathelem[0] = path;
+    i = 1;
 #define SEP ':'
 #endif
-    i = 1;
     osl = strlen(path);
     for (j = 0; j < osl; j++) {
         for (; path[j] != '\0' && path[j] != SEP; j++);
