@@ -1030,6 +1030,22 @@ void ConditionalDeclaration::parsepragmas()
         
         if (vc->include(NULL, NULL)) {
             AttribDeclaration::parsepragmas();
+            
+        } else if (elsedecl) {
+            for (int i = 0; i < elsedecl->dim; i++) {
+                Dsymbol *ds = (Dsymbol *) elsedecl->data[i];
+            
+                if (ds->isAttribDeclaration()) {
+                    AttribDeclaration *ad = (AttribDeclaration *) ds;
+                    ad->parsepragmas();
+                
+                } else if (ds->isImport()) {
+                    Import *im = (Import *) ds;
+                    im->load(NULL);
+                    im->mod->parsepragmas();
+                
+                }
+            }
         }
     } else {
         AttribDeclaration::parsepragmas();
