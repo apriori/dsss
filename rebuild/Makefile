@@ -67,7 +67,7 @@ OBJS=\
   version.o \
   whereami.o
 
-all: rebuild$(EXEEXT)
+all: rebuild$(EXEEXT) rebuild.conf/default
 
 rebuild$(EXEEXT): libdmd.a
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(WA) libdmd.a $(NWA) -o rebuild$(EXEEXT)
@@ -93,6 +93,18 @@ impcnvgen$(EXEEXT): impcnvgen.o
 impcnvgen.o: impcnvgen.c
 	$(NATIVECXX) $(CXXFLAGS) -c impcnvgen.c -o impcnvgen.o
 
+rebuild.conf/default: choosedc$(EXEEXT)
+	./choosedc$(EXEEXT)
+
+choosedc$(EXEEXT): choosedc.o nwhereami.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) choosedc.o whereami.o -o choosedc$(EXEEXT)
+
+choosedc.o: choosedc.c
+	$(NATIVECXX) $(CXXFLAGS) -c choosedc.c -o choosedc.o
+
+nwhereami.o: whereami.c
+	$(NATIVECXX) $(CXXFLAGS) -c whereami.c -o nwhereami.o
+
 .SUFFIXES: .c .o
 
 .c.o:
@@ -102,3 +114,4 @@ clean:
 	rm -f rebuild$(EXEEXT) libdmd.a $(OBJS)
 	rm -f id.c id.h idgen$(EXEEXT) idgen.o
 	rm -f impcnvtab.c impcnvtab.h impcnvgen$(EXEEXT) impcnvgen.o
+	rm -f rebuild.conf/default choosedc$(EXEEXT) choosedc.o nwhereami.o
