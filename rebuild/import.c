@@ -107,7 +107,7 @@ void Import::load(Scope *sc)
     }
     if (!pkg)
 	pkg = mod;
-    mod->semantic();
+    //mod->semantic();
 
     //printf("-Import::load('%s'), pkg = %p\n", toChars(), pkg);
 }

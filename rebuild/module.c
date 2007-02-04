@@ -802,6 +802,12 @@ void Module::parsepragmas()
             if (ds->isAttribDeclaration()) {
                 AttribDeclaration *ad = (AttribDeclaration *) ds;
                 ad->parsepragmas();
+                
+            } else if (ds->isImport()) {
+                Import *im = (Import *) ds;
+                im->load(NULL);
+                im->mod->parsepragmas();
+                
             }
         }
     }
