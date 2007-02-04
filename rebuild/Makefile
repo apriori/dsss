@@ -97,7 +97,7 @@ rebuild.conf/default: choosedc$(EXEEXT)
 	./choosedc$(EXEEXT)
 
 choosedc$(EXEEXT): choosedc.o nwhereami.o
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) choosedc.o whereami.o -o choosedc$(EXEEXT)
+	$(NATIVECXX) $(CXXFLAGS) $(LDFLAGS) choosedc.o nwhereami.o -o choosedc$(EXEEXT)
 
 choosedc.o: choosedc.c
 	$(NATIVECXX) $(CXXFLAGS) -c choosedc.c -o choosedc.o
