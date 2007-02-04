@@ -106,6 +106,8 @@ Module::Module(char *filename, Identifier *ident, int doDocComment, int doHdrGen
     escapetable = NULL;
     cov = NULL;
     covb = NULL;
+    
+    pragmasparsed = 0;
 
     srcfilename = FileName::defaultExt(filename, global.mars_ext);
     if (!srcfilename->equalsExt(global.mars_ext))
@@ -795,6 +797,9 @@ void Module::gensymfile()
 
 void Module::parsepragmas()
 {
+    if (pragmasparsed) return;
+    pragmasparsed = 1;
+    
     if (members) {
         for (int i = 0; i < members->dim; i++) {
             Dsymbol *ds = (Dsymbol *) members->data[i];

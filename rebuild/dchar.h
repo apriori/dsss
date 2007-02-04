@@ -31,6 +31,7 @@ typedef size_t hash_t;
 
 #include <string.h>
 #include <wchar.h>
+#include <wctype.h>
 
 typedef wchar_t dchar;
 #define TEXT(x)		L##x

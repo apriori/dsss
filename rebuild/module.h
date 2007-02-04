@@ -128,6 +128,7 @@ struct Module : Package
     void gensymfile();
     void gendocfile();
     void parsepragmas();
+    int pragmasparsed;
     int needModuleInfo();
     Dsymbol *search(Loc loc, Identifier *ident, int flags);
     void deleteObjFile();
