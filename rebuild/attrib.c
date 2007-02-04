@@ -258,6 +258,20 @@ void AttribDeclaration::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
     buf->writenl();
 }
 
+void AttribDeclaration::parsepragmas()
+{
+    if (decl) {
+        for (int i = 0; i < decl->dim; i++) {
+            Dsymbol *ds = (Dsymbol *) decl->data[i];
+            
+            if (ds->isAttribDeclaration()) {
+                AttribDeclaration *ad = (AttribDeclaration *) ds;
+                ad->parsepragmas();
+            }
+        }
+    }
+}
+
 /************************* StorageClassDeclaration ****************************/
 
 StorageClassDeclaration::StorageClassDeclaration(unsigned stc, Array *decl)
@@ -855,6 +869,11 @@ char *PragmaDeclaration::kind()
     return "pragma";
 }
 
+void PragmaDeclaration::parsepragmas()
+{
+    semantic(new Scope());
+}
+
 void PragmaDeclaration::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 {
     buf->printf("pragma(%s", ident->toChars());
@@ -994,6 +1013,20 @@ void ConditionalDeclaration::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
     else
 	buf->writeByte(':');
     buf->writenl();
+}
+
+void ConditionalDeclaration::parsepragmas()
+{
+    // we only know how to disclude the right version
+    if (dynamic_cast<VersionCondition*>(condition)) {
+        VersionCondition *vc = (VersionCondition *) condition;
+        
+        if (vc->include(NULL, NULL)) {
+            AttribDeclaration::parsepragmas();
+        }
+    } else {
+        AttribDeclaration::parsepragmas();
+    }
 }
 
 /***************************** StaticIfDeclaration ****************************/

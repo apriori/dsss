@@ -49,6 +49,8 @@ struct AttribDeclaration : Dsymbol
     void addLocalClass(ClassDeclarations *);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     AttribDeclaration *isAttribDeclaration() { return this; }
+    
+    virtual void parsepragmas();
 };
 
 struct StorageClassDeclaration: AttribDeclaration
@@ -116,6 +118,8 @@ struct PragmaDeclaration : AttribDeclaration
     int oneMember(Dsymbol **ps);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     char *kind();
+    
+    virtual void parsepragmas();
 };
 
 struct ConditionalDeclaration : AttribDeclaration
@@ -130,6 +134,8 @@ struct ConditionalDeclaration : AttribDeclaration
     Array *include(Scope *sc, ScopeDsymbol *s);
     void addComment(unsigned char *comment);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
+    
+    virtual void parsepragmas();
 };
 
 struct StaticIfDeclaration : ConditionalDeclaration

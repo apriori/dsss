@@ -22,6 +22,7 @@
 
 #include "mem.h"
 
+#include "attrib.h"
 #include "mars.h"
 #include "module.h"
 #include "parse.h"
@@ -789,6 +790,21 @@ void Module::gensymfile()
     buf.data = NULL;
 
     symfile->writev();
+}
+
+
+void Module::parsepragmas()
+{
+    if (members) {
+        for (int i = 0; i < members->dim; i++) {
+            Dsymbol *ds = (Dsymbol *) members->data[i];
+            
+            if (ds->isAttribDeclaration()) {
+                AttribDeclaration *ad = (AttribDeclaration *) ds;
+                ad->parsepragmas();
+            }
+        }
+    }
 }
 
 /**********************************

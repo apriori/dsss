@@ -790,7 +790,18 @@ int main(int argc, char *argv[])
 	fatal();
 #endif
 
-    // Do semantic analysis
+    // parse pragmas
+    for (i = 0; i < global.cmodules->dim; i++)
+    {
+	m = (Module *)global.cmodules->data[i];
+	if (global.params.verbose)
+	    printf("meta      %s\n", m->toChars());
+	m->parsepragmas();
+    }
+    if (global.errors)
+	fatal();
+    
+    /* Do semantic analysis
     for (i = 0; i < global.cmodules->dim; i++)
     {
 	m = (Module *)global.cmodules->data[i];
@@ -812,7 +823,7 @@ int main(int argc, char *argv[])
     if (global.errors)
 	fatal();
 
-    /* Do pass 3 semantic analysis
+    // Do pass 3 semantic analysis
     for (i = 0; i < global.cmodules->dim; i++)
     {
 	m = (Module *)global.cmodules->data[i];
