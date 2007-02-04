@@ -2173,8 +2173,8 @@ done:
 #if _WIN32 && __DMC__
     __locale_decpoint = save;
 #endif
-    if (errno == ERANGE)
-	error("number is not representable");
+    /*if (errno == ERANGE)
+	error("number is not representable"); */
     return result;
 }
 
