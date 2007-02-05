@@ -4,7 +4,7 @@ all: dsss
 
 dsss: rebuild/rebuild
 	cp -f rebuild/defaults/gdc-posix rebuild/rebuild.conf/default
-	./rebuild/rebuild -Irebuild sss/main.d -ofdsss
+	./rebuild/rebuild -full -Irebuild sss/main.d -ofdsss
 	`pwd`/dsss build
 
 rebuild/rebuild:

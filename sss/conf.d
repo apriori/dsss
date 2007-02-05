@@ -51,6 +51,7 @@ version (Windows) {
     import bcd.windows.windows;
 }
 
+alias std.process.system system;
 alias std.string.find find;
 alias std.string.iswhite iswhite;
 

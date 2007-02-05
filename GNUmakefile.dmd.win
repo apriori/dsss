@@ -5,7 +5,7 @@ all: dsss.exe
 
 dsss.exe:
 	copy rebuild\\defaults\\dmd-win rebuild\\rebuild.conf\\default
-	rebuild\\rebuild.exe -od. -Irebuild sss\\main.d -ofdsss_int
+	rebuild\\rebuild.exe -full -Irebuild sss\\main.d -ofdsss_int
 	dsss_int.exe build
 
 install: dsss.exe
