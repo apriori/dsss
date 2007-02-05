@@ -158,7 +158,7 @@ int runLINK()
     // do we even need to do the build?
     if (global.params.fullbuild ||
         stat(global.params.exefile, &osbuf) != 0 ||
-        osbuf.st_mtime < mtime) {
+        osbuf.st_mtime <= mtime) {
         string cline = linkCommand(
             inp, out);
         
