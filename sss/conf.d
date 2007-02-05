@@ -631,20 +631,9 @@ void testVersion(char[] vertok)
     if (!(vertok in versions)) {
         /* now check if this version is defined by making a .d file and
          * building it */
-        std.file.write("dsss_tmp.d", cast(void[])
-                       ("version (" ~ vertok ~ ") {\n" ~
-                        "pragma(msg, \"y\");\n" ~
-                        "} else {\n" ~
-                        "pragma(msg, \"n\");\n" ~
-                        "}\n"));
-        PStream comp = new PStream(dsss_build ~ "-p dsss_tmp.d");
-        char yn = '\0';
-        while (yn == '\0')
-            comp.read(yn);
+        int ret = system(dsss_build ~ "-testversion=" ~ vertok);
         
-        std.file.remove("dsss_tmp.d");
-        
-        if (yn == 'y') {
+        if (ret == 0) {
             // true version
             versions[vertok] = true;
         } else {
@@ -1019,12 +1008,9 @@ bool shLibSupport()
     
     if (!tested) {
         // ask dsss_build
-        PStream comp = new PStream(dsss_build ~ "-shlib-support");
-        char yn = '\0';
-        while (yn == '\0')
-            comp.read(yn);
+        int ret = system(dsss_build ~ "-shlib-support");
         
-        supported = (yn == 'y');
+        supported = (ret == 0);
         
         tested = true;
     }

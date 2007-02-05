@@ -158,7 +158,7 @@ Usage:\n\
   -c             do not link\n\
   -lib           link a static library\n\
   -shlib         link a dynamic library\n\
-  -shlib-support say 'yes' or 'no' for whether shared libraries are supported\n\
+  -shlib-support exit failure or success for whether shared libraries are supported\n\
   -files         list files which would be compiled (but don't compile)\n\
   -full          compile all source files, regardless of their age\n\
   -explicit      only compile files explicitly named, not dependencies\n\
@@ -171,14 +171,14 @@ Usage:\n\
   -oqobjdir      write object files to directory objdir with fully-qualified module names\n\
   -odobjdir      write object files to directory objdir\n\
   -offilename	 name output file to filename\n\
-  -op            do not strip paths from source file\n\
   -quiet         suppress unnecessary messages\n\
   -release	 compile release version\n\
   -exec          run resulting program\n\
   -v             verbose\n\
   -version=level compile in version code >= level\n\
   -version=ident compile in version code identified by ident\n\
-  -circular      Allows circular dependencies to work on some compilers (namely GDC) \n\
+  -circular      allow circular dependencies to work on some compilers (namely GDC) \n\
+  -testversion=<version> exit failure or success for whether the specified version is defined\n\
   All other flags are passed to the compiler.\n\
 ",
 #if WIN32
@@ -240,7 +240,8 @@ int main(int argc, char *argv[])
     global.params.lib = 0;
     global.params.shlib = 0;
     global.params.fullbuild = 0;
-    global.params.fullqobjs = 0;
+    global.params.fullqobjs = 1;
+    global.params.objdir = ".";
     global.params.useAssert = 1;
     global.params.useInvariants = 1;
     global.params.useIn = 1;
@@ -401,11 +402,10 @@ int main(int argc, char *argv[])
                 if (masterConfig.find("shliblink") == masterConfig.end() ||
                     masterConfig["shliblink"].find("shlibs") == masterConfig["shliblink"].end() ||
                     masterConfig["shliblink"]["shlibs"] != "yes") {
-                    printf("no\n");
+                    exit(1);
                 } else {
-                    printf("yes\n");
+                    exit(0);
                 }
-                exit(0);
             }
             else if (strcmp(p + 1, "files") == 0)
             {
@@ -439,14 +439,13 @@ int main(int argc, char *argv[])
                         else
                             global.params.objdir = p + 3;
                         global.params.fullqobjs = 1;
-                        addFlag(compileFlags, "compile", "od", "-od$i", global.params.objdir);
                         break;
                     
 		    case 'd':
 			if (!p[3])
 			    goto Lnoarg;
 			global.params.objdir = p + 3;
-                        addFlag(compileFlags, "compile", "od", "-od$i", p + 3);
+                        global.params.fullqobjs = 0;
 			break;
 
 		    case 'f':
@@ -456,10 +455,12 @@ int main(int argc, char *argv[])
 			break;
 
 		    case 'p':
-			if (p[3])
+                        error("Rebuild does not support -op. Use -oq instead.");
+                        exit(1);
+			/*if (p[3])
 			    goto Lerror;
 			global.params.preservePaths = 1;
-                        addFlag(compileFlags, "compile", "op", "-op");
+                        addFlag(compileFlags, "compile", "op", "-op"); */
 			break;
 
 		    case 0:
@@ -554,6 +555,14 @@ int main(int argc, char *argv[])
             {
                 addFlag(compileFlags, "compile", "circular", "");
             }
+            else if (strncmp(p + 1, "testversion=", 12) == 0)
+            {
+                if (!global.params.versionids) exit(1);
+                
+                if (findCondition(global.params.versionids,
+                                  new Identifier(p + 13, 0))) exit(0);
+                exit(1);
+            }
             else if (strncmp(p + 1, "dc=", 3) == 0) {}
             else if (strncmp(p + 1, "CFPATH", 6) == 0 ||
                      strncmp(p + 1, "BCFPATH", 7) == 0 ||
@@ -590,7 +599,9 @@ int main(int argc, char *argv[])
     {	usage();
 	return EXIT_FAILURE;
     }
-
+    
+    addFlag(compileFlags, "compile", "od", "-od$i", global.params.objdir);
+    
     if (global.params.release)
     {	global.params.useInvariants = 0;
 	global.params.useIn = 0;
