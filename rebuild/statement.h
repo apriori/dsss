@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2006 by Digital Mars
+// Copyright (c) 1999-2007 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // www.digitalmars.com
@@ -111,6 +111,16 @@ struct ExpStatement : Statement
     int inlineCost(InlineCostState *ics);
     Expression *doInline(InlineDoState *ids);
     Statement *inlineScan(InlineScanState *iss);
+};
+
+struct CompileStatement : Statement
+{
+    Expression *exp;
+
+    CompileStatement(Loc loc, Expression *exp);
+    Statement *syntaxCopy();
+    void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
+    Statement *semantic(Scope *sc);
 };
 
 struct DeclarationStatement : ExpStatement

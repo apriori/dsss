@@ -56,11 +56,12 @@ Global::Global()
     hdr_ext  = "di";
     doc_ext  = "html";
     ddoc_ext = "ddoc";
+
     obj_ext  = "o";
-    
+
     copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards,";
     written = "written by Walter Bright and Gregor Richards";
-    version = "version 0.1 (based on DMD 1.004)";
+    version = "version 0.1 (based on DMD 1.005)";
     global.structalign = 8;
     cmodules = NULL;
 
@@ -250,6 +251,7 @@ int main(int argc, char *argv[])
     global.params.useSwitchError = 1;
     global.params.useInline = 0;
     global.params.obj = 1;
+    global.params.Dversion = 2;
 
     global.params.linkswitches = new Array();
     global.params.libfiles = new Array();

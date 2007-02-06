@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2006 by Digital Mars
+// Copyright (c) 1999-2007 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // www.digitalmars.com
@@ -25,6 +25,7 @@
 #include "aggregate.h"
 #include "id.h"
 #include "hdrgen.h"
+#include "parse.h"
 #include "config.h"
 
 /******************************** Statement ***************************/
@@ -97,6 +98,7 @@ void Statement::error(const char *format, ...)
 
 int Statement::hasBreak()
 {
+    //printf("Statement::hasBreak()\n");
     return FALSE;
 }
 
@@ -210,6 +212,57 @@ int ExpStatement::fallOffEnd()
     }
     return TRUE;
 }
+
+/******************************** CompileStatement ***************************/
+
+CompileStatement::CompileStatement(Loc loc, Expression *exp)
+    : Statement(loc)
+{
+    this->exp = exp;
+}
+
+Statement *CompileStatement::syntaxCopy()
+{
+    Expression *e = exp->syntaxCopy();
+    CompileStatement *es = new CompileStatement(loc, e);
+    return es;
+}
+
+void CompileStatement::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
+{
+    buf->writestring("mixin(");
+    exp->toCBuffer(buf, hgs);
+    buf->writestring(");");
+    if (!hgs->FLinit.init)
+        buf->writenl();
+}
+
+Statement *CompileStatement::semantic(Scope *sc)
+{
+    //printf("CompileStatement::semantic() %s\n", exp->toChars());
+    exp = exp->semantic(sc);
+    exp = resolveProperties(sc, exp);
+    exp = exp->optimize(WANTvalue);
+    if (exp->op != TOKstring)
+    {	error("argument to mixin must be a string, not (%s)", exp->toChars());
+	return this;
+    }
+    StringExp *se = (StringExp *)exp;
+    se = se->toUTF8(sc);
+    Parser p(sc->module, (unsigned char *)se->string, se->len, 0);
+    p.loc = loc;
+
+    Statements *statements = new Statements();
+    while (p.token.value != TOKeof)
+    {
+	Statement *s = p.parseStatement(PSsemi | PScurlyscope);
+	statements->push(s);
+    }
+
+    Statement *s = new CompoundStatement(loc, statements);
+    return s->semantic(sc);
+}
+
 
 /******************************** DeclarationStatement ***************************/
 
@@ -680,6 +733,7 @@ Statement *ScopeStatement::semantic(Scope *sc)
 
 int ScopeStatement::hasBreak()
 {
+    //printf("ScopeStatement::hasBreak() %s\n", toChars());
     return statement ? statement->hasBreak() : FALSE;
 }
 
@@ -942,6 +996,7 @@ void ForStatement::scopeCode(Statement **sentry, Statement **sexception, Stateme
 
 int ForStatement::hasBreak()
 {
+    //printf("ForStatement::hasBreak()\n");
     return TRUE;
 }
 
@@ -1778,16 +1833,25 @@ Statement *PragmaStatement::semantic(Scope *sc)
     }
     /*else if (ident == Id::lib)
     {
-	if (!args || args->dim != 1) {}
-	    //error("string expected for library name");
+	if (!args || args->dim != 1)
+	    error("string expected for library name");
 	else
 	{
 	    Expression *e = (Expression *)args->data[0];
 
 	    e = e->semantic(sc);
 	    args->data[0] = (void *)e;
-	    / *if (e->op != TOKstring)
-		error("string expected for library name, not '%s'", e->toChars()); * /
+	    if (e->op != TOKstring)
+		error("string expected for library name, not '%s'", e->toChars());
+	    else if (global.params.verbose)
+	    {
+		StringExp *se = (StringExp *)e;
+		char *name = (char *)mem.malloc(se->len + 1);
+		memcpy(name, se->string, se->len);
+		name[se->len] = 0;
+		printf("library   %s\n", name);
+		mem.free(name);
+	    }
 	}
     }
     else
@@ -1818,7 +1882,7 @@ Statement *PragmaStatement::semantic(Scope *sc)
 	    for (size_t i = 0; i < args->dim; i++)
 	    {
 		Expression *e = (Expression *)args->data[i];
-
+  
 		e = e->semantic(sc);
 		if (e->op == TOKstring)
 		{
@@ -2387,7 +2451,7 @@ Statement *ReturnStatement::semantic(Scope *sc)
 	{   VarExp *ve = (VarExp *)exp;
 	    VarDeclaration *v = ve->var->isVarDeclaration();
 
-	    if (!v)
+	    if (!v || v->isOut())
 		fd->nrvo_can = 0;
 	    else if (fd->nrvo_var == NULL)
 	    {	if (!v->isDataseg() && !v->isParameter() && v->toParent2() == fd)

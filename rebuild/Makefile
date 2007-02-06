@@ -13,6 +13,8 @@ AR=$(CROSS)ar
 ARFLAGS=rc
 RANLIB=$(CROSS)ranlib
 
+PREFIX=/usr
+
 OBJS=\
   access.o \
   array.o \
@@ -109,6 +111,12 @@ nwhereami.o: whereami.c
 
 .c.o:
 	$(CXX) $(CXXFLAGS) -D_DH -DIN_DMDFE -c $< -o $@
+
+install:
+	mkdir -p $(PREFIX)/bin
+	mkdir -p $(PREFIX)/etc/rebuild
+	cp -pf rebuild$(EXEEXT) $(PREFIX)/bin
+	cp -pRf rebuild.conf/* $(PREFIX)/etc/rebuild/
 
 clean:
 	rm -f rebuild$(EXEEXT) libdmd.a $(OBJS)
