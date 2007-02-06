@@ -529,6 +529,8 @@ int main(int argc, char *argv[])
 	    }
             else if (strncmp(p + 1, "ll", 2) == 0)
             {
+                if (!p[3])
+                    goto Lnoarg;
                 linkLibrary(p + 3);
             }
             else if (p[1] == 'C')
@@ -695,12 +697,7 @@ int main(int argc, char *argv[])
 	ext = FileName::ext(p);
 	if (ext)
 	{
-	    if (strcmp(ext, global.obj_ext) == 0)
-	    {
-		global.params.objfiles->push(files.data[i]);
-		continue;
-	    }
-
+	    
 	    if (strcmp(ext, global.ddoc_ext) == 0)
 	    {
 		global.params.ddocfiles->push(files.data[i]);
@@ -727,10 +724,17 @@ int main(int argc, char *argv[])
 		    fatal();
 		}
 	    }
-	    else
+            
+            else
+	    {
+		global.params.objfiles->push(files.data[i]);
+		continue;
+	    }
+
+	    /*else
 	    {	error("unrecognized file extension %s\n", ext);
 		fatal();
-	    }
+	    } */
 	}
 	else
 	{   name = p;
