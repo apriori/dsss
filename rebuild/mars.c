@@ -167,6 +167,9 @@ Usage:\n\
   -Ipath         where to look for imports\n\
   -Ccompileflag  pass compileflag to compilation\n\
   -Llinkerflag   pass linkerflag to link\n\
+  -ll<lib>       link in the specified library\n\
+                 Windows: Link to <lib>.lib\n\
+                 Posix: Link to lib<lib>.{a,so}\n\
   -Spath         search path for libraries\n\
   -O             optimize\n\
   -oqobjdir      write object files to directory objdir with fully-qualified module names\n\
@@ -524,6 +527,10 @@ int main(int argc, char *argv[])
                 addFlag(liblinkFlags, "liblink", "flag", "-L$i", p + 2);
                 addFlag(shliblinkFlags, "shliblink", "flag", "-L$i", p + 2);
 	    }
+            else if (!strncmp(p + 1, "ll", 2) == 0)
+            {
+                linkLibrary(p + 3);
+            }
             else if (p[1] == 'C')
             {
                 addFlag(compileFlags, "compile", "flag", "$i", p + 2);
@@ -691,13 +698,6 @@ int main(int argc, char *argv[])
 	    if (strcmp(ext, global.obj_ext) == 0)
 	    {
 		global.params.objfiles->push(files.data[i]);
-		continue;
-	    }
-
-	    if (strcmp(ext, "a") == 0 ||
-                stricmp(ext, "lib") == 0)
-	    {
-		global.params.libfiles->push(files.data[i]);
 		continue;
 	    }
 
