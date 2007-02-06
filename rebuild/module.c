@@ -33,6 +33,7 @@
 #include "dsymbol.h"
 #include "hdrgen.h"
 #include "lexer.h"
+#include "version.h"
 
 #define MARS 1
 #include "html.h"
@@ -806,12 +807,16 @@ void Module::parsepragmas()
             
             if (ds->isAttribDeclaration()) {
                 AttribDeclaration *ad = (AttribDeclaration *) ds;
-                ad->parsepragmas();
+                ad->parsepragmas(this);
                 
             } else if (ds->isImport()) {
                 Import *im = (Import *) ds;
                 im->load(NULL);
                 im->mod->parsepragmas();
+                
+            } else if (dynamic_cast<VersionSymbol*>(ds)) {
+                VersionSymbol *vs = (VersionSymbol *) ds;
+                vs->addMember(NULL, this, 0);
                 
             }
         }

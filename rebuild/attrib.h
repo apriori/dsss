@@ -50,7 +50,7 @@ struct AttribDeclaration : Dsymbol
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     AttribDeclaration *isAttribDeclaration() { return this; }
     
-    virtual void parsepragmas();
+    virtual void parsepragmas(Module *);
 };
 
 struct StorageClassDeclaration: AttribDeclaration
@@ -119,7 +119,7 @@ struct PragmaDeclaration : AttribDeclaration
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     char *kind();
     
-    virtual void parsepragmas();
+    virtual void parsepragmas(Module *);
 };
 
 struct ConditionalDeclaration : AttribDeclaration
@@ -135,7 +135,7 @@ struct ConditionalDeclaration : AttribDeclaration
     void addComment(unsigned char *comment);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     
-    virtual void parsepragmas();
+    virtual void parsepragmas(Module *);
 };
 
 struct StaticIfDeclaration : ConditionalDeclaration
