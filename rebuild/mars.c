@@ -527,7 +527,7 @@ int main(int argc, char *argv[])
                 addFlag(liblinkFlags, "liblink", "flag", "-L$i", p + 2);
                 addFlag(shliblinkFlags, "shliblink", "flag", "-L$i", p + 2);
 	    }
-            else if (!strncmp(p + 1, "ll", 2) == 0)
+            else if (strncmp(p + 1, "ll", 2) == 0)
             {
                 linkLibrary(p + 3);
             }
