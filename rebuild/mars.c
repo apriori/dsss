@@ -760,7 +760,7 @@ int main(int argc, char *argv[])
 	if (!Module::rootModule)
 	    Module::rootModule = m;
 	m->importedFrom = m;
-	m->deleteObjFile();
+	//m->deleteObjFile();
 	m->read(0);
 	m->parse();
 	if (m->isDocFile)
@@ -1037,8 +1037,9 @@ int main(int argc, char *argv[])
             if (!global.params.fullbuild &&
                 newest != 0 &&
                 stat(m->objfile->name->str, &sbuf) == 0 &&
-                newest < sbuf.st_mtime)
+                newest < sbuf.st_mtime) {
                 ignore = 1;
+            }
             
             if (!ignore) {
                 gc->imodules.push((void *) m);
