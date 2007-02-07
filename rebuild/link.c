@@ -118,7 +118,7 @@ int runLINK()
         inp += " ";
         
         // now check the age
-        if (global.params.fullbuild &&
+        if (!global.params.fullbuild &&
             stat(s, &sbuf) == 0 &&
             sbuf.st_mtime > mtime)
             mtime = sbuf.st_mtime;
@@ -157,6 +157,7 @@ int runLINK()
     
     // do we even need to do the build?
     if (global.params.fullbuild ||
+        mtime == 0 ||
         stat(global.params.exefile, &osbuf) != 0 ||
         osbuf.st_mtime <= mtime) {
         string cline = linkCommand(

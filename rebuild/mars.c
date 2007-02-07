@@ -1035,6 +1035,7 @@ int main(int argc, char *argv[])
             
             // now check if we should ignore it because of its age
             if (!global.params.fullbuild &&
+                newest != 0 &&
                 stat(m->objfile->name->str, &sbuf) == 0 &&
                 newest < sbuf.st_mtime)
                 ignore = 1;
