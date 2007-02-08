@@ -183,6 +183,7 @@ Usage:\n\
   -version=ident compile in version code identified by ident\n\
   -circular      allow circular dependencies to work on some compilers (namely GDC) \n\
   -testversion=<version> exit failure or success for whether the specified version is defined\n\
+  -reflect       use drefgen to make rodin-compatible reflections of all included modules\n\
   All other flags are passed to the compiler.\n\
 ",
 #if WIN32
@@ -245,6 +246,7 @@ int main(int argc, char *argv[])
     global.params.shlib = 0;
     global.params.fullbuild = 0;
     global.params.fullqobjs = 1;
+    global.params.reflect = 0;
     global.params.objdir = ".";
     global.params.useAssert = 1;
     global.params.useInvariants = 1;
@@ -580,6 +582,10 @@ int main(int argc, char *argv[])
                                   new Identifier(p + 13, 0))) exit(0);
                 exit(1);
             }
+            else if (strncmp(p + 1, "reflect", 7) == 0)
+            {
+                global.params.reflect = 1;
+            }
             else if (strncmp(p + 1, "dc=", 3) == 0) {}
             else if (strncmp(p + 1, "CFPATH", 6) == 0 ||
                      strncmp(p + 1, "BCFPATH", 7) == 0 ||
@@ -677,7 +683,7 @@ int main(int argc, char *argv[])
 	    }
 	}
     }
-
+    
     // Create Modules
     if (!global.cmodules) {
         global.cmodules = new Array();
@@ -1056,6 +1062,38 @@ int main(int argc, char *argv[])
         
         if (global.params.doDocComments)
             m->gendocfile();
+        
+        // now possibly reflect this and add the reflected module as well
+        if (global.params.reflect && m->md) {
+            if (!(m->md->packages) ||
+                strcmp(((Identifier *) m->md->packages->data[0])->string,
+                       "reflected") != 0) {
+                // this isn't a reflected module: reflect it and add the reflected module
+                std::string cmd = "drefgen ";
+                cmd += m->srcfile->name->str;
+                if (system(cmd.c_str()) != 0)
+                    error("Failed to reflect %s", m->srcfile->name->str);
+                
+                if (global.params.verbose)
+                    printf("reflect   %s\n", m->toChars());
+                
+                // get the new filename
+                std::string fn = "reflected" DIRSEP;
+                if (m->md->packages) {
+                    for (int pkg = 0; pkg < m->md->packages->dim; pkg++) {
+                        fn += ((Identifier *) m->md->packages->data[pkg])->string;
+                        fn += DIRSEP;
+                    }
+                }
+                fn += m->md->id->string;
+                fn += ".";
+                fn += global.mars_ext;
+                
+                // now add the module to the list
+                global.cmodules->push(new Module(
+                    mem.strdup(fn.c_str()), m->md->id, 0, 0));
+            }
+        }
     }
     
     // Now do the actual compilation

@@ -12,6 +12,12 @@
 #include <map>
 #include <string>
 
+#ifdef __WIN32
+#define DIRSEP "\\"
+#else
+#define DIRSEP "/"
+#endif
+
 typedef std::map<std::string, std::string> ConfigSection;
 typedef std::map<std::string, ConfigSection> Config;
 

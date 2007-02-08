@@ -37,6 +37,7 @@ struct Param
     char expbuild;      // build only listed files
     char listfiles;     // list files which would be built
     char fullqobjs;     // use fully-qualified object names
+    char reflect;       // use drefgen
     char trace;		// insert profiling hooks
     char quiet;		// suppress non-error messages
     char verbose;	// verbose compile
