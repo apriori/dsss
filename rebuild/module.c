@@ -340,8 +340,12 @@ void Module::read(Loc loc)
 {
     //printf("Module::read('%s') file '%s'\n", toChars(), srcfile->toChars());
     if (srcfile->read())
-    {	error(loc, "cannot read file '%s'", srcfile->toChars());
-	fatal();
+    {
+        // don't need to read it if we're only looking for a list of files
+        if (!global.params.listfiles) {
+            error(loc, "cannot read file '%s'", srcfile->toChars());
+            fatal();
+        }
     }
 }
 
