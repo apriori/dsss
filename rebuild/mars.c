@@ -266,8 +266,14 @@ int main(int argc, char *argv[])
     VersionCondition::addPredefinedGlobalIdent("rebuild");
     VersionCondition::addPredefinedGlobalIdent("all");
     
-    // BEFORE reading configuration, check for a specified compiler
+    // BEFORE reading configuration, check for a specified profile
     char *chooseProfile = "default";
+    
+    // first in the environment
+    char *envProfile = getenv("REBUILDPROFILE");
+    if (envProfile) chooseProfile = envProfile;
+    
+    // then in args
     for (i = 1; i < argc; i++)
     {
         p = argv[i];
