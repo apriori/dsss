@@ -16,6 +16,7 @@
 #endif /* __DMC__ */
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdarg.h>
 
 #ifdef IN_GCC
@@ -125,6 +126,8 @@ struct Global
     Array *cmodules;    // Array of Module*'s for all modules to be compiled
     int structalign;
     char *version;
+    
+    FILE *listout;      // If listing files, file to list into
 
     Param params;
     unsigned errors;	// number of errors reported so far

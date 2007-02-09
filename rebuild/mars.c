@@ -663,6 +663,14 @@ int main(int argc, char *argv[])
     }
     if (global.params.cov)
 	VersionCondition::addPredefinedGlobalIdent("D_Coverage");
+    
+    if (global.params.listfiles &&
+        global.params.objname) {
+        global.listout = fopen(global.params.objname, "w");
+        if (!global.listout) { perror(global.params.objname); fatal(); }
+    } else {
+        global.listout = stdout;
+    }
 
 
     //printf("%d source files\n",files.dim);

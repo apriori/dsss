@@ -39,6 +39,7 @@ import std.random;
 import std.regexp;
 
 import sss.build;
+import sss.clean;
 import sss.conf;
 import sss.install;
 import sss.uninstall;
@@ -404,20 +405,19 @@ char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
         }
         
         // use dsss_build -files to get the list of files
-        PStream usesi = new PStream(dsss_build ~ " -files " ~ std.string.join(files, " "));
+        system(dsss_build ~ " -files -offiles.tmp " ~ std.string.join(files, " "));
         
         // read the uses
-        char[] use;
-        while (!usesi.eof()) {
-            use = usesi.readLine();
-            
+        char[][] uses = std.string.split(cast(char[]) std.file.read("files.tmp"),
+                                         "\n");
+        foreach (use; uses) {
             if (use.length == 0) break;
             
             // add the dep
             deps ~= canonicalSource(use, nconf);
         }
         
-        usesi.close();
+        tryRemove("files.tmp");
     }
     
     return deps;

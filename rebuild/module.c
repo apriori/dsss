@@ -323,7 +323,7 @@ Module *Module::load(Loc loc, Array *packages, Identifier *ident)
     }
     
     if (global.params.listfiles) {
-        printf("%s\n", sd);
+        fprintf(global.listout, "%s\n", sd);
     }
 
     m->read(loc);
