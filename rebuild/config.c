@@ -56,6 +56,10 @@ void readConfig(char *argvz, const string &profile)
         exit(1);
     }
     
+    // while we have this data, set our libpath
+    global.libpath = (char *) mem.malloc(strlen(dir) + 8);
+    sprintf(global.libpath, "%s/.." DIRSEP "lib", dir);
+    
     // then look for appropriate directories
     string confdir;
 #ifndef __WIN32

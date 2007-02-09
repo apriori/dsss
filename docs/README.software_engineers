@@ -125,8 +125,9 @@ the directory name) and 'version' (which will otherwise be set to 'latest').
 It is possible to add a setting to all sections with the special [*] section.
 
 
-You can make 'special' build steps, which do not correspond to source files, by
-naming them prefixed with a +. For example:
+You can make 'special' build steps, which do not correspond to D source files
+and so do not call the build tool, by naming them prefixed with a +. For
+example:
 [+genSource]
 prebuild = gensource.d
 

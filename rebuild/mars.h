@@ -34,6 +34,7 @@ struct Param
     char link;		// perform link
     char lib;           // linking a library
     char shlib;         // linking a shared library
+    char dylib;         // linking a dynamic library
     char fullbuild;     // build all files, regardless of age
     char expbuild;      // build only listed files
     char listfiles;     // list files which would be built
@@ -120,6 +121,7 @@ struct Global
     char *doc_ext;	// for Ddoc generated files
     char *ddoc_ext;	// for Ddoc macro include files
     char *hdr_ext;	// for D 'header' import files
+    char *libpath;      // path to libraries associated with rebuild
     char *copyright;
     char *written;
     Array *path;	// Array of char*'s which form the import lookup path

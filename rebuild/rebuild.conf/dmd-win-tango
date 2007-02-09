@@ -60,3 +60,6 @@ cmd=echo $i
 
 [shliblink]
 shlibs=no
+
+[dyliblink]
+dylibs=no

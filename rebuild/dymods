@@ -1,0 +1,10 @@
+#!/bin/bash
+# Make dynamic module .o files
+PROFILE="`cat rebuild.conf/default | grep '^profile' | sed 's|profile=||'`"
+
+if [ "$PROFILE" = "gdc-posix" ]
+then
+    # This is the only supported one anyway ;)
+    gcc -fPIC -c dyloadposix.c -o dyloadposix.o
+    gdmd -c dymoduleinit.d -ofgdc-posix-dymoduleinit.o
+fi

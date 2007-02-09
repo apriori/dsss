@@ -57,6 +57,7 @@ OBJS=\
   opover.o \
   optimize.o \
   parse.o \
+  response.o \
   root.o \
   scope.o \
   statement.o \
@@ -69,7 +70,7 @@ OBJS=\
   version.o \
   whereami.o
 
-all: rebuild$(EXEEXT) rebuild.conf/default
+all: rebuild$(EXEEXT) rebuild.conf/default gendymods
 
 rebuild$(EXEEXT): libdmd.a
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(WA) libdmd.a $(NWA) -o rebuild$(EXEEXT)
@@ -107,6 +108,9 @@ choosedc.o: choosedc.c
 nwhereami.o: whereami.c
 	$(NATIVECXX) $(CXXFLAGS) -c whereami.c -o nwhereami.o
 
+gendymods:
+	./dymods
+
 .SUFFIXES: .c .o
 
 .c.o:
@@ -117,9 +121,11 @@ install:
 	mkdir -p $(PREFIX)/etc/rebuild
 	cp -pf rebuild$(EXEEXT) $(PREFIX)/bin
 	cp -pRf rebuild.conf/* $(PREFIX)/etc/rebuild/
+	./instdymods $(PREFIX)
 
 clean:
 	rm -f rebuild$(EXEEXT) libdmd.a $(OBJS)
 	rm -f id.c id.h idgen$(EXEEXT) idgen.o
 	rm -f impcnvtab.c impcnvtab.h impcnvgen$(EXEEXT) impcnvgen.o
 	rm -f rebuild.conf/default choosedc$(EXEEXT) choosedc.o nwhereami.o
+	rm -f dyloadposix.o gdc-posix-dymoduleinit.o

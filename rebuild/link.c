@@ -1,5 +1,4 @@
 
-
 // Copyright (c) 1999-2006 by Digital Mars, 2007 by Gregor Richards
 // written by Walter Bright and Gregor Richards
 // www.digitalmars.com
@@ -62,6 +61,8 @@ string linkCommand(const string &i, const string &o, char post = 0)
         linkset = "liblink";
     } else if (global.params.shlib) {
         linkset = "shliblink";
+    } else if (global.params.dylib) {
+        linkset = "dyliblink";
     }
     
     if (post)
@@ -89,6 +90,13 @@ string linkCommand(const string &i, const string &o, char post = 0)
     while ((varLoc = cline.find("$o", 0)) != string::npos) {
         cline = cline.substr(0, varLoc) +
             o +
+            cline.substr(varLoc + 2);
+    }
+    
+    // replace $l (lib directory)
+    while ((varLoc = cline.find("$l", 0)) != string::npos) {
+        cline = cline.substr(0, varLoc) + 
+            global.libpath +
             cline.substr(varLoc + 2);
     }
     

@@ -58,3 +58,6 @@ cmd=ranlib $i
 
 [shliblink]
 shlibs=no
+
+[dyliblink]
+dylibs=no

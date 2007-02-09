@@ -37,6 +37,7 @@ long __cdecl __ehfilter(LPEXCEPTION_POINTERS ep);
 #include "mars.h"
 #include "module.h"
 #include "mtype.h"
+#include "response.h"
 #include "id.h"
 #include "cond.h"
 #include "expression.h"
@@ -153,13 +154,16 @@ Documentation: www.digitalmars.com/d/index.html\n\
 Usage:\n\
   rebuild files.d ... { -switch }\n\
 \n\
-  files.d        D source files\n%s\
+  files.d        D source files\n\
+  -rf<filename>  Use specified response file\n\
   -dc=<compiler> use the specified compiler configuration\n\
   -p             do not compile (or link)\n\
   -c             do not link\n\
   -lib           link a static library\n\
-  -shlib         link a dynamic library\n\
+  -shlib         link a shared library\n\
   -shlib-support exit failure or success for whether shared libraries are supported\n\
+  -dylib         link a dynamic library (a library intended to be loaded at runtime)\n\
+  -dylib-support exit failure or success for whether dynamic libraries are supported\n\
   -files         list files which would be compiled (but don't compile)\n\
   -full          compile all source files, regardless of their age\n\
   -explicit      only compile files explicitly named, not dependencies\n\
@@ -185,13 +189,7 @@ Usage:\n\
   -testversion=<version> exit failure or success for whether the specified version is defined\n\
   -reflect       use drefgen to make rodin-compatible reflections of all included modules\n\
   All other flags are passed to the compiler.\n\
-",
-#if WIN32
-"  @cmdfile       read arguments from cmdfile\n"
-#else
-""
-#endif
-);
+");
 }
 
 bool stringInArray(Array *arr, char *str)
@@ -232,11 +230,6 @@ int main(int argc, char *argv[])
 
     //backend_init();
 
-#if __DMC__	// DMC unique support for response files
-    if (response_expand(&argc,&argv))	// expand response files
-	error("can't open response file");
-#endif
-
     files.reserve(argc - 1);
 
     // Set default values
@@ -244,6 +237,7 @@ int main(int argc, char *argv[])
     global.params.link = 1;
     global.params.lib = 0;
     global.params.shlib = 0;
+    global.params.dylib = 0;
     global.params.fullbuild = 0;
     global.params.fullqobjs = 1;
     global.params.reflect = 0;
@@ -379,6 +373,8 @@ int main(int argc, char *argv[])
     }
 #endif
 
+    dupArgs(&argc, &argv);
+    
     for (i = 1; i < argc; i++)
     {
 	p = argv[i];
@@ -396,16 +392,20 @@ int main(int argc, char *argv[])
                 global.params.lib = 1;
             else if (strcmp(p + 1, "shlib") == 0)
                 global.params.shlib = 1;
+            else if (strcmp(p + 1, "dylib") == 0)
+                global.params.dylib = 1;
             else if (strcmp(p + 1, "link") == 0) /* compat with build */
             {
                 global.params.link = 1;
                 global.params.lib = 0;
                 global.params.shlib = 0;
+                global.params.dylib = 0;
             }
             else if (strcmp(p + 1, "nolib") == 0) /* compat with build */
             {
                 global.params.lib = 0;
                 global.params.shlib = 0;
+                global.params.dylib = 0;
             }
             else if (strcmp(p + 1, "nolink") == 0) /* compat with build */
                 global.params.link = 0;
@@ -415,6 +415,17 @@ int main(int argc, char *argv[])
                 if (masterConfig.find("shliblink") == masterConfig.end() ||
                     masterConfig["shliblink"].find("shlibs") == masterConfig["shliblink"].end() ||
                     masterConfig["shliblink"]["shlibs"] != "yes") {
+                    exit(1);
+                } else {
+                    exit(0);
+                }
+            }
+            else if (strcmp(p + 1, "dylib-support") == 0)
+            {
+                // just test for support
+                if (masterConfig.find("dyliblink") == masterConfig.end() ||
+                    masterConfig["dyliblink"].find("dylibs") == masterConfig["dyliblink"].end() ||
+                    masterConfig["dyliblink"]["dylibs"] != "yes") {
                     exit(1);
                 } else {
                     exit(0);
@@ -586,6 +597,21 @@ int main(int argc, char *argv[])
             {
                 global.params.reflect = 1;
             }
+            else if (strncmp(p + 1, "rf", 2) == 0)
+            {
+                // figure out the rf name
+                char *rf = p + 3;
+                if (!rf[0]) {
+                    i++;
+                    if (i >= argc) {
+                        i--;
+                        goto Lnoarg;
+                    }
+                    rf = argv[i];
+                }
+                
+                parseResponseFile(&argc, &argv, rf, i);
+            }
             else if (strncmp(p + 1, "dc=", 3) == 0) {}
             else if (strncmp(p + 1, "CFPATH", 6) == 0 ||
                      strncmp(p + 1, "BCFPATH", 7) == 0 ||
@@ -717,13 +743,6 @@ int main(int argc, char *argv[])
 	ext = FileName::ext(p);
 	if (ext)
 	{
-	    
-	    if (strcmp(ext, global.ddoc_ext) == 0)
-	    {
-		global.params.ddocfiles->push(files.data[i]);
-		continue;
-	    }
-
 	    if (stricmp(ext, global.mars_ext) == 0 ||
 		stricmp(ext, "htm") == 0 ||
 		stricmp(ext, "html") == 0 ||

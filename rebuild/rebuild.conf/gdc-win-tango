@@ -64,3 +64,6 @@ cmd=gdmd -q,-shared -q,-nodefaultlibs $i -of$o
 libdir=-L-L$i
 lib=-L-l$i
 flag=-L$i
+
+[dyliblink]
+dylibs=no
