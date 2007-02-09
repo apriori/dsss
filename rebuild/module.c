@@ -345,6 +345,11 @@ void Module::read(Loc loc)
         if (!global.params.listfiles) {
             error(loc, "cannot read file '%s'", srcfile->toChars());
             fatal();
+        } else {
+            // we need to have something
+            srcfile->buffer = (unsigned char *) mem.malloc(1);
+            srcfile->buffer[0] = '\0';
+            srcfile->len = 0;
         }
     }
 }
