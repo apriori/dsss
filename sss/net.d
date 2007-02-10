@@ -39,6 +39,7 @@ import std.random;
 import std.regexp;
 
 import sss.build;
+import sss.clean;
 import sss.conf;
 import sss.install;
 import sss.uninstall;
@@ -403,31 +404,20 @@ char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
             continue;
         }
         
-        // make a uses file
-        char[] usesLine = dsss_build ~ " -test -uses=temp.uses " ~
-            std.string.join(files, " ");
-        saySystemDie(usesLine);
+        // use dsss_build -files to get the list of files
+        system(dsss_build ~ " -files -offiles.tmp " ~ std.string.join(files, " "));
         
-        // then read the uses
-        char[] uses = cast(char[]) std.file.read("temp.uses");
-        foreach (use; std.string.split(uses, "\n")) {
-            if (use.length == 0) continue;
-            if (use[$-1] == '\r') use = use[0 .. $-1];
-            if (use.length == 0) continue;
-            
-            if (use == "[USEDBY]") break;
-            if (use[0] == '[') continue;
-            
-            // OK, we're definitely reading a use - split by " <> "
-            char[][] useinfo = std.string.split(use, " <> ");
-            if (useinfo.length < 2) continue;
+        // read the uses
+        char[][] uses = std.string.split(cast(char[]) std.file.read("files.tmp"),
+                                         "\n");
+        foreach (use; uses) {
+            if (use.length == 0) break;
             
             // add the dep
-            deps ~= canonicalSource(useinfo[1], nconf);
+            deps ~= canonicalSource(use, nconf);
         }
         
-        // delete the uses file
-        std.file.remove("temp.uses");
+        tryRemove("files.tmp");
     }
     
     return deps;

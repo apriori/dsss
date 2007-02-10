@@ -3,12 +3,10 @@ MAKE=make
 
 all: dsss.exe
 
-dsss.exe: dsss_build\\dsss_build.exe
-	dsss_build\\dsss_build.exe -od. -Idsss_build sss\\main.d -Tdsss_int
+dsss.exe:
+	copy rebuild\\defaults\\dmd-win rebuild\\rebuild.conf\\default
+	rebuild\\rebuild.exe -full -Irebuild sss\\main.d -ofdsss_int
 	dsss_int.exe build
-
-dsss_build\\dsss_build.exe:
-	cd dsss_build && $(MAKE) -f GNUmakefile.win && cd ..
 
 install: dsss.exe
 	dsss.exe install --prefix=$(PREFIX)
@@ -18,4 +16,3 @@ clean:
 	del *.obj
 	del dsss.exe
 	del dsss_int.exe
-	cd dsss_build && $(MAKE) -f Makefile.dos clean && cd ..

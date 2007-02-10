@@ -2,20 +2,22 @@ PREFIX=/usr
 
 all: dsss
 
-dsss: dsss_build/dsss_build
-	./dsss_build/dsss_build -Idsss_build sss/main.d -Tdsss
+dsss: rebuild/rebuild
+	cp -f rebuild/defaults/gdc-posix rebuild/rebuild.conf/default
+	./rebuild/rebuild -full -Irebuild sss/main.d -ofdsss
 	`pwd`/dsss build
 
-dsss_build/dsss_build:
-	cd dsss_build && \
-	$(MAKE) -f Makefile.gdc
+rebuild/rebuild:
+	cd rebuild && \
+	$(MAKE)
 
 install: dsss
 	`pwd`/dsss install --prefix=$(PREFIX)
 
 clean:
 	-`pwd`/dsss distclean
+	rm -rf dsss_objs dsss_imports
 	rm -f *.o
 	rm -f dsss
-	cd dsss_build && \
-	$(MAKE) -f Makefile.gdc clean
+	cd rebuild && \
+	$(MAKE) clean

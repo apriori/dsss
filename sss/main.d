@@ -38,7 +38,9 @@ import sss.clean;
 import sss.conf;
 import sss.genconfig;
 import sss.install;
-import sss.net;
+version (DSSS_Light) {} else {
+    import sss.net;
+}
 import sss.uninstall;
 
 const char[] DSSS_VERSION = "0.13";
@@ -130,8 +132,13 @@ int main(char[][] args)
                 command = cmd_t.INSTALLED;
                 
             } else if (arg == "net") {
-                commandSet = true;
-                command = cmd_t.NET;
+                version (DSSS_Light) {
+                    writefln("The 'net' command is not supported in DSSS Light");
+                    exit(1);
+                } else {
+                    commandSet = true;
+                    command = cmd_t.NET;
+                }
                 
             } else if (arg == "genconfig") {
                 commandSet = true;
@@ -240,7 +247,7 @@ int main(char[][] args)
     foreach (dir; useDirs) {
         dsss_build ~= "-I" ~ dir ~ std.path.sep ~
             "include" ~ std.path.sep ~
-            "d -L" ~ dir ~ std.path.sep ~
+            "d -S" ~ dir ~ std.path.sep ~
             "lib ";
     }
     
@@ -270,7 +277,9 @@ int main(char[][] args)
             break;
             
         case cmd_t.NET:
-            return sss.net.net(buildElems);
+            version (DSSS_Light) {} else {
+                return sss.net.net(buildElems);
+            }
             break;
             
         case cmd_t.GENCONFIG:
@@ -295,9 +304,13 @@ Usage: dsss [dsss options] <command> [command options]
     distclean: clean up all files from all or some builds
     install:   install all or some binaries or libraries
     uninstall: uninstall a specified tool or library
-    installed: list installed software
-    net:       Internet-based installation and package management
-    genconfig: generate a config file
+    installed: list installed software`);
+        version(DSSS_Light) {} else {
+            writefln(
+`    net:       Internet-based installation and package management`);
+        }
+        writefln(
+`    genconfig: generate a config file
   Each command has its own set of options, which are not listed here. To list
   the options for a command:
     dsss <command> --help`

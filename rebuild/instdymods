@@ -1,0 +1,11 @@
+#!/bin/bash
+if [ ! "$1" ] ; then exit ; fi
+
+# Install dynamic module .o files
+PROFILE="`cat rebuild.conf/default | grep '^profile' | sed 's|profile=||'`"
+
+if [ "$PROFILE" = "gdc-posix" ]
+then
+    mkdir -p "$1/lib"
+    cp -f dymoduleinit.d $1/lib
+fi

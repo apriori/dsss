@@ -36,6 +36,8 @@ import std.string;
 import sss.build;
 import sss.conf;
 
+import hcf.path;
+
 /** A utility function to attempt removal of a file but not fail on error */
 void tryRemove(char[] fn)
 {
@@ -48,16 +50,11 @@ void tryRemove(char[] fn)
 
 /** The entry function to the DSSS "clean" command */
 int clean(DSSSConf conf = null) {
-    // fairly simple
-    foreach (dire; listdir(".")) {
-        char[] ext = std.string.tolower(getExt(dire));
-        if (ext == "o" ||
-            ext == "obj") {
-            writefln("Removing %s", dire);
-            tryRemove(dire);
-        }
-    }
-    
+    // fairly simple, get rid of easy things - dsss_objs and dsss_imports
+    if (exists("dsss_objs"))
+        rmRecursive("dsss_objs");
+    if (exists("dsss_imports"))
+        rmRecursive("dsss_imports");
     return 0;
 }
 
@@ -93,14 +90,7 @@ int distclean(DSSSConf conf = null)
         }
         
         if (type == "library") {
-            // remove the .di files ...
-            char[][] files = targetToFiles(build, conf);
-            foreach (file; files) {
-                tryRemove(file ~ "i");
-                tryRemove(file ~ "i0");
-            }
-            
-            version (GNU_or_Posix) {
+            if (targetGNUOrPosix()) {
                 // first remove the static library
                 tryRemove("libS" ~ target ~ ".a");
                 
@@ -113,8 +103,8 @@ int distclean(DSSSConf conf = null)
                     tryRemove(ssln);
                 }
                 
-            } else version (Windows) {
-                // first remove
+            } else if (targetVersion("Windows")) {
+                // first remove the static library
                 tryRemove("S" ~ target ~ ".lib");
                 
                 // then remove the shared libraries
@@ -126,16 +116,16 @@ int distclean(DSSSConf conf = null)
                     tryRemove(ssln);
                 }
             } else {
-                static assert(0);
+                assert(0);
             }
             
         } else if (type == "binary") {
-            version (Posix) {
+            if (targetVersion("Posix")) {
                 tryRemove(target);
-            } else version (Windows) {
+            } else if (targetVersion("Windows")) {
                 tryRemove(target ~ ".exe");
             } else {
-                static assert(0);
+                assert(0);
             }
             
         } else if (type == "subdir") {

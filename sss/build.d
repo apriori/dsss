@@ -5,7 +5,7 @@
  *  Gregor Richards
  * 
  * License:
- *  Copyright (c) 2006  Gregor Richards
+ *  Copyright (c) 2006, 2007  Gregor Richards
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a
  *  copy of this software and associated documentation files (the "Software"),
@@ -65,11 +65,12 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
      */
     
     // make the basic build line
-    char[] bl = dsss_build ~ forceFlags;
+    char[] bl = dsss_build ~ forceFlags ~ " ";
     
-    // for DMD, force output files to be generated in this directory
-    version (DigitalMars) {
-        bl ~= "-od. ";
+    // add -oq if we don't have such a setting
+    if (find(forceFlags, "-o") == -1) {
+        mkdirP("dsss_objs");
+        bl ~= "-oqdsss_objs ";
     }
     
     // 1) Make .di files for everything
@@ -88,35 +89,13 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
             
             // generate .di files
             foreach (file; srcFiles) {
-                if (!exists(file ~ "i") ||
-                    fileNewer(file, file ~ "i")) {
-                    
-                    /+
-                    // FIXME: this should not assume by version()
-                    int res;
-                    version (GNU) {
-                        res = system(dsss_build ~
-                                     "-obj -full -fintfc -fintfc-file=" ~
-                                     file ~ "i " ~ file);
-                    } else version (DigitalMars) {
-                        res = system(dsss_build ~
-                                     "-obj -full -H -Hf" ~
-                                     file ~ "i " ~ file);
-                    } else {
-                        static assert(0);
-                    }
-                    
-                    if (res) {
-                        // make sure the .i file is removed
-                        std.file.remove(file ~ "i");
-                        return res;
-                    }
-                    +/
-                    
+                char[] ifile = "dsss_imports" ~ std.path.sep ~ file ~ "i";
+                if (!exists(ifile) ||
+                    fileNewer(file, ifile)) {
                     /* BIG FAT NOTE slash FIXME:
                      * .di files do NOT include interfaces! So, we need to just
                      * cast .d files as .di until that's fixed */
-                    std.file.copy(file, file ~ "i");
+                    mkdirP(getDirName(ifile));
                     
                     // now edit the .di file to reference the appropriate library
                     
@@ -125,7 +104,7 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
                     
                     if (shLibSupport() &&
                         ("shared" in settings)) {
-                          std.file.write(file ~ "i", std.file.read(file ~ "i") ~ `
+                        std.file.write(ifile, std.file.read(file) ~ `
 version (build) {
     version (DSSS_Static_` ~ usname ~ `) {
         pragma(link, "S` ~ target ~ `");
@@ -135,7 +114,7 @@ version (build) {
 }
 `);
                     } else {
-                        std.file.write(file ~ "i", std.file.read(file ~ "i") ~ `
+                        std.file.write(ifile, std.file.read(file) ~ `
 version (build) {
     pragma(link, "S` ~ target ~ `");
 }
@@ -186,19 +165,17 @@ version (build) {
                 writefln("Building stub shared library for %s", target);
                 
                 // make the stub
-                version (GNU_or_Posix) {
-                    char[] stubbl = bl ~ "-fPIC -shlib " ~ stubDLoc ~ " -T" ~ shlibname ~
-                    " " ~ shlibflag;
+                if (targetGNUOrPosix()) {
+                    char[] stubbl = bl ~ "-fPIC -shlib " ~ stubDLoc ~ " -of" ~ shlibname ~
+                        " " ~ shlibflag;
                     saySystemDie(stubbl);
-                    version (Posix) {
+                    if (targetVersion("Posix")) {
                         foreach (ssln; shortshlibnames) {
                             saySystemDie("ln -sf " ~ shlibname ~ " " ~ ssln);
                         }
                     }
-                } else version (Windows) {
-                    assert(0);
                 } else {
-                    static assert(0);
+                    assert(0);
                 }
                 
                 writefln("");
@@ -220,18 +197,12 @@ version (build) {
             // get the list of files
             char[][] files = targetToFiles(build, conf);
             
-            // unfortunately, at each step we need to move the .di files out of the way, then back
-            // I'd like a switch in build to avoid this, but there isn't one
-            foreach (file; files) {
-                std.file.rename(file ~ "i", file ~ "i0");
-            }
-            
             // and other necessary data
             char[] shlibname = getShLibName(settings);
             char[] shlibflag = getShLibFlag(settings);
             char[] bflags;
             if ("buildflags" in settings) {
-                bflags = settings["buildflags"];
+                bflags = settings["buildflags"] ~ " ";
             }
             
             // output what we're building
@@ -245,40 +216,35 @@ version (build) {
             // get the file list
             char[] fileList = std.string.join(targetToFiles(build, conf), " ");
             
-            version (GNU_or_Posix) {
+            if (targetGNUOrPosix()) {
                 // first do a static library
                 if (exists("libS" ~ target ~ ".a")) std.file.remove("libS" ~ target ~ ".a");
-                char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -TlibS" ~ target ~ ".a";
+                char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -oflibS" ~ target ~ ".a";
                 saySystemDie(stbl);
                 
                 if (shLibSupport() &&
                     ("shared" in settings)) {
                     // then make the shared library
                     if (exists(shlibname)) std.file.remove(shlibname);
-                    char[] shbl = bl ~ bflags ~ " -fPIC -explicit -shlib -full " ~ fileList ~ " -T" ~ shlibname ~
+                    char[] shbl = bl ~ bflags ~ " -fPIC -explicit -shlib -full " ~ fileList ~ " -of" ~ shlibname ~
                         " " ~ shlibflag;
                     
                     // finally, the shared compile
                     saySystemDie(shbl);
                 }
                 
-            } else version (Windows) {
+            } else if (targetVersion("Windows")) {
                 // for the moment, only do a static library
                 if (exists("S" ~ target ~ ".lib")) std.file.remove("S" ~ target ~ ".lib");
-                char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -TS" ~ target ~ ".lib";
+                char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -ofS" ~ target ~ ".lib";
                 saySystemDie(stbl);
             } else {
-                static assert(0);
+                assert(0);
             }
         
             // do the postbuild
             if ("postbuild" in settings) {
                 dsssScriptedStep(conf, settings["postbuild"]);
-            }
-            
-            // unfortunately, at each step we need to move the .di files out of the way, then back
-            foreach (file; files) {
-                std.file.rename(file ~ "i0", file ~ "i");
             }
             
             // an extra line for clarity
@@ -314,7 +280,7 @@ version (build) {
             // build a build line
             char[] ext = std.string.tolower(getExt(build));
             if (ext == "d") {
-                bbl ~= build ~ " -T" ~ target ~ " ";
+                bbl ~= build ~ " -of" ~ target ~ " ";
             } else if (ext == "brf") {
                 bbl ~= "@" ~ getName(build) ~ " ";
             } else {
