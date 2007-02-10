@@ -70,7 +70,7 @@ OBJS=\
   version.o \
   whereami.o
 
-all: rebuild$(EXEEXT) rebuild.conf/default gendymods
+all: rebuild$(EXEEXT) rebuild.conf/default
 
 rebuild$(EXEEXT): libdmd.a
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(WA) libdmd.a $(NWA) -o rebuild$(EXEEXT)
@@ -108,9 +108,6 @@ choosedc.o: choosedc.c
 nwhereami.o: whereami.c
 	$(NATIVECXX) $(CXXFLAGS) -c whereami.c -o nwhereami.o
 
-gendymods:
-	./dymods
-
 .SUFFIXES: .c .o
 
 .c.o:
@@ -128,4 +125,3 @@ clean:
 	rm -f id.c id.h idgen$(EXEEXT) idgen.o
 	rm -f impcnvtab.c impcnvtab.h impcnvgen$(EXEEXT) impcnvgen.o
 	rm -f rebuild.conf/default choosedc$(EXEEXT) choosedc.o nwhereami.o
-	rm -f dyloadposix.o gdc-posix-dymoduleinit.o

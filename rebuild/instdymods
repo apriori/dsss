@@ -7,5 +7,5 @@ PROFILE="`cat rebuild.conf/default | grep '^profile' | sed 's|profile=||'`"
 if [ "$PROFILE" = "gdc-posix" ]
 then
     mkdir -p "$1/lib"
-    cp -f dyloadposix.o gdc-posix-dymoduleinit.o $1/lib
+    cp -f dymoduleinit.d $1/lib
 fi

@@ -67,7 +67,7 @@ flag=-L$i
 
 [dyliblink]
 dylibs=yes
-cmd=gdmd -q,-shared -q,-nodefaultlibs $i $l/dyloadposix.o $l/gdc-posix-dymoduleinit.o -of$o
+cmd=gdmd -q,-shared -q,-nodefaultlibs $i $l/dymoduleinit.d -of$o
 
 libdir=-L-L$i
 lib=-L-l$i

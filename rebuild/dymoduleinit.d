@@ -17,7 +17,12 @@ version (Windows) {
     }
 }
 
-version (DMW) {} else {
+version (DMW) {
+    extern (C) void initDylib() {}
+} else {
+    extern (C) void initDylib() {
+        _dy_moduleCtor();
+    }
 
 enum
 {   MIctorstart = 1,	// we've started constructing it
