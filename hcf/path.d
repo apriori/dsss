@@ -125,7 +125,12 @@ char[] canonPath(char[] origpath)
     }
     
     // make sure we don't miss a .. element
-    if (ret.length > 4 && ret[($-3) .. $] == std.path.sep ~ "..") {
+    if (ret.length > 3 && ret[($-3) .. $] == std.path.sep ~ "..") {
+        ret ~= std.path.sep;
+    }
+    
+    // or a . element
+    if (ret.length > 2 && ret[($-2) .. $] == std.path.sep ~ ".") {
         ret ~= std.path.sep;
     }
     
@@ -147,8 +152,8 @@ char[] canonPath(char[] origpath)
     }
     
     // search for . elements
-    for (int i = 0; ret.length > 2 && i <= ret.length - 2; i++) {
-        if (ret[i .. (i + 2)] == std.path.sep ~ ".") {
+    for (int i = 0; ret.length > 2 && i <= ret.length - 3; i++) {
+        if (ret[i .. (i + 2)] == std.path.sep ~ "." ~ std.path.sep) {
             // drop this path element
             ret = ret[0..i] ~ ret[(i + 2) .. $];
             i--;
