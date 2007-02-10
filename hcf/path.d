@@ -135,7 +135,7 @@ char[] canonPath(char[] origpath)
     }
     
     // search for .. elements
-    for (int i = 0; ret.length > 4 && i < ret.length - 4; i++) {
+    for (int i = 0; ret.length > 4 && i <= ret.length - 4; i++) {
         if (ret[i .. (i + 4)] == std.path.sep ~ ".." ~ std.path.sep) {
             // drop the previous path element
             int j;
@@ -152,7 +152,7 @@ char[] canonPath(char[] origpath)
     }
     
     // search for . elements
-    for (int i = 0; ret.length > 2 && i < ret.length - 3; i++) {
+    for (int i = 0; ret.length > 2 && i <= ret.length - 3; i++) {
         if (ret[i .. (i + 3)] == std.path.sep ~ "." ~ std.path.sep) {
             // drop this path element
             ret = ret[0..i] ~ ret[(i + 2) .. $];
