@@ -38,6 +38,7 @@ struct Param
     char fullbuild;     // build all files, regardless of age
     char expbuild;      // build only listed files
     char listfiles;     // list files which would be built
+    char listobjfiles;  // list object files which were built
     char fullqobjs;     // use fully-qualified object names
     char reflect;       // use drefgen
     char trace;		// insert profiling hooks

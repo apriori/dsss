@@ -165,6 +165,7 @@ Usage:\n\
   -dylib         link a dynamic library (a library intended to be loaded at runtime)\n\
   -dylib-support exit failure or success for whether dynamic libraries are supported\n\
   -files         list files which would be compiled (but don't compile)\n\
+  -objfiles      list object files generated\n\
   -full          compile all source files, regardless of their age\n\
   -explicit      only compile files explicitly named, not dependencies\n\
   --help         print help\n\
@@ -239,6 +240,9 @@ int main(int argc, char *argv[])
     global.params.shlib = 0;
     global.params.dylib = 0;
     global.params.fullbuild = 0;
+    global.params.expbuild = 0;
+    global.params.listfiles = 0;
+    global.params.listobjfiles = 0;
     global.params.fullqobjs = 1;
     global.params.reflect = 0;
     global.params.objdir = ".";
@@ -436,6 +440,10 @@ int main(int argc, char *argv[])
                 global.params.listfiles = 1;
                 global.params.obj = 0;
                 global.params.link = 0;
+            }
+            else if (strcmp(p + 1, "objfiles") == 0)
+            {
+                global.params.listobjfiles = 1;
             }
             else if (strcmp(p + 1, "full") == 0)
                 global.params.fullbuild = 1;
@@ -1071,6 +1079,9 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+            
+            if (!ignore && global.params.listobjfiles)
+                printf("%s\n", m->objfile->name->str);
             
             // now check if we should ignore it because of its age
             if (!global.params.fullbuild &&
