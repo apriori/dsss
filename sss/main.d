@@ -43,7 +43,7 @@ version (DSSS_Light) {} else {
 }
 import sss.uninstall;
 
-const char[] DSSS_VERSION = "0.13";
+const char[] DSSS_VERSION = "0.50";
 
 private {
     /** Possible commands */

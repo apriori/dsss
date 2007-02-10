@@ -1,3 +1,7 @@
+0.50 from 0.13:
+        - dsss_build (bud) removed, replaced with rebuild.
+        - Too many changes and improvements to iterate.
+
 0.13 from 0.12:
         - Fixed some tokenizing of dsss.conf .
 
