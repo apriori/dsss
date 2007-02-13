@@ -412,6 +412,14 @@ char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
                                          "\n");
         foreach (use; uses) {
             if (use.length == 0) break;
+
+            // get rid of any trailing \r's or \n's
+            while (use.length &&
+                   (use[$-1] == '\n' ||
+                    use[$-1] == '\r')) {
+                use = use[0..$-1];
+            }
+            if (use.length == 0) break;
             
             // add the dep
             deps ~= canonicalSource(use, nconf);
