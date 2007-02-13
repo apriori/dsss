@@ -427,6 +427,9 @@ char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
 char[] canonicalSource(char[] origsrc, NetConfig nconf)
 {
     char[] src = origsrc.dup;
+    version (Windows) {
+        src = std.string.replace(src, "\\", "/");
+    }
     
     if ((src.length > 2 &&
          std.string.tolower(src[$-2 .. $]) == ".d") ||
