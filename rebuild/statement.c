@@ -1811,7 +1811,7 @@ Statement *PragmaStatement::semantic(Scope *sc)
 {   // Should be merged with PragmaDeclaration
     //printf("PragmaStatement::semantic() %s\n", toChars());
     //printf("body = %p\n", body);
-    if (ident == Id::msg && !global.params.obj)
+    /*if (ident == Id::msg)
     {
         if (args)
         {
@@ -1831,7 +1831,7 @@ Statement *PragmaStatement::semantic(Scope *sc)
             fprintf(stdmsg, "\n");
         }
     }
-    /*else if (ident == Id::lib)
+    else if (ident == Id::lib)
     {
 	if (!args || args->dim != 1)
 	    error("string expected for library name");

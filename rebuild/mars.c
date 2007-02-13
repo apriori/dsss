@@ -388,6 +388,7 @@ int main(int argc, char *argv[])
             {
                 global.params.obj = 0;
                 global.params.link = 0;
+                addFlag(compileFlags, "compile", "o-", "-o-");
             }
 	    else if (strcmp(p + 1, "c") == 0 ||
                      strcmp(p + 1, "obj") == 0 /* compat with build */)
@@ -494,7 +495,14 @@ int main(int argc, char *argv[])
 			global.params.preservePaths = 1;
                         addFlag(compileFlags, "compile", "op", "-op"); */
 			break;
-
+                        
+                    case '-':
+                        // like -p
+                        global.params.obj = 0;
+                        global.params.link = 0;
+                        addFlag(compileFlags, "compile", "o-", "-o-");
+                        break;
+                        
 		    case 0:
 			error("-o no longer supported, use -of or -od");
 			break;
@@ -751,10 +759,16 @@ int main(int argc, char *argv[])
 	ext = FileName::ext(p);
 	if (ext)
 	{
-	    if (stricmp(ext, global.mars_ext) == 0 ||
-		stricmp(ext, "htm") == 0 ||
-		stricmp(ext, "html") == 0 ||
-		stricmp(ext, "xhtml") == 0)
+            if (stricmp(ext, global.ddoc_ext) == 0)
+            {
+                // probably something like candydoc, add it to every compile
+                compileFlags = " " + (name + compileFlags);
+            }
+            
+            else if (stricmp(ext, global.mars_ext) == 0 ||
+                     stricmp(ext, "htm") == 0 ||
+                     stricmp(ext, "html") == 0 ||
+                     stricmp(ext, "xhtml") == 0)
 	    {
 		ext--;			// skip onto '.'
 		assert(*ext == '.');
@@ -1094,6 +1108,9 @@ int main(int argc, char *argv[])
             if (!ignore) {
                 gc->imodules.push((void *) m);
             }
+        } else {
+            // not compiling, but still pass it through for the parser
+            gc->imodules.push((void *) m);
         }
 	if (global.params.verbose)
 	    printf("code      %s\n", m->toChars());
