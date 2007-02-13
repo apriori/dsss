@@ -41,6 +41,7 @@ struct Param
     char listobjfiles;  // list object files which were built
     char fullqobjs;     // use fully-qualified object names
     char reflect;       // use drefgen
+    char candydoc;      // generate modules.ddoc
     char trace;		// insert profiling hooks
     char quiet;		// suppress non-error messages
     char verbose;	// verbose compile

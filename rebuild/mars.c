@@ -161,9 +161,12 @@ Usage:\n\
   -c             do not link\n\
   -lib           link a static library\n\
   -shlib         link a shared library\n\
-  -shlib-support exit failure or success for whether shared libraries are supported\n\
-  -dylib         link a dynamic library (a library intended to be loaded at runtime)\n\
-  -dylib-support exit failure or success for whether dynamic libraries are supported\n\
+  -shlib-support exit failure or success for whether shared libraries are\n\
+                 supported\n\
+  -dylib         link a dynamic library (a library intended to be loaded at\n\
+                 runtime)\n\
+  -dylib-support exit failure or success for whether dynamic libraries are\n\
+                 supported\n\
   -files         list files which would be compiled (but don't compile)\n\
   -objfiles      list object files generated\n\
   -full          compile all source files, regardless of their age\n\
@@ -177,7 +180,8 @@ Usage:\n\
                  Posix: Link to lib<lib>.{a,so}\n\
   -Spath         search path for libraries\n\
   -O             optimize\n\
-  -oqobjdir      write object files to directory objdir with fully-qualified module names\n\
+  -oqobjdir      write object files to directory objdir with fully-qualified\n\
+                 module names\n\
   -odobjdir      write object files to directory objdir\n\
   -offilename	 name output file to filename\n\
   -quiet         suppress unnecessary messages\n\
@@ -186,9 +190,15 @@ Usage:\n\
   -v             verbose\n\
   -version=level compile in version code >= level\n\
   -version=ident compile in version code identified by ident\n\
-  -circular      allow circular dependencies to work on some compilers (namely GDC) \n\
-  -testversion=<version> exit failure or success for whether the specified version is defined\n\
-  -reflect       use drefgen to make rodin-compatible reflections of all included modules\n\
+  -circular      allow circular dependencies to work on some compilers (namely\n\
+                 GDC) \n\
+  -testversion=<version>\n\
+                 exit failure or success for whether the specified version is\n\
+                 defined\n\
+  -reflect       use drefgen to make rodin-compatible reflections of all\n\
+                 included modules\n\
+  -candydoc      generate the modules.ddoc file for candydoc (must specify -Dd,\n\
+                 implies -explicit)\n\
   All other flags are passed to the compiler.\n\
 ");
 }
@@ -245,6 +255,7 @@ int main(int argc, char *argv[])
     global.params.listobjfiles = 0;
     global.params.fullqobjs = 1;
     global.params.reflect = 0;
+    global.params.candydoc = 0;
     global.params.objdir = ".";
     global.params.useAssert = 1;
     global.params.useInvariants = 1;
@@ -511,6 +522,18 @@ int main(int argc, char *argv[])
 			goto Lerror;
 		}
 	    }
+            else if (p[1] == 'D')
+            {
+                /* this is passed through, but we keep one piece of information
+                 * we may need */
+                compileFlags += " ";
+                compileFlags += p;
+                
+                if (p[2] == 'd') {
+                    // yes, it's a documentation directory. Needed for -candydoc
+                    global.params.docdir = p + 3;
+                }
+            }
 	    else if (strcmp(p + 1, "quiet") == 0)
 		global.params.quiet = 1;
 	    else if (strcmp(p + 1, "release") == 0)
@@ -609,9 +632,14 @@ int main(int argc, char *argv[])
                                   new Identifier(p + 13, 0))) exit(0);
                 exit(1);
             }
-            else if (strncmp(p + 1, "reflect", 7) == 0)
+            else if (strcmp(p + 1, "reflect") == 0)
             {
                 global.params.reflect = 1;
+            }
+            else if (strcmp(p + 1, "candydoc") == 0)
+            {
+                global.params.candydoc = 1;
+                global.params.expbuild = 1;
             }
             else if (strncmp(p + 1, "rf", 2) == 0)
             {
@@ -1149,6 +1177,41 @@ int main(int argc, char *argv[])
                     mem.strdup(fn.c_str()), m->md->id, 0, 0));
             }
         }
+    }
+    
+    
+    // Generate candydoc modules.ddoc if requested
+    if (global.params.candydoc &&
+        global.params.docdir) {
+        char *modulesddoc = (char *) mem.malloc(strlen(global.params.docdir) +
+                                                24);
+        sprintf(modulesddoc, "%s" DIRSEP "candydoc" DIRSEP "modules.ddoc", global.params.docdir);
+        
+        // format: MODULES =\n\t$(MODULE ...)\n\t$(MODULE ...)
+        FILE *mddf = fopen(modulesddoc, "w");
+        if (!mddf) {
+            error("Failed to open candydoc/modules.ddoc");
+        } else {
+            fprintf(mddf, "MODULES =\n");
+            
+            for (i = 0; i < GroupedCompiles.dim; i++) {
+                GroupedCompile *gc = (GroupedCompile *) GroupedCompiles.data[i];
+                
+                for (unsigned int j = 0; j < gc->imodules.dim; j++) {
+                    Module *m = (Module *) gc->imodules.data[j];
+                    if (m->md)
+                        fprintf(mddf, "\t$(MODULE %s)\n", m->md->toChars());
+                }
+            }
+        }
+        fclose(mddf);
+        
+        // now add candydoc to the compile flags
+        compileFlags += " ";
+        compileFlags += global.params.docdir;
+        compileFlags += DIRSEP "candydoc" DIRSEP "candy.ddoc ";
+        compileFlags += global.params.docdir;
+        compileFlags += DIRSEP "candydoc" DIRSEP "modules.ddoc";
     }
     
     // Now do the actual compilation
