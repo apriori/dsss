@@ -762,7 +762,8 @@ int main(int argc, char *argv[])
             if (stricmp(ext, global.ddoc_ext) == 0)
             {
                 // probably something like candydoc, add it to every compile
-                compileFlags = " " + (name + compileFlags);
+                compileFlags = " " + (((char *) files.data[i]) + compileFlags);
+                continue;
             }
             
             else if (stricmp(ext, global.mars_ext) == 0 ||
@@ -1023,43 +1024,43 @@ int main(int argc, char *argv[])
             gc->ofiles.push((void *) m->objfile->name->str);
         }
         
-	if (global.params.obj) {
-            // don't generate if we should ignore this module
-            char ignore = 0;
-            if (m->md) {
-                std::string modname = m->md->id->string;
-                if (m->md->packages) {
-                    for (int j = m->md->packages->dim - 1; j >= 0; j--) {
-                        modname = std::string(((Identifier *) m->md->packages->data[j])->string) +
-                            "." + modname;
-                    }
+        char ignore = 0;
+        // don't generate if we should ignore this module
+        if (m->md) {
+            std::string modname = m->md->id->string;
+            if (m->md->packages) {
+                for (int j = m->md->packages->dim - 1; j >= 0; j--) {
+                    modname = std::string(((Identifier *) m->md->packages->data[j])->string) +
+                        "." + modname;
                 }
+            }
                 
-                if (masterConfig.find("") != masterConfig.end() &&
-                    masterConfig[""].find("ignore") != masterConfig[""].end()) {
-                    std::string modIgnoreList = masterConfig[""]["ignore"];
+            if (masterConfig.find("") != masterConfig.end() &&
+                masterConfig[""].find("ignore") != masterConfig[""].end()) {
+                std::string modIgnoreList = masterConfig[""]["ignore"];
                     
-                    // split by ' '
-                    while (modIgnoreList.length()) {
-                        std::string modIgnore;
-                        int loc = modIgnoreList.find(' ', 0);
+                // split by ' '
+                while (modIgnoreList.length()) {
+                    std::string modIgnore;
+                    int loc = modIgnoreList.find(' ', 0);
                         
-                        if (loc == std::string::npos) {
-                            modIgnore = modIgnoreList;
-                            modIgnoreList = "";
-                        } else {
-                            modIgnore = modIgnoreList.substr(0, loc);
-                            modIgnoreList = modIgnoreList.substr(loc + 1);
-                        }
+                    if (loc == std::string::npos) {
+                        modIgnore = modIgnoreList;
+                        modIgnoreList = "";
+                    } else {
+                        modIgnore = modIgnoreList.substr(0, loc);
+                        modIgnoreList = modIgnoreList.substr(loc + 1);
+                    }
                         
-                        // check it
-                        if (modname.substr(0, modIgnore.length()) == modIgnore) {
-                            ignore = 1;
-                        }
+                    // check it
+                    if (modname.substr(0, modIgnore.length()) == modIgnore) {
+                        ignore = 1;
                     }
                 }
             }
-            
+        }
+        
+	if (global.params.obj) {
             if (!ignore) {
                 if (!global.params.objfiles)
                     global.params.objfiles = new Array();
@@ -1105,13 +1106,12 @@ int main(int argc, char *argv[])
                 ignore = 1;
             }
             
-            if (!ignore) {
-                gc->imodules.push((void *) m);
-            }
-        } else {
-            // not compiling, but still pass it through for the parser
+        }
+        
+        if (!ignore) {
             gc->imodules.push((void *) m);
         }
+        
 	if (global.params.verbose)
 	    printf("code      %s\n", m->toChars());
         
