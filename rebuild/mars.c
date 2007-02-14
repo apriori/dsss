@@ -1215,7 +1215,7 @@ int main(int argc, char *argv[])
     }
     
     // Now do the actual compilation
-    for (unsigned int j = 0; j < GroupedCompiles.dim; j++) {
+    for (unsigned int j = 0; global.params.obj && j < GroupedCompiles.dim; j++) {
         GroupedCompile *gc = (GroupedCompile *) GroupedCompiles.data[j];
         
         if (gc->imodules.dim == 0) continue;
