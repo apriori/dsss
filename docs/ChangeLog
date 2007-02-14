@@ -1,3 +1,7 @@
+0.51 from 0.50:
+        - Some fixes for dsss net on Windows.
+        - Updates to rebuild (0.6->0.8).
+
 0.50 from 0.13:
         - dsss_build (bud) removed, replaced with rebuild.
         - Too many changes and improvements to iterate.
