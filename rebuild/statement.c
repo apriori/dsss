@@ -159,6 +159,7 @@ Statements *Statement::flatten(Scope *sc)
     return NULL;
 }
 
+
 /******************************** ExpStatement ***************************/
 
 ExpStatement::ExpStatement(Loc loc, Expression *exp)
@@ -1982,6 +1983,7 @@ SwitchStatement::SwitchStatement(Loc loc, Expression *c, Statement *b)
     body = b;
     sdefault = NULL;
     cases = NULL;
+    hasNoDefault = 0;
 }
 
 Statement *SwitchStatement::syntaxCopy()
@@ -2052,7 +2054,8 @@ Statement *SwitchStatement::semantic(Scope *sc)
     }
 
     if (!sc->sw->sdefault)
-    {
+    {	hasNoDefault = 1;
+
 	if (global.params.warnings)
 	{   fprintf(stdmsg, "warning - ");
 	    //error("switch statement has no default");
@@ -2145,7 +2148,7 @@ Statement *CaseStatement::semantic(Scope *sc)
     {	int i;
 
 	exp = exp->implicitCastTo(sc, sw->condition->type);
-	exp = exp->constFold();
+	exp = exp->optimize(WANTvalue);
 	if (exp->op != TOKstring && exp->op != TOKint64)
 	{
 	    //error("case must be a string or an integral constant, not %s", exp->toChars());
@@ -2330,7 +2333,7 @@ Statement *GotoCaseStatement::semantic(Scope *sc)
 	if (exp)
 	{
 	    exp = exp->implicitCastTo(sc, sc->sw->condition->type);
-	    exp = exp->constFold();
+	    exp = exp->optimize(WANTvalue);
 	}
     }
     return this;

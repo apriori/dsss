@@ -60,9 +60,9 @@ Global::Global()
 
     obj_ext  = "o";
 
-    copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards,";
+    copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards";
     written = "written by Walter Bright and Gregor Richards";
-    version = "version 0.8 (based on DMD 1.005)";
+    version = "version 0.8 (based on DMD 1.006)";
     global.structalign = 8;
     cmodules = NULL;
 
@@ -144,6 +144,9 @@ void halt()
     *(char*)0=0;
 #endif
 }
+
+/*extern void backend_init();
+extern void backend_term();*/
 
 void usage()
 {
@@ -549,6 +552,12 @@ int main(int argc, char *argv[])
                 
                 addFlag(compileFlags, "compile", "incdir", "-I$i", p + 2);
 	    }
+	    else if (p[1] == 'J')
+	    {
+		if (!global.params.fileImppath)
+		    global.params.fileImppath = new Array();
+		global.params.fileImppath->push(p + 2);
+	    }
 	    else if (memcmp(p + 1, "version", 5) == 0)
 	    {
 		// Parse:
@@ -758,6 +767,23 @@ int main(int argc, char *argv[])
 		if (!global.path)
 		    global.path = new Array();
 		global.path->append(a);
+	    }
+	}
+    }
+
+    // Build string import search path
+    if (global.params.fileImppath)
+    {
+	for (i = 0; i < global.params.fileImppath->dim; i++)
+	{
+	    char *path = (char *)global.params.fileImppath->data[i];
+	    Array *a = FileName::splitPath(path);
+
+	    if (a)
+	    {
+		if (!global.filePath)
+		    global.filePath = new Array();
+		global.filePath->append(a);
 	    }
 	}
     }

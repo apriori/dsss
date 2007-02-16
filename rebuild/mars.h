@@ -71,6 +71,7 @@ struct Param
 
     char *argv0;	// program name
     Array *imppath;	// array of char*'s of where to look for import modules
+    Array *fileImppath;	// array of char*'s of where to look for file import modules
     char *objdir;	// .obj file output directory
     char *objname;	// .obj file output name
 
@@ -128,6 +129,7 @@ struct Global
     char *written;
     Array *path;	// Array of char*'s which form the import lookup path
     Array *cmodules;    // Array of Module*'s for all modules to be compiled
+    Array *filePath;	// Array of char*'s which form the file import lookup path
     int structalign;
     char *version;
     

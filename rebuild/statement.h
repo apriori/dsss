@@ -44,6 +44,7 @@ struct GotoStatement;
 struct ScopeStatement;
 struct TryCatchStatement;
 struct HdrGenState;
+struct InterState;
 
 enum TOK;
 
@@ -87,6 +88,7 @@ struct Statement : Object
     virtual int comeFrom();
     virtual void scopeCode(Statement **sentry, Statement **sexit, Statement **sfinally);
     virtual Statements *flatten(Scope *sc);
+    virtual Expression *interpret(InterState *istate);
 
     virtual int inlineCost(InlineCostState *ics);
     virtual Expression *doInline(InlineDoState *ids);
@@ -106,6 +108,7 @@ struct ExpStatement : Statement
     Statement *syntaxCopy();
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     Statement *semantic(Scope *sc);
+    Expression *interpret(InterState *istate);
     int fallOffEnd();
 
     int inlineCost(InlineCostState *ics);
@@ -151,6 +154,7 @@ struct CompoundStatement : Statement
     int comeFrom();
     Statements *flatten(Scope *sc);
     ReturnStatement *isReturnStatement();
+    Expression *interpret(InterState *istate);
 
     int inlineCost(InlineCostState *ics);
     Expression *doInline(InlineDoState *ids);
@@ -174,6 +178,7 @@ struct UnrolledLoopStatement : Statement
     int usesEH();
     int fallOffEnd();
     int comeFrom();
+    Expression *interpret(InterState *istate);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 
     int inlineCost(InlineCostState *ics);
@@ -195,6 +200,7 @@ struct ScopeStatement : Statement
     int usesEH();
     int fallOffEnd();
     int comeFrom();
+    Expression *interpret(InterState *istate);
 
     Statement *inlineScan(InlineScanState *iss);
 };
@@ -212,6 +218,7 @@ struct WhileStatement : Statement
     int usesEH();
     int fallOffEnd();
     int comeFrom();
+    Expression *interpret(InterState *istate);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 
     Statement *inlineScan(InlineScanState *iss);
@@ -230,6 +237,7 @@ struct DoStatement : Statement
     int usesEH();
     int fallOffEnd();
     int comeFrom();
+    Expression *interpret(InterState *istate);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 
     Statement *inlineScan(InlineScanState *iss);
@@ -251,6 +259,7 @@ struct ForStatement : Statement
     int usesEH();
     int fallOffEnd();
     int comeFrom();
+    Expression *interpret(InterState *istate);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 
     Statement *inlineScan(InlineScanState *iss);
@@ -279,6 +288,7 @@ struct ForeachStatement : Statement
     int usesEH();
     int fallOffEnd();
     int comeFrom();
+    Expression *interpret(InterState *istate);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 
     Statement *inlineScan(InlineScanState *iss);
@@ -296,6 +306,7 @@ struct IfStatement : Statement
     IfStatement(Loc loc, Argument *arg, Expression *condition, Statement *ifbody, Statement *elsebody);
     Statement *syntaxCopy();
     Statement *semantic(Scope *sc);
+    Expression *interpret(InterState *istate);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     int usesEH();
     int fallOffEnd();
@@ -354,6 +365,7 @@ struct SwitchStatement : Statement
 
     Array gotoCases;		// array of unresolved GotoCaseStatement's
     Array *cases;		// array of CaseStatement's
+    int hasNoDefault;		// !=0 if no default statement
 
     SwitchStatement(Loc loc, Expression *c, Statement *b);
     Statement *syntaxCopy();
@@ -361,6 +373,7 @@ struct SwitchStatement : Statement
     int hasBreak();
     int usesEH();
     int fallOffEnd();
+    Expression *interpret(InterState *istate);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 
     Statement *inlineScan(InlineScanState *iss);
@@ -380,6 +393,7 @@ struct CaseStatement : Statement
     int usesEH();
     int fallOffEnd();
     int comeFrom();
+    Expression *interpret(InterState *istate);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 
     Statement *inlineScan(InlineScanState *iss);
@@ -398,6 +412,7 @@ struct DefaultStatement : Statement
     int usesEH();
     int fallOffEnd();
     int comeFrom();
+    Expression *interpret(InterState *istate);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 
     Statement *inlineScan(InlineScanState *iss);
@@ -410,6 +425,7 @@ struct GotoDefaultStatement : Statement
     GotoDefaultStatement(Loc loc);
     Statement *syntaxCopy();
     Statement *semantic(Scope *sc);
+    Expression *interpret(InterState *istate);
     int fallOffEnd();
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 };
@@ -422,6 +438,7 @@ struct GotoCaseStatement : Statement
     GotoCaseStatement(Loc loc, Expression *exp);
     Statement *syntaxCopy();
     Statement *semantic(Scope *sc);
+    Expression *interpret(InterState *istate);
     int fallOffEnd();
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 };
@@ -442,6 +459,7 @@ struct ReturnStatement : Statement
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     Statement *semantic(Scope *sc);
     int fallOffEnd();
+    Expression *interpret(InterState *istate);
 
     int inlineCost(InlineCostState *ics);
     Expression *doInline(InlineDoState *ids);
@@ -457,6 +475,7 @@ struct BreakStatement : Statement
     BreakStatement(Loc loc, Identifier *ident);
     Statement *syntaxCopy();
     Statement *semantic(Scope *sc);
+    Expression *interpret(InterState *istate);
     int fallOffEnd();
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 };
@@ -468,6 +487,7 @@ struct ContinueStatement : Statement
     ContinueStatement(Loc loc, Identifier *ident);
     Statement *syntaxCopy();
     Statement *semantic(Scope *sc);
+    Expression *interpret(InterState *istate);
     int fallOffEnd();
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 };
@@ -608,6 +628,7 @@ struct GotoStatement : Statement
     Statement *syntaxCopy();
     Statement *semantic(Scope *sc);
     int fallOffEnd();
+    Expression *interpret(InterState *istate);
 
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     GotoStatement *isGotoStatement() { return this; }
@@ -628,6 +649,7 @@ struct LabelStatement : Statement
     int usesEH();
     int fallOffEnd();
     int comeFrom();
+    Expression *interpret(InterState *istate);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 
     Statement *inlineScan(InlineScanState *iss);

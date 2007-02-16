@@ -6,12 +6,6 @@ CXXFLAGS=-O2 -g
 EXEEXT=
 
 LDFLAGS=
-WA=-Wl,--whole-archive
-NWA=-Wl,--no-whole-archive
-
-AR=$(CROSS)ar
-ARFLAGS=rc
-RANLIB=$(CROSS)ranlib
 
 PREFIX=/usr
 
@@ -45,6 +39,7 @@ OBJS=\
   inifile.o \
   init.o \
   inline.o \
+  interpret.o \
   lexer.o \
   link.o \
   lstring.o \
@@ -72,11 +67,8 @@ OBJS=\
 
 all: rebuild$(EXEEXT) rebuild.conf/default
 
-rebuild$(EXEEXT): libdmd.a
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(WA) libdmd.a $(NWA) -o rebuild$(EXEEXT)
-
-libdmd.a: id.c impcnvtab.c $(OBJS)
-	$(AR) $(ARFLAGS) libdmd.a $(OBJS)
+rebuild$(EXEEXT): id.c impcnvtab.c $(OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(OBJS) -o rebuild$(EXEEXT)
 
 id.c: idgen$(EXEEXT)
 	./idgen$(EXEEXT)
@@ -95,7 +87,7 @@ impcnvgen$(EXEEXT): impcnvgen.o
 
 impcnvgen.o: impcnvgen.c
 	$(NATIVECXX) $(CXXFLAGS) -c impcnvgen.c -o impcnvgen.o
-
+  
 rebuild.conf/default: choosedc$(EXEEXT)
 	./choosedc$(EXEEXT)
 
@@ -121,7 +113,7 @@ install:
 	./instdymods $(PREFIX)
 
 clean:
-	rm -f rebuild$(EXEEXT) libdmd.a $(OBJS)
+	rm -f rebuild$(EXEEXT) $(OBJS)
 	rm -f id.c id.h idgen$(EXEEXT) idgen.o
 	rm -f impcnvtab.c impcnvtab.h impcnvgen$(EXEEXT) impcnvgen.o
 	rm -f rebuild.conf/default choosedc$(EXEEXT) choosedc.o nwhereami.o

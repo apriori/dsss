@@ -207,6 +207,8 @@ struct VarDeclaration : Declaration
     int onstack;		// 1: it has been allocated on the stack
 				// 2: on stack, run destructor anyway
     Dsymbol *aliassym;		// if redone as alias to another symbol
+    Expression *value;		// when interpreting, this is the value
+				// (NULL if value not determinable)
 
     VarDeclaration(Loc loc, Type *t, Identifier *id, Initializer *init);
     Dsymbol *syntaxCopy(Dsymbol *);
@@ -373,7 +375,7 @@ struct FuncDeclaration : Declaration
 #if IN_GCC
     VarDeclaration *v_argptr;	        // '_argptr' variable
 #endif
-    Array *parameters;			// Array of Argument's for parameters
+    Dsymbols *parameters;		// Array of VarDeclaration's for parameters
     DsymbolTable *labtab;		// statement label symbol table
     Declaration *overnext;		// next in overload list
     Loc endloc;				// location of closing curly bracket
@@ -382,6 +384,7 @@ struct FuncDeclaration : Declaration
     int inlineAsm;			// !=0 if has inline assembler
     ILS inlineStatus;
     int inlineNest;			// !=0 if nested inline
+    int cantInterpret;			// !=0 if cannot interpret function
     int semanticRun;			// !=0 if semantic3() had been run
     int nestedFrameRef;			// !=0 if nested variables referenced frame ptr
     ForeachStatement *fes;		// if foreach body, this is the foreach
@@ -390,6 +393,7 @@ struct FuncDeclaration : Declaration
 					// of the 'introducing' function
 					// this one is overriding
     int inferRetType;			// !=0 if return type is to be inferred
+    Scope *scope;		// !=NULL means context to use
 
     // Things that should really go into Scope
     int hasReturnExp;			// 1 if there's a return exp; statement
@@ -405,6 +409,7 @@ struct FuncDeclaration : Declaration
     FuncDeclaration(Loc loc, Loc endloc, Identifier *id, enum STC storage_class, Type *type);
     Dsymbol *syntaxCopy(Dsymbol *);
     void semantic(Scope *sc);
+    void semantic2(Scope *sc);
     void semantic3(Scope *sc);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     void bodyToCBuffer(OutBuffer *buf, HdrGenState *hgs);
@@ -431,6 +436,7 @@ struct FuncDeclaration : Declaration
     virtual int isVirtual();
     virtual int addPreInvariant();
     virtual int addPostInvariant();
+    Expression *interpret(Expressions *arguments);
     void inlineScan();
     int canInline(int hasthis, int hdrscan = 0);
     Expression *doInline(InlineScanState *iss, Expression *ethis, Array *arguments);
