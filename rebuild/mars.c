@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <limits.h>
+#include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>

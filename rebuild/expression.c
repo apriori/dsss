@@ -21,6 +21,8 @@ extern "C" char * __cdecl __locale_decpoint;
 
 #if __WIN32 && __GNUC__
 #define isnan _isnan
+#elif __APPLE__
+using std::isnan;
 #endif
 
 #if IN_GCC
@@ -2389,8 +2391,8 @@ void StringExp::toMangleBuffer(OutBuffer *buf)
 {   char m;
     OutBuffer tmp;
     char *p;
-    unsigned c;
-    unsigned u;
+    dchar_t c;
+    size_t u;
     unsigned char *q;
     unsigned qlen;
 
