@@ -28,7 +28,7 @@ version=Tango
 
 
 [compile]
-cmd=dmd -version=Posix -c $i
+cmd=dmd -version=Posix -version=Tango -c $i
 
 flag=$i
 incdir=-I$i

@@ -27,7 +27,7 @@ version=Tango
 
 
 [compile]
-cmd=gdmd -c $i
+cmd=gdmd -version=Tango -c $i
 
 flag=$i
 incdir=-I$i
