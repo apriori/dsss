@@ -210,7 +210,7 @@ Usage:\n\
 bool stringInArray(Array *arr, char *str)
 {
     for (unsigned int i = 0; i < arr->dim; i++) {
-        if (!strcmp((char *) arr->data[i], str)) return true;
+        if (!stricmp((char *) arr->data[i], str)) return true;
     }
     return false;
 }
