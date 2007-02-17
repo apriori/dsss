@@ -33,13 +33,13 @@
 #include	<unistd.h>
 #endif
 
+#include        "mtype.h"
+#include        "cond.h"
 #include        "config.h"
-
-#include	"root.h"
-
+#include        "identifier.h"
 #include	"mars.h"
-
 #include	"mem.h"
+#include	"root.h"
 
 using namespace std;
 
@@ -78,6 +78,13 @@ string linkCommand(const string &i, const string &o, char post = 0)
     
     // config: compile=[g]dmd -c $i -o $o
     string cline = masterConfig[linkset]["cmd"];
+
+    // there are some flags that should be added only on non-darwin
+    if (!findCondition(global.params.versionids, new Identifier("darwin", 0))) {
+        if (masterConfig[linkset].find("nodarwinflag") != masterConfig[linkset].end()) {
+            cline += " " + masterConfig[linkset]["nodarwinflag"];
+        }
+    }
     
     // replace $i
     while ((varLoc = cline.find("$i", 0)) != string::npos) {

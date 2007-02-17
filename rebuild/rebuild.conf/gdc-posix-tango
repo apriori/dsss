@@ -9,6 +9,7 @@ objext=o
 noversion=DigitalMars
 version=GNU
 testversion=linux
+testversion=darwin
 version=Unix
 version=Posix
 noversion=Windows
@@ -38,7 +39,8 @@ version=-version=$i
 
 
 [link]
-cmd=gdmd -q,-rdynamic $i -of$o
+cmd=gdmd $i -of$o
+nodarwinflag=-q,-rdynamic
 
 libdir=-L-L$i
 lib=-L-l$i
