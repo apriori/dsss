@@ -1040,34 +1040,44 @@ void ConditionalDeclaration::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 void ConditionalDeclaration::parsepragmas(Module *m)
 {
     // we only know how to disclude the right version
+    bool doinclude = true;
+    
     if (dynamic_cast<VersionCondition*>(condition)) {
         VersionCondition *vc = (VersionCondition *) condition;
         
-        if (vc->include(NULL, NULL)) {
-            AttribDeclaration::parsepragmas(m);
+        if (!(vc->include(NULL, NULL))) {
+            doinclude = false;
+        }
+    } else if (dynamic_cast<DebugCondition*>(condition)) {
+        DebugCondition *dc = (DebugCondition *) condition;
+        
+        if (!(dc->include(NULL, NULL))) {
+            doinclude = false;
+        }
+    }
+    
+    if (doinclude) {
+        AttribDeclaration::parsepragmas(m);
+        
+    } else if (elsedecl) {
+        for (int i = 0; i < elsedecl->dim; i++) {
+            Dsymbol *ds = (Dsymbol *) elsedecl->data[i];
             
-        } else if (elsedecl) {
-            for (int i = 0; i < elsedecl->dim; i++) {
-                Dsymbol *ds = (Dsymbol *) elsedecl->data[i];
-            
-                if (ds->isAttribDeclaration()) {
-                    AttribDeclaration *ad = (AttribDeclaration *) ds;
-                    ad->parsepragmas(m);
+            if (ds->isAttribDeclaration()) {
+                AttribDeclaration *ad = (AttribDeclaration *) ds;
+                ad->parsepragmas(m);
                 
-                } else if (ds->isImport()) {
-                    Import *im = (Import *) ds;
-                    im->load(NULL);
-                    im->mod->parsepragmas();
+            } else if (ds->isImport()) {
+                Import *im = (Import *) ds;
+                im->load(NULL);
+                im->mod->parsepragmas();
                 
-                } else if (dynamic_cast<VersionSymbol*>(ds)) {
-                    VersionSymbol *vs = (VersionSymbol *) ds;
-                    vs->addMember(NULL, m, 0);
-                    
-                }
+            } else if (dynamic_cast<VersionSymbol*>(ds)) {
+                VersionSymbol *vs = (VersionSymbol *) ds;
+                vs->addMember(NULL, m, 0);
+                
             }
         }
-    } else {
-        AttribDeclaration::parsepragmas(m);
     }
 }
 

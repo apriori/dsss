@@ -81,7 +81,7 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
         char[] type = settings["type"];
         char[] target = settings["target"];
         
-        if (type == "library") {
+        if (type == "library" && libsSafe()) {
             writefln("Creating imports for %s", target);
             
             // this is a library, so make .di files
@@ -155,7 +155,7 @@ version (build) {
             char[] type = settings["type"];
             char[] target = settings["target"];
         
-            if (type == "library") {
+            if (type == "library" && libsSafe()) {
                 char[] shlibname = getShLibName(settings);
                 char[][] shortshlibnames = getShortShLibNames(settings);
                 char[] shlibflag = getShLibFlag(settings);
@@ -191,7 +191,7 @@ version (build) {
         char[] type = settings["type"];
         char[] target = settings["target"];
         
-        if (type == "library") {
+        if (type == "library" && libsSafe()) {
             char[] dotname = std.string.replace(build, std.path.sep, ".");
             
             // get the list of files

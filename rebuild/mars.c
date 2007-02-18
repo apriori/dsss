@@ -164,6 +164,8 @@ Usage:\n\
   -p             do not compile (or link)\n\
   -c             do not link\n\
   -lib           link a static library\n\
+  -libs-safe     exit failure or success for whether libraries can be safely\n\
+                 be used with any D code\n\
   -shlib         link a shared library\n\
   -shlib-support exit failure or success for whether shared libraries are\n\
                  supported\n\
@@ -194,6 +196,9 @@ Usage:\n\
   -v             verbose\n\
   -version=level compile in version code >= level\n\
   -version=ident compile in version code identified by ident\n\
+  -debug         compile in debug code\n\
+  -debug=level   compile in debug code <= level\n\
+  -debug=ident   compile in debug code identified by ident\n\
   -circular      allow circular dependencies to work on some compilers (namely\n\
                  GDC) \n\
   -testversion=<version>\n\
@@ -429,6 +434,16 @@ int main(int argc, char *argv[])
             }
             else if (strcmp(p + 1, "nolink") == 0) /* compat with build */
                 global.params.link = 0;
+            else if (strcmp(p + 1, "libs-safe") == 0)
+            {
+                if (masterConfig.find("liblink") == masterConfig.end() ||
+                    masterConfig["liblink"].find("safe") == masterConfig["liblink"].end() ||
+                    masterConfig["liblink"]["safe"] != "yes") {
+                    exit(1);
+                } else {
+                    exit(0);
+                }
+            }
             else if (strcmp(p + 1, "shlib-support") == 0)
             {
                 // just test for support
@@ -585,6 +600,39 @@ int main(int argc, char *argv[])
 		else
 		    goto Lerror;
 	    }
+	    else if (memcmp(p + 1, "debug", 5) == 0)
+	    {
+		// Parse:
+		//	-debug
+		//	-debug=number
+		//	-debug=identifier
+		if (p[6] == '=')
+		{
+                    addFlag(compileFlags, "compile", "setdebug", "-debug=$i", p + 7);
+                    
+		    if (isdigit(p[7]))
+		    {	long level;
+
+			errno = 0;
+			level = strtol(p + 7, &p, 10);
+			if (*p || errno || level > INT_MAX)
+			    goto Lerror;
+			DebugCondition::setGlobalLevel((int)level);
+		    }
+		    else if (Lexer::isValidIdentifier(p + 7))
+			DebugCondition::addGlobalIdent(p + 7);
+		    else
+			goto Lerror;
+		}
+		else if (p[6])
+		    goto Lerror;
+		else
+                {
+                    addFlag(compileFlags, "compile", "debug", "-debug");
+                    
+		    global.params.debuglevel = 1;
+                }
+            }
 	    else if (strcmp(p + 1, "-help") == 0)
 	    {	usage();
 		exit(EXIT_SUCCESS);

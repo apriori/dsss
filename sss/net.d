@@ -390,7 +390,7 @@ char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
         char[] type = conf.settings[section]["type"];
         if (type == "binary") {
             files ~= section;
-        } else if (type == "library") {
+        } else if (type == "library" || type == "sourcelibrary") {
             files ~= targetToFiles(section, conf);
         } else if (type == "subdir") {
             // recurse

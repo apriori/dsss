@@ -46,6 +46,7 @@ flag=-L$i
 
 
 [liblink]
+safe=no
 cmd=lib -c $o $i
 
 libdir=

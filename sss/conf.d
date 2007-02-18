@@ -1001,6 +1001,21 @@ char[] getShLibFlag(char[][char[]] settings)
     return "";
 }
 
+/** Return true or false for whether libraries are safe  */
+bool libsSafe()
+{
+    static bool tested = false;
+    static bool safe = false;
+    
+    if (!tested) {
+        int ret = system(dsss_build ~ "-libs-safe");
+        safe = (ret == 0);
+        tested = true;
+    }
+    
+    return safe;
+}
+
 /** Return true or false for whether shared libraries are supported */
 bool shLibSupport()
 {

@@ -83,7 +83,7 @@ int install(char[][] buildElems, char[][]* subManifest = null)
         }
         
         // figure out what it is
-        if (type == "library") {
+        if (type == "library" && libsSafe()) {
             // far more complicated
             
             // 1) copy in library files
@@ -154,7 +154,8 @@ int install(char[][] buildElems, char[][]* subManifest = null)
                 assert(0);
             }
             
-        } else if (type == "sourcelibrary") {
+        } else if (type == "sourcelibrary" ||
+                   (type == "library" && !libsSafe())) {
             // also fairly easy
             char[][] srcFiles = targetToFiles(build, conf);
             foreach (file; srcFiles) {
