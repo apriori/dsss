@@ -24,11 +24,6 @@ type=binary
 type=library
 type=sourcelibrary
 
-Note that DSSS no longer builds libraries with DMD as of DSSS 0.52. This is
-because DMD does not support (at least) templates in libraries. Libraries are
-demoted to sourcelibraries on DMD. If DMD eventually has full support for
-libraries, DSSS will be adjusted accordingly.
-
 In each section, there can be any number of settings. Each setting is a
 keyword, possibly followed by = or += and a value. For example, the "target"
 setting sets the name of the output binary or library in a given section:
