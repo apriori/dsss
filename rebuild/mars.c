@@ -63,7 +63,7 @@ Global::Global()
 
     copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards";
     written = "written by Walter Bright and Gregor Richards";
-    version = "version 0.10 (based on DMD 1.006)";
+    version = "version 0.11 (based on DMD 1.006)";
     global.structalign = 8;
     cmodules = NULL;
 
@@ -1108,6 +1108,12 @@ int main(int argc, char *argv[])
                         mem.free(ofname);
                         ofname = newfname;
                     }
+                } else {
+                    // to make sure there's no overlap, always add something
+                    char *newfname = (char *) mem.malloc(strlen(ofname) + 2);
+                    sprintf(newfname, "_%s", ofname);
+                    mem.free(ofname);
+                    ofname = newfname;
                 }
                 
                 // then add the objdir
