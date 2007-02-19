@@ -1,3 +1,7 @@
+0.52 from 0.51:
+        - Several bugs fixed with rebuild (0.8->0.10).
+        - DSSS no longer builds libraries on DMD.
+
 0.51 from 0.50:
         - Some fixes for dsss net on Windows.
         - Updates to rebuild (0.6->0.8).

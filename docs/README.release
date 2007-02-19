@@ -5,23 +5,20 @@ instructions on how to make a release of the current version of DSSS.
 1) sss/main.d, docs/ChangeLog, docs/NEWS and rebuild/mars.c all need to be
    updated.
 
-2) Copy to dsss-<version>
+2) svn export to dsss-<version>
 
-3) find dsss-<version> -name .svn | xargs rm -rf
+3) In dsss.conf, set version = <version>
 
-4) In dsss.conf, set version = <version>
-
-5) Remove mango stuff (until mango becomes a proper prerequisite)
-   rm -rf *mango*
-
-6) Make sure the winbins/ directory is out of the way (it shouldn't be in the
+4) Make sure the winbins/ directory is out of the way (it shouldn't be in the
    source packages)
 
-7) tar jcf dsss-<version>.tar.bz2 dsss-<version>/ && zip -r dsss-<version>.zip
+5) tar jcf dsss-<version>.tar.bz2 dsss-<version>/ && zip -r dsss-<version>.zip
    dsss-<version>/
 
-8) Add it to the downloads/ branch in SVN.
+6) Make binaries for supported platforms.
 
-9) Update the wiki at dsource.org
+7) Add it to the downloads/ branch in SVN.
 
-10) (Optionally) post an announcement to the NG.
+8) Update the wiki at dsource.org
+
+9) (Optionally) post an announcement to the NG.
