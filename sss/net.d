@@ -242,7 +242,7 @@ int net(char[][] args)
                 // compress
                 version (Windows) {
                     system("bsdtar -zcf " ~ archname ~ " " ~ std.string.join(
-                        listdir(".", RegExp(r"^[^\.]")),
+                        listdir("", RegExp(r"^[^\.]")),
                         " "));
                 } else {
                     system("tar -cf - * | gzip -c > " ~ archname);
