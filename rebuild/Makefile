@@ -108,8 +108,10 @@ nwhereami.o: whereami.c
 install:
 	mkdir -p $(PREFIX)/bin
 	mkdir -p $(PREFIX)/etc/rebuild
+	mkdir -p $(PREFIX)/share/doc/rebuild
 	cp -pf rebuild$(EXEEXT) $(PREFIX)/bin
 	cp -pRf rebuild.conf/* $(PREFIX)/etc/rebuild/
+	cp -pf README $(PREFIX)/share/doc/rebuild
 	./instdymods $(PREFIX)
 
 clean:

@@ -1,0 +1,70 @@
+Rebuild is a tool for building D software. It is based on the frontend to the
+DMD D compiler.
+
+Essentially, for any D source file given, rebuild finds all dependencies, and
+compiles them all into the target. Compiling a D program with rebuild is, for
+example:
+
+rebuild foo/foo.d -offood
+
+In this example, a program called fooD is compiled with the main source file
+being foo/foo.d.
+
+
+Rebuild can also compile libraries. The -lib flag to rebuild causes it to
+generate a library instead of a binary:
+
+Windows+DMD: rebuild -lib foo/foo.d -offoo.lib
+Otherwise:   rebuild -lib foo/foo.d -oflibfoo.a
+
+
+A useful flag when generating libraries is -explicit, which will cause it /not/
+to include all the dependencies. For example, if foo/foo.d imports foo/bar.d,
+then:
+rebuild -lib foo/foo.d -oflibfoo.a
+will include foo/bar.d in the target library, but
+rebuild -lib -explicit foo/foo.d -oflibfoo.a
+will not.
+
+
+On some platforms (presently, GDC on Posix), it is also possible to build
+shared libraries. From rebuild's perspective, a shared library must be able to
+be used interchangeably with a standard library, so DMD's .dll's on Windows are
+not supported. Such shared libraries can be built with:
+
+rebuild -shlib -explicit foo/foo.d -oflibfoo.so
+
+
+Rebuild allows you to save options usually passed to rebuild in a response
+file. Use one line per argument, then choose the response file with:
+
+rebuild -rf<filename>
+
+
+Rebuild also accepts a few special pragma()'s in source files. These must be in
+a version(build) block. The two supported pragmas are link and export_version.
+
+pragma(link) is useful for indicating that a D source file depends on a
+specified library. If the file depended on libxml2, for example, pragma(link)
+would be used like so:
+
+version(build) {
+    pragma(link, "xml2");
+}
+
+On Posix and MingW, this links with -lxml2 (so it will link to libxml2.a or
+libxml2.so). On Windows, this links to xml2.lib.
+
+
+pragma(export_version) is used to set a version identifier for all source files
+(as opposed to version=, which sets it only for a single source file):
+
+version (build) {
+    pragma(export_version, "setversion");
+}
+
+
+Rebuild has a large number of other available options. This document does not
+list all of them. Use
+rebuild --help
+to get the entire list.
