@@ -1254,6 +1254,10 @@ int main(int argc, char *argv[])
         
         if (!ignore) {
             gc->imodules.push((void *) m);
+        } else if (global.params.fullqobjs) {
+            // we generated a rename, so remove it
+            gc->origonames.pop();
+            gc->newonames.pop();
         }
         
 	if (global.params.verbose)
@@ -1349,8 +1353,16 @@ int main(int argc, char *argv[])
         
         // and rename
         for (unsigned int k = 0; k < gc->origonames.dim; k++) {
-            rename((char *) gc->origonames.data[k],
-                   (char *) gc->newonames.data[k]); // ignore errors
+            if (access((char *) gc->origonames.data[k], F_OK) == 0) {
+                if (global.params.verbose)
+                    printf("rename    %s to %s\n",
+                           (char *) gc->origonames.data[k],
+                           (char *) gc->newonames.data[k]);
+                
+                remove((char *) gc->newonames.data[k]); // ignore errors
+                rename((char *) gc->origonames.data[k],
+                       (char *) gc->newonames.data[k]); // ignore errors
+            }
         }
     }
     
