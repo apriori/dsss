@@ -1,3 +1,11 @@
+0.54 from 0.53:
+        - DSSS now again builds libraries on DMD.
+        - Fixed `net fetch` on Windows.
+        - Rebuild: -quiet is now passed through to GDC/DMD.
+        - Many fixes from CyberShadow.
+        - Rebuild: Added a small README.
+        - Rebuild: Now uses lib -p256 on Windows+DMD.
+
 0.53 from 0.52:
         - DSSS properly no longer builds libraries on DMD.
 
