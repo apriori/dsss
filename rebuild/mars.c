@@ -554,7 +554,10 @@ int main(int argc, char *argv[])
                 }
             }
 	    else if (strcmp(p + 1, "quiet") == 0)
+            {
 		global.params.quiet = 1;
+                addFlag(compileFlags, "compile", "quiet", "-quiet");
+            }
 	    else if (strcmp(p + 1, "release") == 0)
             {
 		global.params.release = 1;
