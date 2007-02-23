@@ -226,7 +226,7 @@ int net(char[][] args)
             chdir(srcDir);
             
             // make sure the directory gets removed
-            scope(exit) {
+            scope(success) {      // CyberShadow 2007.02.21: don't clean up if we failed, so we wouldn't have to redownload everything - and allow the user to figure out what went wrong
                 chdir(origcwd);
                 rmRecursive(tmpDir);
             }
@@ -241,11 +241,16 @@ int net(char[][] args)
                 
                 // compress
                 version (Windows) {
-                    system("bsdtar -zcf " ~ archname ~ " " ~ std.string.join(
-                        listdir("", RegExp(r"^[^\.]")),
-                        " "));
+                    // CyberShadow 2007.02.21: this code actually works now
+                    char[][] files = listdir("");
+                    auto regexp = RegExp(r"^[^\.]");
+                    char[] cmdline = "bsdtar -zcf " ~ archname;
+                    foreach(file;files)
+                        if(regexp.test(file))
+                            cmdline ~= " " ~ file;
+                    saySystemDie(cmdline);
                 } else {
-                    system("tar -cf - * | gzip -c > " ~ archname);
+                    saySystemDie("tar -cf - * | gzip -c > " ~ archname);
                 }
                 
                 // move into place
@@ -256,7 +261,7 @@ int net(char[][] args)
                 return 0;
             } else {
                 // 4) make sure it's not installed
-                uninstall(args[1..2]);
+                uninstall(args[1..2], true);
             
                 // 5) install prerequisites
                 char[][] netcmd;
@@ -554,7 +559,7 @@ bool getSources(char[] pkg, NetConfig conf)
             }
             
             // install the patch
-            system("patch -p0 -i " ~ pfile);
+            system("patch -p0 -N -i " ~ pfile);    // CyberShadow 2007.02.21: added -N to prevent useless questions ("apply reverse patch?") when re-running "net install"
             
             chdir(srcDir);
         }

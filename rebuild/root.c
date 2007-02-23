@@ -1634,9 +1634,7 @@ void OutBuffer::printf(const char *format, ...)
 {
     va_list ap;
     va_start(ap, format);
-#ifndef __WIN32 // mysterious error ;(
     vprintf(format,ap);
-#endif
     va_end(ap);
 }
 

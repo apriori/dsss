@@ -37,14 +37,15 @@ import std.stdio;
 import std.string;
 
 /** Entry to the "uninstall" function */
-int uninstall(char[][] toolList)
+int uninstall(char[][] toolList, bool quiet=false)     // CyberShadow 2007.02.21: added quiet parameter to prevent ambiguous "Package foo is not installed" message when installing packages
 {
     foreach (tool; toolList)
     {
         // uninstall this tool
         char[] manifestFile = manifestPrefix ~ std.path.sep ~ tool ~ ".manifest";
         if (!exists(manifestFile)) {
-            writefln("Tool " ~ tool ~ " is not installed.");
+            if(!quiet)
+            	writefln("Package " ~ tool ~ " is not installed.");
             return 1;
         }
         

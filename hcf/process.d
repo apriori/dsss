@@ -259,7 +259,13 @@ void systemOrDie(char[] cmd)
 {
     int res;
     res = system(cmd);
-    if (res) exit(res);
+    if (res)  // CyberShadow 2007.02.22: Display a message before exiting
+    {
+        int p = cmd.find(' ');
+        if(p!=-1) cmd=cmd[0..p];
+        writefln("Command " ~ cmd ~ " returned with exitcode ", res, ", aborting.");
+        exit(res);
+    }
 }
 
 /** system + output */

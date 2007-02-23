@@ -43,12 +43,13 @@ char[] getEnvVar(char[] var)
         return toString(
             getenv(toStringz(var)));
     } else version (Windows) {
-        char[1024] buffer;
+        // CyberShadow 2007.02.22: enlarging buffer tenfold for people with huge PATHs (like me)
+        char[10240] buffer;
         buffer[0] = '\0';
         GetEnvironmentVariableA(
                 toStringz(var),
                 buffer.ptr,
-                1024);
+                10240);
         return toString(buffer.ptr);
     } else {
         static assert(0);
