@@ -180,7 +180,8 @@ Usage:\n\
   --help         print help\n\
   -Ipath         where to look for imports\n\
   -Ccompileflag  pass compileflag to compilation\n\
-  -Llinkerflag   pass linkerflag to link\n\
+  -Llinkerflag   pass linkerflag to the linker at link time\n\
+  -Klinkerflag   pass linkerflag to the compiler at link time\n\
   -ll<lib>       link in the specified library\n\
                  Windows: Link to <lib>.lib\n\
                  Posix: Link to lib<lib>.{a,so}\n\
@@ -646,6 +647,12 @@ int main(int argc, char *argv[])
                 addFlag(liblinkFlags, "liblink", "flag", "-L$i", p + 2);
                 addFlag(shliblinkFlags, "shliblink", "flag", "-L$i", p + 2);
 	    }
+            else if (p[1] == 'K')
+            {
+                addFlag(linkFlags, "link", "cflag", "$i", p + 1);
+                addFlag(liblinkFlags, "link", "cflag", "$i", p + 1);
+                addFlag(shliblinkFlags, "link", "cflag", "$i", p + 1);
+            }
             else if (strncmp(p + 1, "ll", 2) == 0)
             {
                 if (!p[3])
@@ -802,10 +809,35 @@ int main(int argc, char *argv[])
     } else {
         global.listout = stdout;
     }
-
+    
 
     //printf("%d source files\n",files.dim);
-
+    
+    // add include= paths
+    if (masterConfig.find("") != masterConfig.end() &&
+        masterConfig[""].find("include") != masterConfig[""].end()) {
+        std::string includeList = masterConfig[""]["include"];
+        
+        // split by ' '
+        while (includeList.length()) {
+            std::string include;
+            int loc = includeList.find(' ', 0);
+            
+            if (loc == std::string::npos) {
+                include = includeList;
+                includeList = "";
+            } else {
+                include = includeList.substr(0, loc);
+                includeList = includeList.substr(loc + 1);
+            }
+            
+            // include it
+            if (!global.params.imppath)
+                global.params.imppath = new Array();
+            global.params.imppath->push(p + 2);
+        }
+    }
+    
     // Build import search path
     if (global.params.imppath)
     {
@@ -822,7 +854,7 @@ int main(int argc, char *argv[])
 	    }
 	}
     }
-
+    
     // Build string import search path
     if (global.params.fileImppath)
     {
@@ -1150,12 +1182,12 @@ int main(int argc, char *argv[])
             if (masterConfig.find("") != masterConfig.end() &&
                 masterConfig[""].find("ignore") != masterConfig[""].end()) {
                 std::string modIgnoreList = masterConfig[""]["ignore"];
-                    
+                
                 // split by ' '
                 while (modIgnoreList.length()) {
                     std::string modIgnore;
                     int loc = modIgnoreList.find(' ', 0);
-                        
+                    
                     if (loc == std::string::npos) {
                         modIgnore = modIgnoreList;
                         modIgnoreList = "";
