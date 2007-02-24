@@ -113,7 +113,9 @@ founddir:
     fclose(tmpfile);
     
     // get the compile line
-    string cline = compileCommand("rebuild_tmp.d");
+    string response;
+    bool useresponse;
+    string cline = compileCommand("rebuild_tmp.d", response, useresponse);
     
     // test it
 #define VERTESTBUF 1024

@@ -30,6 +30,7 @@ version=Tango
 
 [compile]
 cmd=dmd -version=Tango -c $i
+response=@
 
 flag=$i
 incdir=-I$i
@@ -40,6 +41,7 @@ version=-version=$i
 
 [link]
 cmd=dmd $i -of$o
+response=@
 
 libdir=-L+$i\
 lib=-L+$i
@@ -49,6 +51,7 @@ flag=-L$i
 [liblink]
 safe=yes
 cmd=lib -c -p256 $o $i
+response=@
 
 libdir=
 lib=

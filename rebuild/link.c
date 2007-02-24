@@ -39,6 +39,7 @@
 #include        "identifier.h"
 #include	"mars.h"
 #include	"mem.h"
+#include        "response.h"
 #include	"root.h"
 
 using namespace std;
@@ -50,7 +51,7 @@ int executearg0(char *cmd, char *args);
  * Run the linker.  Return status of execution.
  */
 
-string linkCommand(const string &i, const string &o, char post = 0)
+string linkCommand(const string &i, const string &o, string &response, bool &useresponse, char post)
 {
     int varLoc;
     
@@ -76,9 +77,17 @@ string linkCommand(const string &i, const string &o, char post = 0)
         return "";
     }
     
+    // check if we need to use a response file
+    useresponse = false;
+    if (masterConfig.find(linkset) != masterConfig.end() &&
+        masterConfig[linkset].find("response") != masterConfig[linkset].end()) {
+        useresponse = true;
+        response = masterConfig[linkset]["response"];
+    }
+    
     // config: compile=[g]dmd -c $i -o $o
     string cline = masterConfig[linkset]["cmd"];
-
+    
     // there are some flags that should be added only on non-darwin
     if (!findCondition(global.params.versionids, new Identifier("darwin", 0))) {
         if (masterConfig[linkset].find("nodarwinflag") != masterConfig[linkset].end()) {
@@ -122,7 +131,8 @@ string linkCommand(const string &i, const string &o, char post = 0)
 int runLINK()
 {
     // get the list of input files, as well as the age if they're necessary
-    string inp, out;
+    string inp, out, response;
+    bool useresponse;
     time_t mtime = 0;
     struct stat sbuf, osbuf;
     
@@ -176,25 +186,42 @@ int runLINK()
         stat(global.params.exefile, &osbuf) != 0 ||
         osbuf.st_mtime <= mtime) {
         string cline = linkCommand(
-            inp, out);
+            inp, out, response, useresponse, 0);
         
         if (global.params.verbose)
             printf("link      %s\n", cline.c_str());
         
         // run it
-        if (cline == "" ||
-            system(cline.c_str())) {
+        int res = 0;
+        if (cline == "") {
+            res = 1;
+        } else {
+            if (useresponse)
+                res = systemResponse(cline.c_str(), response.c_str(), "rsp");
+            else
+                res = system(cline.c_str());
+        }
+        if (res) {
             global.errors++;
             return -1;
         }
         
         if (global.params.lib) {
             // do postlib link
-            cline = linkCommand(out, "", 1);
+            cline = linkCommand(out, "", response, useresponse, 1);
             if (global.params.verbose)
                 printf("postlink  %s\n", cline.c_str());
-            if (cline == "" ||
-                system(cline.c_str())) {
+            
+            res = 0;
+            if (cline == "") {
+                res = 1;
+            } else {
+                if (useresponse)
+                    res = systemResponse(cline.c_str(), response.c_str(), "rsp");
+                else
+                    res = system(cline.c_str());
+            }
+            if (res) {
                 global.errors++;
                 return -1;
             }

@@ -86,3 +86,48 @@ void parseResponseFile(int *argc, char ***argv, char *rf, int argnum)
     *argc = nargc;
     *argv = nargv;
 }
+
+int systemResponse(const char *cmd, const char *rflag, const char *rfile)
+{
+    char *newcmd = mem.strdup(cmd);
+    int res;
+    
+    // open the output file
+    FILE *of = fopen(rfile, "w");
+    if (!of) {
+        perror(rfile);
+        exit(1);
+    }
+    
+    // break up the command
+    int i, slen;
+    slen = strlen(newcmd);
+    char *cur = newcmd;
+    for (i = 0; i <= slen; i++) {
+        if (newcmd[i] == ' ' ||
+            newcmd[i] == '\0' ||
+            newcmd[i] == '\n' ||
+            newcmd[i] == '\r') {
+            newcmd[i] = '\0';
+            
+            // add the previous one
+            if (cur != newcmd &&
+                *cur != '\0') {
+                fprintf(of, "%s\n", cur);
+            }
+            cur = newcmd + i + 1;
+        }
+    }
+    fclose(of);
+    
+    // form the response file line
+    char *newcmdr = (char *) mem.malloc(strlen(newcmd) + strlen(rflag) + strlen(rfile) + 2);
+    sprintf(newcmdr, "%s %s%s", newcmd, rflag, rfile);
+    res = system(newcmdr);
+    remove(rfile);
+    
+    mem.free(newcmdr);
+    mem.free(newcmd);
+    
+    return res;
+}

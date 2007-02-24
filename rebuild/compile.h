@@ -11,7 +11,7 @@
 
 #include <string>
 
-std::string compileCommand(const std::string &i);
+std::string compileCommand(const std::string &i, std::string &response, bool &useresponse);
 
 void runCompile(const std::string &files);
 

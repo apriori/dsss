@@ -29,6 +29,7 @@ noversion=BigEndian
 
 [compile]
 cmd=dmd -c $i
+response=@
 
 flag=$i
 incdir=-I$i
@@ -48,6 +49,7 @@ flag=-L$i
 [liblink]
 safe=yes
 cmd=lib -c -p256 $o $i
+response=@
 
 libdir=
 lib=

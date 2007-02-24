@@ -17,8 +17,9 @@ extern "C" {
 #include "config.h"
 #include "mars.h"
 #include "module.h"
+#include "response.h"
 
-string compileCommand(const string &i)
+string compileCommand(const string &i, string &response, bool &useresponse)
 {
     int varLoc;
     
@@ -28,6 +29,13 @@ string compileCommand(const string &i)
         cerr << "No 'compile.cmd' setting configured." << endl;
         global.errors++;
         return "";
+    }
+    
+    // check if we need to use a response file
+    useresponse = false;
+    if (masterConfig["compile"].find("response") != masterConfig["compile"].end()) {
+        useresponse = true;
+        response = masterConfig["compile"]["response"];
     }
     
     // config: compile=[g]dmd -c $i -o $o
@@ -48,13 +56,24 @@ string compileCommand(const string &i)
 
 void runCompile(const std::string &files)
 {
-    string cline = compileCommand(files);
+    string response;
+    bool useresponse;
+    string cline = compileCommand(files, response, useresponse);
     
     if (global.params.verbose)
         printf("compile   %s\n", cline.c_str());
     
     // run it
-    if (cline == "" ||
-        system(cline.c_str()))
+    int res = 0;
+    if (cline == "") {
+        res = 1;
+    } else {
+        if (useresponse)
+            res = systemResponse(cline.c_str(), response.c_str(), "rsp");
+        else
+            res = system(cline.c_str());
+    }
+    if (res) {
         global.errors++;
+    }
 }
