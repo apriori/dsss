@@ -1254,7 +1254,7 @@ int main(int argc, char *argv[])
         
         if (!ignore) {
             gc->imodules.push((void *) m);
-        } else if (global.params.fullqobjs) {
+        } else if (global.params.fullqobjs && m->md) {
             // we generated a rename, so remove it
             gc->origonames.pop();
             gc->newonames.pop();
