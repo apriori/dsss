@@ -1389,20 +1389,42 @@ int TypeBasic::implicitConvTo(Type *to)
     //printf("TypeBasic::implicitConvTo(%s) from %s\n", to->toChars(), toChars());
     if (this == to)
 	return MATCHexact;
-    if (to->ty == Tvoid)
+
+    if (ty == Tvoid || to->ty == Tvoid)
 	return MATCHnomatch;
+    if (1 || global.params.Dversion == 1)
+    {
+	if (to->ty == Tbool)
+	    return MATCHnomatch;
+    }
+    else
+    {
+	if (ty == Tbool || to->ty == Tbool)
+	    return MATCHnomatch;
+    }
     if (!to->isTypeBasic())
 	return MATCHnomatch;
-    if (ty == Tvoid /*|| to->ty == Tvoid*/)
-	return MATCHnomatch;
-    if (to->ty == Tbit || to->ty == Tbool)
-	return MATCHnomatch;
+
     TypeBasic *tob = (TypeBasic *)to;
     if (flags & TFLAGSintegral)
     {
 	// Disallow implicit conversion of integers to imaginary or complex
 	if (tob->flags & (TFLAGSimaginary | TFLAGScomplex))
 	    return MATCHnomatch;
+
+	// If converting to integral
+	if (0 && global.params.Dversion > 1 && tob->flags & TFLAGSintegral)
+	{   d_uns64 sz = size(0);
+	    d_uns64 tosz = tob->size(0);
+
+	    /* Can't convert to smaller size or, if same size, change sign
+	     */
+	    if (sz > tosz)
+		return MATCHnomatch;
+
+	    /*if (sz == tosz && (flags ^ tob->flags) & TFLAGSunsigned)
+		return MATCHnomatch;*/
+	}
     }
     else if (flags & TFLAGSfloating)
     {
@@ -1489,13 +1511,10 @@ Expression *TypeArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	Expressions *arguments;
 	int size = next->size(e->loc);
 	int dup;
-	char *nm;
-	static char *name[2] = { "_adReverse", "_adDupT" };
 
 	assert(size);
 	dup = (ident == Id::dup);
-	nm = name[dup];
-	fd = FuncDeclaration::genCfunc(Type::tindex, nm);
+	fd = FuncDeclaration::genCfunc(Type::tindex, dup ? Id::adDup : Id::adReverse);
 	ec = new VarExp(0, fd);
 	e = e->castTo(sc, n->arrayOf());	// convert to dynamic array
 	arguments = new Expressions();
@@ -3050,7 +3069,12 @@ void TypeQualified::resolveHelper(Loc loc, Scope *sc,
 		id = (Identifier *)ti->idents.data[0];
 		sm = s->search(loc, id, 0);
 		if (!sm)
-		{   //error(loc, "template identifier %s is not a member of %s", id->toChars(), s->toChars());
+		{
+#ifdef DEBUG
+		    printf("1: \n");
+#endif
+		    /* error(loc, "template identifier %s is not a member of %s %s",
+			id->toChars(), s->kind(), s->toChars()); */
 		    return;
 		}
 		sm = sm->toAlias();
@@ -3287,11 +3311,11 @@ Dsymbol *TypeIdentifier::toDsymbol(Scope *sc)
     s = sc->search(loc, ident, &scopesym);
     if (s)
     {
-	s = s->toAlias();
 	for (int i = 0; i < idents.dim; i++)
 	{   Identifier *id;
 	    Dsymbol *sm;
 
+	    s = s->toAlias();
 	    id = (Identifier *)idents.data[i];
 	    //printf("\tid = '%s'\n", id->toChars());
 	    if (id->dyncast() != DYNCAST_IDENTIFIER)
@@ -3303,20 +3327,35 @@ Dsymbol *TypeIdentifier::toDsymbol(Scope *sc)
 		id = (Identifier *)ti->idents.data[0];
 		sm = s->search(loc, id, 0);
 		if (!sm)
-		{   //error(loc, "template identifier %s is not a member of %s", id->toChars(), s->toChars());
-		    break;
-		}
-		sm = sm->toAlias();
-		td = sm->isTemplateDeclaration();
-		if (!td)
 		{
-		    //error(loc, "%s is not a template", id->toChars());
-		    break;
+		    Type *t = s->getType();
+		    if (t)
+			sm = t->toDsymbol(sc);
+		    if (!sm)
+		    {
+#ifdef DEBUG
+			printf("E2: %s\n", s->getType()->toChars());
+#endif
+			/*error(loc, "template identifier %s is not a member of %s %s",
+			    id->toChars(), s->kind(), s->toChars()); */
+			break;
+		    }
+		    sm = sm->toAlias();
 		}
-		ti->tempdecl = td;
-		if (!ti->semanticdone)
-		    ti->semantic(sc);
-		sm = ti->toAlias();
+		else
+		{
+		    sm = sm->toAlias();
+		    td = sm->isTemplateDeclaration();
+		    if (!td)
+		    {
+			//error(loc, "%s %s is not a template", sm->kind(), id->toChars());
+			break;
+		    }
+		    ti->tempdecl = td;
+		    if (!ti->semanticdone)
+			ti->semantic(sc);
+		    sm = ti->toAlias();
+		}
 	    }
 	    else
 		sm = s->search(loc, id, 0);
@@ -3326,7 +3365,6 @@ Dsymbol *TypeIdentifier::toDsymbol(Scope *sc)
 	    {	//printf("\tdidn't find a symbol\n");
 		break;
 	    }
-	    s = s->toAlias();
 	}
     }
     return s;
@@ -4195,6 +4233,12 @@ L1:
 	    e = e->semantic(sc);
 	    return e;
 	}
+	if (d->isTupleDeclaration())
+	{
+	    e = new TupleExp(e->loc, d->isTupleDeclaration());
+	    e = e->semantic(sc);
+	    return e;
+	}
 	return new VarExp(e->loc, d);
     }
 
@@ -4526,6 +4570,12 @@ L1:
 	    e = de->semantic(sc);
 	    return e;
 	}
+	else if (d->isTupleDeclaration())
+	{
+	    e = new TupleExp(e->loc, d->isTupleDeclaration());
+	    e = e->semantic(sc);
+	    return e;
+	}
 	else
 	    ve = new VarExp(e->loc, d);
 	return ve;
@@ -4592,12 +4642,13 @@ int TypeClass::implicitConvTo(Type *to)
 	return 1;
     }
 
-    // Allow conversion to (void *)
-    if (to->ty == Tpointer && to->next->ty == Tvoid)
-	return 1;
+    if (global.params.Dversion == 1)
+    {
+	// Allow conversion to (void *)
+	if (to->ty == Tpointer && to->next->ty == Tvoid)
+	    return 1;
+    }
 
-//    if (to->ty == Tvoid)
-//	return MATCHconvert;
     return 0;
 }
 

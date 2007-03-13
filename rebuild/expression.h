@@ -18,6 +18,7 @@
 
 struct Type;
 struct Scope;
+struct TupleDeclaration;
 struct VarDeclaration;
 struct FuncDeclaration;
 struct FuncLiteralDeclaration;
@@ -308,6 +309,7 @@ struct TupleExp : Expression
     Expressions *exps;
 
     TupleExp(Loc loc, Expressions *exps);
+    TupleExp(Loc loc, TupleDeclaration *tup);
     Expression *syntaxCopy();
     int equals(Object *o);
     Expression *semantic(Scope *sc);
@@ -1214,6 +1216,9 @@ struct CondExp : BinExp
 #define EXP_CONTINUE_INTERPRET	((Expression *)2)
 #define EXP_BREAK_INTERPRET	((Expression *)3)
 #define EXP_GOTO_INTERPRET	((Expression *)4)
+#define EXP_VOID_INTERPRET	((Expression *)5)
+
+Expression *expType(Type *type, Expression *e);
 
 Expression *Neg(Type *type, Expression *e1);
 Expression *Com(Type *type, Expression *e1);

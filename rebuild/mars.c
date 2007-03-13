@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <errno.h>
+#include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -63,7 +64,7 @@ Global::Global()
 
     copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards";
     written = "written by Walter Bright and Gregor Richards";
-    version = "version 0.13 (based on DMD 1.006)";
+    version = "version 0.13 (based on DMD 1.009)";
     global.structalign = 8;
     cmodules = NULL;
 

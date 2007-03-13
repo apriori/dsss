@@ -109,6 +109,7 @@ void initPrecedence()
     precedence[TOKis] = PREC_primary;
     precedence[TOKassert] = PREC_primary;
     precedence[TOKfunction] = PREC_primary;
+    precedence[TOKvar] = PREC_primary;
 
     // post
     precedence[TOKdotti] = PREC_primary;
@@ -1154,7 +1155,9 @@ void IntegerExp::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 		     break;
 		}
 	    case Tchar:
-		if (isprint(v) && v != '\\')
+		if (v == '\'')
+		    buf->writestring("'\\''");
+		else if (isprint(v) && v != '\\')
 		    buf->printf("'%c'", (int)v);
 		else
 		    buf->printf("'\\x%02x'", (int)v);
@@ -1829,23 +1832,8 @@ Lagain:
 
     TupleDeclaration *tup = s->isTupleDeclaration();
     if (tup)
-    {	Expressions *exps = new Expressions();
-
-	exps->reserve(tup->objects->dim);
-	for (size_t i = 0; i < tup->objects->dim; i++)
-	{   Object *o = (Object *)tup->objects->data[i];
-	    if (o->dyncast() != DYNCAST_EXPRESSION)
-	    {
-		//error("%s is not an expression", o->toChars());
-	    }
-	    else
-	    {
-		Expression *e = (Expression *)o;
-		e = e->syntaxCopy();
-		exps->push(e);
-	    }
-	}
-	e = new TupleExp(loc, exps);
+    {
+	e = new TupleExp(loc, tup);
 	e = e->semantic(sc);
 	return e;
     }
@@ -2756,6 +2744,7 @@ Lagain:
     }
     else
 	type = newtype->semantic(loc, sc);
+    newtype = type;		// in case type gets cast to something else
     tb = type->toBasetype();
     //printf("tb: %s, deco = %s\n", tb->toChars(), tb->deco);
 
@@ -2835,6 +2824,9 @@ Lagain:
 	    /*else if (thisexp)
 		error("e.new is only for allocating nested classes"); */
 	}
+	else if (thisexp)
+	    error("e.new is only for allocating nested classes");
+
 	FuncDeclaration *f = cd->ctor;
 	if (f)
 	{
@@ -2932,7 +2924,7 @@ Lagain:
 
 	    Expression *arg = (Expression *)arguments->data[i];
 	    arg = resolveProperties(sc, arg);
-	    arg = arg->implicitCastTo(sc, Type::tindex);
+	    arg = arg->implicitCastTo(sc, Type::tsize_t);
 	    /*if (arg->op == TOKint64 && (long long)arg->toInteger() < 0)
 		error("negative array index %s", arg->toChars()); */
 	    arguments->data[i] = (void *) arg;
@@ -3274,6 +3266,35 @@ TupleExp::TupleExp(Loc loc, Expressions *exps)
     this->type = NULL;
 }
 
+
+TupleExp::TupleExp(Loc loc, TupleDeclaration *tup)
+	: Expression(loc, TOKtuple, sizeof(TupleExp))
+{
+    exps = new Expressions();
+    type = NULL;
+
+    exps->reserve(tup->objects->dim);
+    for (size_t i = 0; i < tup->objects->dim; i++)
+    {   Object *o = (Object *)tup->objects->data[i];
+	if (o->dyncast() == DYNCAST_EXPRESSION)
+	{
+	    Expression *e = (Expression *)o;
+	    e = e->syntaxCopy();
+	    exps->push(e);
+	}
+	else if (o->dyncast() == DYNCAST_DSYMBOL)
+	{
+	    Dsymbol *s = (Dsymbol *)o;
+	    Expression *e = new DsymbolExp(loc, s);
+	    exps->push(e);
+	}
+	else
+	{
+	    //error("%s is not an expression", o->toChars());
+	}
+    }
+}
+
 int TupleExp::equals(Object *o)
 {   TupleExp *ne;
 
@@ -3322,6 +3343,10 @@ Expression *TupleExp::semantic(Scope *sc)
     }
 
     expandTuples(exps);
+    if (0 && exps->dim == 1)
+    {
+	return (Expression *)exps->data[0];
+    }
     type = new TypeTuple(exps);
     //printf("-TupleExp::semantic(%s)\n", toChars());
     return this;
@@ -3329,8 +3354,9 @@ Expression *TupleExp::semantic(Scope *sc)
 
 void TupleExp::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 {
-    buf->writestring("tuple");
+    buf->writestring("tuple(");
     argsToCBuffer(buf, exps, hgs);
+    buf->writeByte(')');
 }
 
 int TupleExp::checkSideEffect(int flag)
@@ -4026,7 +4052,7 @@ Expression *CompileExp::semantic(Scope *sc)
 #endif
     UnaExp::semantic(sc);
     e1 = resolveProperties(sc, e1);
-    e1 = e1->optimize(WANTvalue);
+    e1 = e1->optimize(WANTvalue | WANTinterpret);
     if (e1->op != TOKstring)
     {	error("argument to mixin must be a string, not (%s)", e1->toChars());
 	return this;
@@ -4712,7 +4738,7 @@ Expression *DotTemplateInstanceExp::semantic(Scope *sc)
     id = (Identifier *)ti->idents.data[0];
     s2 = s->search(loc, id, 0);
     if (!s2)
-    {	//error("template identifier %s is not a member of %s", id->toChars(), s->ident->toChars());
+    {	//error("template identifier %s is not a member of %s %s", id->toChars(), s->kind(), s->ident->toChars());
 	goto Lerr;
     }
     s = s2;
@@ -5910,12 +5936,12 @@ Expression *SliceExp::semantic(Scope *sc)
     if (lwr)
     {	lwr = lwr->semantic(sc);
 	lwr = resolveProperties(sc, lwr);
-	lwr = lwr->implicitCastTo(sc, Type::tindex);
+	lwr = lwr->implicitCastTo(sc, Type::tsize_t);
     }
     if (upr)
     {	upr = upr->semantic(sc);
 	upr = resolveProperties(sc, upr);
-	upr = upr->implicitCastTo(sc, Type::tindex);
+	upr = upr->implicitCastTo(sc, Type::tsize_t);
     }
 
     if (t->ty == Tsarray || t->ty == Tarray || t->ty == Ttuple)
@@ -6042,7 +6068,7 @@ Expression *ArrayLengthExp::semantic(Scope *sc)
 	UnaExp::semantic(sc);
 	e1 = resolveProperties(sc, e1);
 
-	type = Type::tindex;
+	type = Type::tsize_t;
     }
     return this;
 }
@@ -6258,13 +6284,13 @@ Expression *IndexExp::semantic(Scope *sc)
     {
 	case Tpointer:
 	case Tarray:
-	    e2 = e2->implicitCastTo(sc, Type::tindex);
+	    e2 = e2->implicitCastTo(sc, Type::tsize_t);
 	    e->type = t1->next;
 	    break;
 
 	case Tsarray:
 	{
-	    e2 = e2->implicitCastTo(sc, Type::tindex);
+	    e2 = e2->implicitCastTo(sc, Type::tsize_t);
 
 	    TypeSArray *tsa = (TypeSArray *)t1;
 
@@ -6295,7 +6321,7 @@ Expression *IndexExp::semantic(Scope *sc)
 
 	case Ttuple:
 	{
-	    e2 = e2->implicitCastTo(sc, Type::tindex);
+	    e2 = e2->implicitCastTo(sc, Type::tsize_t);
 	    e2 = e2->optimize(WANTvalue);
 	    uinteger_t index = e2->toUInteger();
 	    size_t length;

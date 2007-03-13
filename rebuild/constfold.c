@@ -34,6 +34,16 @@ static real_t zero;	// work around DMC bug for now
 
 #define LOG 0
 
+Expression *expType(Type *type, Expression *e)
+{
+    if (type != e->type)
+    {
+	e = e->copy();
+	e->type = type;
+    }
+    return e;
+}
+
 /* ================================== isConst() ============================== */
 
 int Expression::isConst()
@@ -447,7 +457,7 @@ Expression *Div(Type *type, Expression *e1, Expression *e2)
 	n1 = e1->toInteger();
 	n2 = e2->toInteger();
 	if (n2 == 0)
-	{   //error("divide by 0");
+	{   //e2->error("divide by 0");
 	    e2 = new IntegerExp(0, 1, e2->type);
 	    n2 = 1;
 	}
@@ -510,7 +520,7 @@ Expression *Mod(Type *type, Expression *e1, Expression *e2)
 	n1 = e1->toInteger();
 	n2 = e2->toInteger();
 	if (n2 == 0)
-	{   //error("divide by 0");
+	{   //e2->error("divide by 0");
 	    e2 = new IntegerExp(0, 1, e2->type);
 	    n2 = 1;
 	}
@@ -1019,7 +1029,8 @@ Expression *Index(Type *type, Expression *e1, Expression *e2)
 {   Expression *e = EXP_CANT_INTERPRET;
     Loc loc = e1->loc;
 
-    //printf("Index()\n");
+    //printf("Index(e1 = %s)\n", e1->toChars());
+    assert(e1->type);
     if (e1->op == TOKstring && e2->op == TOKint64)
     {	StringExp *es1 = (StringExp *)e1;
 	uinteger_t i = e2->toInteger();
@@ -1056,7 +1067,7 @@ Expression *Index(Type *type, Expression *e1, Expression *e2)
 	uinteger_t i = e2->toInteger();
 
 	if (i >= length)
-	{   //error("array index %ju is out of bounds [0 .. %ju]", i, length);
+	{   //e2->error("array index %ju is out of bounds %s[0 .. %ju]", i, e1->toChars(), length);
 	}
 	else if (e1->op == TOKarrayliteral && !e1->checkSideEffect(2))
 	{   ArrayLiteralExp *ale = (ArrayLiteralExp *)e1;
@@ -1075,6 +1086,11 @@ Expression *Slice(Type *type, Expression *e1, Expression *lwr, Expression *upr)
 
 #if LOG
     printf("Slice()\n");
+    if (lwr)
+    {	printf("\te1 = %s\n", e1->toChars());
+	printf("\tlwr = %s\n", lwr->toChars());
+	printf("\tupr = %s\n", upr->toChars());
+    }
 #endif
     if (e1->op == TOKstring && lwr->op == TOKint64 && upr->op == TOKint64)
     {	StringExp *es1 = (StringExp *)e1;
@@ -1129,9 +1145,48 @@ Expression *Slice(Type *type, Expression *e1, Expression *lwr, Expression *upr)
 Expression *Cat(Type *type, Expression *e1, Expression *e2)
 {   Expression *e = EXP_CANT_INTERPRET;
     Loc loc = e1->loc;
+    Type *t;
 
-    //printf("Cat()\n");
-    if (e1->op == TOKstring && e2->op == TOKstring)
+    //printf("Cat(e1 = %s, e2 = %s)\n", e1->toChars(), e2->toChars());
+
+    if (e1->op == TOKnull && e2->op == TOKint64)
+    {	e = e2;
+	goto L2;
+    }
+    else if (e1->op == TOKint64 && e2->op == TOKnull)
+    {	e = e1;
+     L2:
+	Type *tn = e->type->toBasetype();
+	if (tn->ty == Tchar || tn->ty == Twchar || tn->ty == Tdchar)
+	{
+	    // Create a StringExp
+	    void *s;
+	    StringExp *es;
+	    size_t len = 1;
+	    int sz = tn->size();
+	    integer_t v = e->toInteger();
+
+	    s = mem.malloc((len + 1) * sz);
+	    memcpy((unsigned char *)s, &v, sz);
+
+	    // Add terminating 0
+	    memset((unsigned char *)s + len * sz, 0, sz);
+
+	    es = new StringExp(loc, s, len);
+	    es->sz = sz;
+	    es->committed = 1;
+	    e = es;
+	}
+	else
+	{   // Create an ArrayLiteralExp
+	    Expressions *elements = new Expressions();
+	    elements->push(e);
+	    e = new ArrayLiteralExp(e->loc, elements);
+	}
+	e->type = type;
+	return e;
+    }
+    else if (e1->op == TOKstring && e2->op == TOKstring)
     {
 	// Concatenate the strings
 	void *s;
@@ -1265,12 +1320,21 @@ Expression *Cat(Type *type, Expression *e1, Expression *e2)
     }
     else if (e1->op == TOKnull && e2->op == TOKstring)
     {
+	t = e1->type;
 	e = e2;
 	goto L1;
     }
     else if (e1->op == TOKstring && e2->op == TOKnull)
     {	e = e1;
+	t = e2->type;
       L1:
+	Type *tb = t->toBasetype();
+	if (tb->ty == Tarray && tb->next->equals(e->type))
+	{   Expressions *expressions = new Expressions();
+	    expressions->push(e);
+	    e = new ArrayLiteralExp(loc, expressions);
+	    e->type = t;
+	}
 	if (!e->type->equals(type))
 	{   StringExp *se = (StringExp *)e->copy();
 	    e = se->castTo(NULL, type);

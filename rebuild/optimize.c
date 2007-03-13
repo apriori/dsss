@@ -42,13 +42,17 @@ static real_t zero;	// work around DMC bug for now
 
 Expression *fromConstInitializer(Expression *e1)
 {
+    //printf("fromConstInitializer(%s)\n", e1->toChars());
     if (e1->op == TOKvar)
     {	VarExp *ve = (VarExp *)e1;
 	VarDeclaration *v = ve->var->isVarDeclaration();
 	if (v && v->isConst() && v->init)
 	{   Expression *ei = v->init->toExpression();
 	    if (ei)
-		e1 = ei;
+	    {	e1 = ei;
+		if (!e1->type)
+		    e1->type = v->type;
+	    }
 	}
     }
     return e1;
@@ -231,7 +235,7 @@ Expression *CallExp::optimize(int result)
 	FuncDeclaration *fd = ((VarExp *)e1)->var->isFuncDeclaration();
 	if (fd)
 	{
-	    Expression *eresult = fd->interpret(arguments);
+	    Expression *eresult = fd->interpret(NULL, arguments);
 	    if (eresult)
 		e = eresult;
 	    /*else if (result & WANTinterpret)
