@@ -1162,6 +1162,13 @@ int main(int argc, char *argv[])
                 gc->newonames.push((void *) ofname);
                 
                 m->objfile = new File(ofname);
+                
+            } else {
+                // ignore gcstats (argh)
+                if (strcmp(m->srcfile->name->name(), "gcstats.d")) {
+                    fprintf(stderr, "WARNING: Module %s does not have a module declaration. This can cause problems\n"
+                                    "         with rebuild's -oq option. If an error occurs, fix this first.\n");
+                }
             }
         } else {
             // just add it
