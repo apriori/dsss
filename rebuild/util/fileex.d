@@ -203,7 +203,7 @@ ulong[] FindInFile(char[] pFileName, char[] pText, char[] pOptions = "", uint pM
     int lPos;
     int lStartPos;
     ulong[] lResult;
-    long function(char[] a, char[] b) lFind;
+    int function(char[] a, char[] b) lFind;
     char[] lGrepOpt;
 
 
@@ -247,7 +247,7 @@ ulong[] FindInFile(char[] pFileName, char[] pText, char[] pOptions = "", uint pM
 
     if (lRegExp)
     {
-        lFind = &grep;
+        lFind = cast(int function(char[] a, char[] b)) &grep;
         if (lCaseSensitive)
             lGrepOpt ~= 'i';
 
@@ -257,9 +257,9 @@ ulong[] FindInFile(char[] pFileName, char[] pText, char[] pOptions = "", uint pM
     else
     {
         if (lCaseSensitive)
-            lFind = &std.string.find;
+            lFind = cast(int function(char[] a, char[] b)) &std.string.find;
         else
-            lFind = &std.string.ifind;
+            lFind = cast(int function(char[] a, char[] b)) &std.string.ifind;
     }
 
     // Pull the entire text into RAM.

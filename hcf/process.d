@@ -281,3 +281,48 @@ void saySystemDie(char[] cmd)
     writefln("+ %s", cmd);
     systemOrDie(cmd);
 }
+
+/** system + use a response file */
+int systemResponse(char[] cmd, char[] rflag, char[] rfile)
+{
+    int ret;
+    char[][] elems = std.string.split(cmd, " ");
+    
+    /* the output is elems past 1 joined with \n */
+    char[] resp = std.string.join(elems[1..$], "\n");
+    std.file.write(rfile, resp);
+    
+    ret = system(elems[0] ~ " " ~ rflag ~ rfile);
+    
+    std.file.remove(rfile);
+    
+    return ret;
+}
+
+/** systemResponse + guarantee success */
+void systemROrDie(char[] cmd, char[] rflag, char[] rfile)
+{
+    int res;
+    res = systemResponse(cmd, rflag, rfile);
+    if (res)  // CyberShadow 2007.02.22: Display a message before exiting
+    {
+        int p = cmd.find(' ');
+        if(p!=-1) cmd=cmd[0..p];
+        writefln("Command " ~ cmd ~ " returned with code ", res, ", aborting.");
+        exit(res);
+    }
+}
+
+/** systemResponse + output */
+int sayAndSystemR(char[] cmd, char[] rflag, char[] rfile)
+{
+    writefln("+ %s", cmd);
+    return systemResponse(cmd, rflag, rfile);
+}
+
+/** systemROrDie + output */
+void saySystemRDie(char[] cmd, char[] rflag, char[] rfile)
+{
+    writefln("+ %s", cmd);
+    systemROrDie(cmd, rflag, rfile);
+}

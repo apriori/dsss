@@ -168,7 +168,7 @@ version (build) {
                 if (targetGNUOrPosix()) {
                     char[] stubbl = bl ~ "-fPIC -shlib " ~ stubDLoc ~ " -of" ~ shlibname ~
                         " " ~ shlibflag;
-                    saySystemDie(stubbl);
+                    saySystemRDie(stubbl, "-rf", "temp.rf");
                     if (targetVersion("Posix")) {
                         foreach (ssln; shortshlibnames) {
                             saySystemDie("ln -sf " ~ shlibname ~ " " ~ ssln);
@@ -220,7 +220,7 @@ version (build) {
                 // first do a static library
                 if (exists("libS" ~ target ~ ".a")) std.file.remove("libS" ~ target ~ ".a");
                 char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -oflibS" ~ target ~ ".a";
-                saySystemDie(stbl);
+                saySystemRDie(stbl, "-rf", "temp.rf");
                 
                 if (shLibSupport() &&
                     ("shared" in settings)) {
@@ -230,14 +230,14 @@ version (build) {
                         " " ~ shlibflag;
                     
                     // finally, the shared compile
-                    saySystemDie(shbl);
+                    saySystemRDie(shbl, "-rf", "temp.rf");
                 }
                 
             } else if (targetVersion("Windows")) {
                 // for the moment, only do a static library
                 if (exists("S" ~ target ~ ".lib")) std.file.remove("S" ~ target ~ ".lib");
                 char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -ofS" ~ target ~ ".lib";
-                saySystemDie(stbl);
+                saySystemRDie(stbl, "-rf", "temp.rf");
             } else {
                 assert(0);
             }
@@ -289,7 +289,7 @@ version (build) {
             }
             
             // then do it
-            saySystemDie(bbl);
+            saySystemRDie(bbl, "-rf", "temp.rf");
             
             // do the postbuild
             if ("postbuild" in settings) {

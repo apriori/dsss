@@ -410,7 +410,8 @@ char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
         }
         
         // use dsss_build -files to get the list of files
-        system(dsss_build ~ " -files -offiles.tmp " ~ std.string.join(files, " "));
+        systemResponse(dsss_build ~ " -files -offiles.tmp " ~
+                       std.string.join(files, " "), "-rf", "temp.rf");
         
         // read the uses
         char[][] uses = std.string.split(cast(char[]) std.file.read("files.tmp"),
