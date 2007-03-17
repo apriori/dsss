@@ -188,7 +188,7 @@ void CreateTextFile(char[] pFileName, char[] pLines, CreateOpt pOpt = CreateOpt.
     CreateTextFile(pFileName, lLines, pOpt);
 }
 
-int grep(char[] pData, char[] pPattern)
+long grep(char[] pData, char[] pPattern)
 {
     return std.regexp.find(pData, pPattern, vGrepOpts[$-1]);
 }
@@ -203,7 +203,7 @@ ulong[] FindInFile(char[] pFileName, char[] pText, char[] pOptions = "", uint pM
     int lPos;
     int lStartPos;
     ulong[] lResult;
-    int function(char[] a, char[] b) lFind;
+    long function(char[] a, char[] b) lFind;
     char[] lGrepOpt;
 
 

@@ -145,7 +145,7 @@ class PStream : Stream {
         isopen = true;
     }
     
-    uint readBlock(void* buffer, uint size)
+    override size_t readBlock(void* buffer, size_t size)
     {
         version (Posix) {
             int rd = hcf.process.read(op[0], buffer, size);
@@ -168,7 +168,7 @@ class PStream : Stream {
         }
     }
     
-    uint writeBlock(void* buffer, uint size)
+    override size_t writeBlock(void* buffer, size_t size)
     {
         version (Posix) {
             int wt = hcf.process.write(ip[1], buffer, size);
@@ -188,7 +188,7 @@ class PStream : Stream {
         }
     }
     
-    ulong seek(long offset, SeekPos whence)
+    override ulong seek(long offset, SeekPos whence)
     {
         throw new StreamException("Cannot seek in PStreams");
     }
@@ -263,7 +263,7 @@ void systemOrDie(char[] cmd)
     {
         int p = cmd.find(' ');
         if(p!=-1) cmd=cmd[0..p];
-        writefln("Command " ~ cmd ~ " returned with exitcode ", res, ", aborting.");
+        writefln("Command " ~ cmd ~ " returned with code ", res, ", aborting.");
         exit(res);
     }
 }

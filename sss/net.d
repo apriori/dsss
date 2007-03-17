@@ -5,7 +5,7 @@
  *  Gregor Richards
  * 
  * License:
- *  Copyright (c) 2006  Gregor Richards
+ *  Copyright (c) 2006, 2007  Gregor Richards
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a
  *  copy of this software and associated documentation files (the "Software"),
@@ -262,19 +262,19 @@ int net(char[][] args)
             } else {
                 // 4) make sure it's not installed
                 uninstall(args[1..2], true);
-            
+                
                 // 5) install prerequisites
                 char[][] netcmd;
                 netcmd ~= "deps";
                 int netret = net(netcmd);
                 if (netret) return netret;
                 chdir(srcDir);
-            
+                
                 // 6) build
                 DSSSConf dconf = readConfig(null);
                 int buildret = build(args[2..$], dconf);
                 if (buildret) return buildret;
-            
+                
                 // 7) install
                 return install(args[2..$]);
             }
