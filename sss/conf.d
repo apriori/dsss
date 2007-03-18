@@ -147,20 +147,20 @@ void getPrefix(char[] argvz)
         stubDLoc = sssBaseLoc ~ "stub.d";
         dsssDllLoc = sssBaseLoc ~ "dssdll.d";
         
-        // set build environment variable
+        // get rebuild environment variable
         version (Posix) {
             dsss_build = installPrefix ~
                 std.path.sep ~ "rebuild" ~
                 std.path.sep ~ "rebuild";
-            setEnvVar("DSSS_BUILD", dsss_build);
         } else version (Windows) {
             dsss_build = installPrefix ~
                 std.path.sep ~ "rebuild" ~
                 std.path.sep ~ "rebuild.exe";
-            setEnvVar("DSSS_BUILD", dsss_build);
         } else {
             static assert(0);
         }
+        
+        setEnvVar("DSSS_BUILD", dsss_build);
     } else {
         inSourceDir = false;
         
@@ -180,14 +180,25 @@ void getPrefix(char[] argvz)
         version (Posix) {
             dsss_build = installPrefix ~
                  std.path.sep ~ "rebuild";
-            setEnvVar("DSSS_BUILD", dsss_build);
         } else version (Windows) {
             dsss_build = installPrefix ~
                 std.path.sep ~ "rebuild.exe";
-            setEnvVar("DSSS_BUILD", dsss_build);
         } else {
             static assert(0);
         }
+        
+        // if we don't have rebuild next to us, try to use it without a path
+        if (!std.file.exists(dsss_build)) {
+            version (Posix) {
+                dsss_build = "rebuild";
+            } else version (Windows) {
+                dsss_build = "rebuild.exe";
+            } else {
+                static assert(0);
+            }
+        }
+        
+        setEnvVar("DSSS_BUILD", dsss_build);
     }
     
     if (!binPrefix.length)
