@@ -190,23 +190,29 @@ void getPrefix(char[] argvz)
         }
     }
     
-    binPrefix = forcePrefix ~ std.path.sep ~ "bin";
-    libPrefix = forcePrefix ~ std.path.sep ~ "lib";
-    includePrefix = forcePrefix ~ std.path.sep ~
-        "include" ~ std.path.sep ~
-        "d";
-    manifestPrefix = forcePrefix ~ std.path.sep ~
-        "share" ~ std.path.sep ~
-        "dsss" ~ std.path.sep ~
-        "manifest";
-    etcPrefix = forcePrefix ~ std.path.sep ~
-        "etc";
-    srcListPrefix = canonPath(
-        installPrefix ~ std.path.sep ~
-        ".." ~ std.path.sep ~
-        "share" ~ std.path.sep ~
-        "dsss" ~ std.path.sep ~
-        "sources");
+    if (!binPrefix.length)
+        binPrefix = forcePrefix ~ std.path.sep ~ "bin";
+    if (!libPrefix.length)
+        libPrefix = forcePrefix ~ std.path.sep ~ "lib";
+    if (!includePrefix.length)
+        includePrefix = forcePrefix ~ std.path.sep ~
+             "include" ~ std.path.sep ~
+             "d";
+    if (!manifestPrefix.length)
+        manifestPrefix = forcePrefix ~ std.path.sep ~
+            "share" ~ std.path.sep ~
+            "dsss" ~ std.path.sep ~
+            "manifest";
+    if (!etcPrefix.length)
+        etcPrefix = forcePrefix ~ std.path.sep ~
+            "etc";
+    if (!srcListPrefix.length)
+        srcListPrefix = canonPath(
+            installPrefix ~ std.path.sep ~
+            ".." ~ std.path.sep ~
+            "share" ~ std.path.sep ~
+            "dsss" ~ std.path.sep ~
+            "sources");
     
     // set the scratch prefix and some some environment variables
     version (Posix) {

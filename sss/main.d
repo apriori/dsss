@@ -146,35 +146,9 @@ int main(char[][] args)
                 
             }
             
-        } else if (command == cmd_t.GENCONFIG ||
-                   command == cmd_t.UNINSTALL) {
-            /* commands with no special options (put them in their own else-if
-             * if they gain options */
-            if (argIsHelp()) {
-                usage();
-                return 0;
-                
-            } else {
-                // a binary or library
-                buildElems ~= arg;
-            }
-            
-        } else if (command == cmd_t.CLEAN ||
-                   command == cmd_t.DISTCLEAN ||
-                   command == cmd_t.INSTALLED) {
-            /* commands that take no options whatsoever */
-            if (argIsHelp()) {
-                usage();
-                return 0;
-                
-            } else {
-                writefln("ERROR: Command takes no arguments.");
-            }
-            
-        } else if (command == cmd_t.NET) {
-            // dsss net takes both --prefix and --use
+        } else {
+            /* generic options */
             char[] val;
-            
             if (argIsHelp()) {
                 usage();
                 return 0;
@@ -187,26 +161,20 @@ int main(char[][] args)
                 // force a prefix
                 forcePrefix = val;
                 
-            } else if (arg.length >= 1 &&
-                       arg[0] == '-') {
-                // pass through to build
-                dsss_buildOptions ~= arg ~ " ";
+            } else if (parseArg(arg, "bindir", true, &val)) {
+                binPrefix = val;
                 
-            } else {
-                buildElems ~= arg;
+            } else if (parseArg(arg, "libdir", true, &val)) {
+                libPrefix = val;
                 
-            }
-            
-        } else if (command == cmd_t.BUILD) {
-            char[] val;
-            
-            if (argIsHelp()) {
-                usage();
-                return 0;
+            } else if (parseArg(arg, "includedir", true, &val)) {
+                includePrefix = val;
                 
-            } else if (parseArg(arg, "use", true, &val)) {
-                // force a use-dir
-                useDirs ~= val;
+            } else if (parseArg(arg, "sysconfdir", true, &val)) {
+                etcPrefix = val;
+                
+            } else if (parseArg(arg, "scratchdir", true, &val)) {
+                scratchPrefix = val;
                 
             } else if (arg.length >= 1 &&
                        arg[0] == '-') {
@@ -214,24 +182,12 @@ int main(char[][] args)
                 dsss_buildOptions ~= arg ~ " ";
                 
             } else {
-                buildElems ~= arg;
                 
-            }
-            
-        } else if (command == cmd_t.INSTALL) {
-            char[] val;
-            
-            if (argIsHelp()) {
-                usage();
-                return 0;
-                
-            } else if (parseArg(arg, "prefix", true, &val)) {
-                // force a prefix
-                forcePrefix = val;
-                
-            } else {
+                // something to pass in
                 buildElems ~= arg;
             }
+            
+            /* there are presently no specific options */
         }
     }
     
@@ -295,7 +251,7 @@ void usage()
     if (command == cmd_t.NONE) {
         writefln(
 `DSSS version ` ~ DSSS_VERSION ~ `
-Usage: dsss [dsss options] <command> [command options]
+Usage: dsss [dsss options] <command> [options]
   DSSS Options:
     --help|-h: Display this help.
   Commands:
@@ -310,46 +266,31 @@ Usage: dsss [dsss options] <command> [command options]
 `    net:       Internet-based installation and package management`);
         }
         writefln(
-`    genconfig: generate a config file
-  Each command has its own set of options, which are not listed here. To list
-  the options for a command:
-    dsss <command> --help`
-            );
+`    genconfig: generate a config file`);
         
     } else if (command == cmd_t.BUILD) {
         writefln(
-`Usage: dsss [dsss options] build [build options] [sources, binaries or packages]
-  Build Options:
-    --use=<directory containing import library includes and libs>
-    All other options are passed through to build and ultimately the compiler.`
+`Usage: dsss [dsss options] build [build options] [sources, binaries or packages]`
             );
         
     } else if (command == cmd_t.CLEAN) {
         writefln(
-`Usage: dsss [dsss options] clean [clean options] [sources, binaries or packages]
-  Clean Options:
-    [none yet]`
+`Usage: dsss [dsss options] clean [clean options] [sources, binaries or packages]`
             );
         
     } else if (command == cmd_t.DISTCLEAN) {
         writefln(
-`Usage: dsss [dsss options] distclean [distclean options] [sources, binaries or packages]
-  Distclean Options:
-    [none yet]`
+`Usage: dsss [dsss options] distclean [distclean options] [sources, binaries or packages]`
             );
         
     } else if (command == cmd_t.INSTALL) {
         writefln(
-`Usage: dsss [dsss options] install [install options] [sources, binaries or packages]
-  Install Options:
-    --prefix=<prefix>: set the install prefix`
+`Usage: dsss [dsss options] install [install options] [sources, binaries or packages]`
             );
         
     } else if (command == cmd_t.UNINSTALL) {
         writefln(
-`Usage: dsss [dsss options] uninstall [uninstall options] [tools or libraries]
-  Uninstall Options:
-    [none yet]`
+`Usage: dsss [dsss options] uninstall [uninstall options] [tools or libraries]`
             );
         
     } else if (command == cmd_t.INSTALLED) {
@@ -366,20 +307,29 @@ Usage: dsss [dsss options] <command> [command options]
     install: install a package via the network source
     fetch:   fetch but do not compile or install a package
     list:    list all installable packages
-    search:  find an installable package by name
-  Net Options:
-    --prefix=<prefix>: set the install prefix
-    --use=<directory containing import library includes and libs>
-    All other options are passed through to build and ultimately the compiler.`
+    search:  find an installable package by name`
             );
 
         
     } else if (command == cmd_t.GENCONFIG) {
         writefln(
-`Usage: dsss [dsss options] genconfig [install options] [sources, binaries or packages]
-  Genconfig Options:
-    [none yet]`
+`Usage: dsss [dsss options] genconfig [install options] [sources, binaries or packages]`
             );
         
     }
+    
+    writefln(
+`  Generic options:
+    --help: display specific options and information
+    --prefix=<prefix>: set the install prefix
+    --use=<directory containing import library includes and libs>
+
+    --bindir=<dir> [default <prefix>/bin]
+    --libdir=<dir> [default <prefix>/lib]
+    --includedir=<dir> [default <prefix>/include/d]
+    --sysconfdir=<dir> [default <prefix/etc]
+    --scratchdir=<dir> [default /tmp]
+
+  All other options are passed through to rebuild and ultimately the compiler.`);
+        
 }
