@@ -196,6 +196,7 @@ Usage:\n\
   -release	 compile release version\n\
   -exec          run resulting program\n\
   -v             verbose\n\
+  -n             just list the commands to be run, don't run them\n\
   -version=level compile in version code >= level\n\
   -version=ident compile in version code identified by ident\n\
   -debug         compile in debug code\n\
@@ -277,6 +278,7 @@ int main(int argc, char *argv[])
     global.params.useInline = 0;
     global.params.obj = 1;
     global.params.Dversion = 2;
+    global.params.listonly = 0;
 
     global.params.linkswitches = new Array();
     global.params.libfiles = new Array();
@@ -488,6 +490,10 @@ int main(int argc, char *argv[])
             {
 		global.params.verbose = 1;
                 //addFlag(compileFlags, "compile", "verbose", "-v");
+            }
+            else if (strcmp(p + 1, "n") == 0) {
+                global.params.listonly = 1;
+                global.params.fullbuild = 1;
             }
 	    else if (strcmp(p + 1, "O") == 0)
             {
@@ -1165,7 +1171,8 @@ int main(int argc, char *argv[])
                 
             } else {
                 // ignore gcstats (argh)
-                if (strcmp(m->srcfile->name->name(), "gcstats.d")) {
+                if (strcmp(m->srcfile->name->name(), "gcstats.d") &&
+                    !global.params.listonly) {
                     fprintf(stderr, "WARNING: Module %s does not have a module declaration. This can cause problems\n"
                                     "         with rebuild's -oq option. If an error occurs, fix this first.\n");
                 }
@@ -1361,15 +1368,21 @@ int main(int argc, char *argv[])
         
         // and rename
         for (unsigned int k = 0; k < gc->origonames.dim; k++) {
-            if (access((char *) gc->origonames.data[k], F_OK) == 0) {
-                if (global.params.verbose)
-                    printf("rename    %s to %s\n",
-                           (char *) gc->origonames.data[k],
-                           (char *) gc->newonames.data[k]);
+            if (global.params.listonly) {
+                printf("mv -f %s %s\n",
+                       gc->origonames.data[k], gc->newonames.data[k]);
                 
-                remove((char *) gc->newonames.data[k]); // ignore errors
-                rename((char *) gc->origonames.data[k],
-                       (char *) gc->newonames.data[k]); // ignore errors
+            } else {
+                if (access((char *) gc->origonames.data[k], F_OK) == 0) {
+                    if (global.params.verbose)
+                        printf("rename    %s to %s\n",
+                               (char *) gc->origonames.data[k],
+                               (char *) gc->newonames.data[k]);
+                    
+                    remove((char *) gc->newonames.data[k]); // ignore errors
+                    rename((char *) gc->origonames.data[k],
+                           (char *) gc->newonames.data[k]); // ignore errors
+                }
             }
         }
     }
@@ -1394,7 +1407,7 @@ int main(int argc, char *argv[])
     else
     {
 	if (global.params.link)
-	    status = runLINK();
+            status = runLINK();
 
 	if (global.params.run)
 	{

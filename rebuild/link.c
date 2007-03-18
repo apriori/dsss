@@ -196,10 +196,15 @@ int runLINK()
         if (cline == "") {
             res = 1;
         } else {
-            if (useresponse)
-                res = systemResponse(cline.c_str(), response.c_str(), "rsp");
-            else
-                res = system(cline.c_str());
+            if (global.params.listonly) {
+                printf("%s\n", cline.c_str());
+                res = 0;
+            } else {
+                if (useresponse)
+                    res = systemResponse(cline.c_str(), response.c_str(), "rsp");
+                else
+                    res = system(cline.c_str());
+            }
         }
         if (res) {
             global.errors++;
@@ -216,10 +221,15 @@ int runLINK()
             if (cline == "") {
                 res = 1;
             } else {
-                if (useresponse)
-                    res = systemResponse(cline.c_str(), response.c_str(), "rsp");
-                else
-                    res = system(cline.c_str());
+                if (global.params.listonly) {
+                    printf("%s\n", cline.c_str());
+                    res = 0;
+                } else {
+                    if (useresponse)
+                        res = systemResponse(cline.c_str(), response.c_str(), "rsp");
+                    else
+                        res = system(cline.c_str());
+                }
             }
             if (res) {
                 global.errors++;
@@ -359,12 +369,15 @@ int executearg0(char *cmd, char *args)
 int runProgram()
 {
     //printf("runProgram()\n");
-    if (global.params.verbose)
+    if (global.params.verbose || global.params.listonly)
     {
 	printf("%s", global.params.exefile);
 	for (size_t i = 0; i < global.params.runargs_length; i++)
 	    printf(" %s", (char *)global.params.runargs[i]);
 	printf("\n");
+    }
+    if (global.params.listonly) {
+        return 0;
     }
 
     // Build argv[]

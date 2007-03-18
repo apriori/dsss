@@ -68,10 +68,14 @@ void runCompile(const std::string &files)
     if (cline == "") {
         res = 1;
     } else {
-        if (useresponse)
-            res = systemResponse(cline.c_str(), response.c_str(), "rsp");
-        else
-            res = system(cline.c_str());
+        if (global.params.listonly) {
+            printf("%s\n", cline.c_str());
+        } else {
+            if (useresponse)
+                res = systemResponse(cline.c_str(), response.c_str(), "rsp");
+            else
+                res = system(cline.c_str());
+        }
     }
     if (res) {
         global.errors++;

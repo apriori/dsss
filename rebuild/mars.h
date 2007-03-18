@@ -52,6 +52,7 @@ struct Param
     char trace;		// insert profiling hooks
     char quiet;		// suppress non-error messages
     char verbose;	// verbose compile
+    char listonly;      // list the commands that would be run, don't run them
     char symdebug;	// insert debug symbolic information
     char optimize;	// run optimizer
     char cpu;		// target CPU
