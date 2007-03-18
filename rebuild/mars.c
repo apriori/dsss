@@ -202,6 +202,7 @@ Usage:\n\
   -debug         compile in debug code\n\
   -debug=level   compile in debug code <= level\n\
   -debug=ident   compile in debug code identified by ident\n\
+  -clean         remove object files after done building\n\
   -circular      allow circular dependencies to work on some compilers (namely\n\
                  GDC) \n\
   -testversion=<version>\n\
@@ -266,6 +267,7 @@ int main(int argc, char *argv[])
     global.params.listfiles = 0;
     global.params.listobjfiles = 0;
     global.params.fullqobjs = 1;
+    global.params.clean = 0;
     global.params.reflect = 0;
     global.params.candydoc = 0;
     global.params.objdir = ".";
@@ -644,6 +646,9 @@ int main(int argc, char *argv[])
 		    global.params.debuglevel = 1;
                 }
             }
+            else if (strcmp(p + 1, "clean") == 0 ||
+                     strcmp(p + 1, "cleanup") == 0)
+                global.params.clean = 1;
 	    else if (strcmp(p + 1, "-help") == 0)
 	    {	usage();
 		exit(EXIT_SUCCESS);
@@ -735,8 +740,6 @@ int main(int argc, char *argv[])
             else if (strncmp(p + 1, "CFPATH", 6) == 0 ||
                      strncmp(p + 1, "BCFPATH", 7) == 0 ||
                      strcmp(p + 1, "allobj") == 0 ||
-                     strcmp(p + 1, "cleanup") == 0 ||
-                     strcmp(p + 1, "clean") == 0 ||
                      strncmp(p + 1, "LIBOPT", 6) == 0 ||
                      strncmp(p + 1, "SHLIBOPT", 8) == 0 ||
                      strncmp(p + 1, "LIBPATH", 7) == 0 ||
@@ -1408,6 +1411,9 @@ int main(int argc, char *argv[])
     {
 	if (global.params.link)
             status = runLINK();
+        
+        if (global.params.clean)
+            runClean();
 
 	if (global.params.run)
 	{

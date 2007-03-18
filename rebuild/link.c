@@ -245,6 +245,19 @@ int runLINK()
     return 0;
 }
 
+void runClean()
+{
+    for (unsigned int i = 0; i < global.params.objfiles->dim; i++) {
+        char *s = (char *) global.params.objfiles->data[i];
+        
+        if (global.params.listonly) {
+            printf("rm -f %s\n", s);
+        } else {
+            remove(s); // ignore errors
+        }
+    }
+}
+
 /**********************************
  * Delete generated EXE file.
  */

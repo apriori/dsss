@@ -47,6 +47,7 @@ struct Param
     char listfiles;     // list files which would be built
     char listobjfiles;  // list object files which were built
     char fullqobjs;     // use fully-qualified object names
+    char clean;         // clean after building
     char reflect;       // use drefgen
     char candydoc;      // generate modules.ddoc
     char trace;		// insert profiling hooks
@@ -272,6 +273,7 @@ void verror(Loc loc, const char *format, va_list);
 void fatal();
 void err_nomem();
 int runLINK();
+void runClean();
 void deleteExeFile();
 int runProgram();
 void inifile(char *argv0, char *inifile);
