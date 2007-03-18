@@ -50,6 +50,7 @@ flag=-L$i
 
 [liblink]
 safe=yes
+oneatatime=yes
 cmd=lib -c -p256 $o $i
 response=@
 

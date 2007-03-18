@@ -268,6 +268,7 @@ int main(int argc, char *argv[])
     global.params.listobjfiles = 0;
     global.params.fullqobjs = 1;
     global.params.clean = 0;
+    global.params.oneatatime = 0;
     global.params.reflect = 0;
     global.params.candydoc = 0;
     global.params.objdir = ".";
@@ -420,11 +421,32 @@ int main(int argc, char *argv[])
                      strcmp(p + 1, "obj") == 0 /* compat with build */)
 		global.params.link = 0;
             else if (strcmp(p + 1, "lib") == 0)
+            {
+                if (masterConfig.find("liblink") != masterConfig.end() &&
+                    masterConfig["liblink"].find("oneatatime") != masterConfig["liblink"].end() &&
+                    masterConfig["liblink"]["oneatatime"] != "yes") {
+                    global.params.oneatatime = 1;
+                }
                 global.params.lib = 1;
+            }
             else if (strcmp(p + 1, "shlib") == 0)
+            {
+                if (masterConfig.find("shliblink") != masterConfig.end() &&
+                    masterConfig["shliblink"].find("oneatatime") != masterConfig["shliblink"].end() &&
+                    masterConfig["shliblink"]["oneatatime"] != "yes") {
+                    global.params.oneatatime = 1;
+                }
                 global.params.shlib = 1;
+            }
             else if (strcmp(p + 1, "dylib") == 0)
+            {
+                if (masterConfig.find("dyliblink") != masterConfig.end() &&
+                    masterConfig["dyliblink"].find("oneatatime") != masterConfig["dyliblink"].end() &&
+                    masterConfig["dyliblink"]["oneatatime"] != "yes") {
+                    global.params.oneatatime = 1;
+                }
                 global.params.dylib = 1;
+            }
             else if (strcmp(p + 1, "link") == 0) /* compat with build */
             {
                 global.params.link = 1;
@@ -1113,13 +1135,17 @@ int main(int argc, char *argv[])
         {
             // find the right compile to add this to
             unsigned int cmp;
-            for (cmp = 0; cmp < GroupedCompiles.dim; cmp++) {
-                gc = (GroupedCompile *) GroupedCompiles.data[cmp];
+            if (global.params.oneatatime) {
+                cmp = GroupedCompiles.dim;
+            } else {
+                for (cmp = 0; cmp < GroupedCompiles.dim; cmp++) {
+                    gc = (GroupedCompile *) GroupedCompiles.data[cmp];
                 
-                if (!stringInArray(&(gc->ofiles), m->objfile->name->str)) {
-                    // add it
-                    gc->ofiles.push((void *) m->objfile->name->str);
-                    break;
+                    if (!stringInArray(&(gc->ofiles), m->objfile->name->str)) {
+                        // add it
+                        gc->ofiles.push((void *) m->objfile->name->str);
+                        break;
+                    }
                 }
             }
             if (cmp == GroupedCompiles.dim) {
