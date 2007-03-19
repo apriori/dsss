@@ -1,3 +1,15 @@
+0.56+0.14 from 0.55+0.13:
+        - Rebuild: Updated DMD frontend version.
+        - Patches to compile on x86_64 (NOT for rebuild yet)
+        - Uses response files when calling rebuild, for Windows bugs (ticket
+          #18)
+        - Added --bindir, --libdir, similar options.
+        - Rebuild: Added -n option (like make -n)
+        - Now looks for rebuild in $PATH, rather than just next to DSSS.
+        - Rebuild: Added -clean option (like bud's)
+        - Added one-file-at-a-time option for libraries on DMD+Windows
+          (according to Walter, the only reliable way to do this).
+
 0.55 from 0.54:
         - Rebuild: Fixed a segfault bug.
 
