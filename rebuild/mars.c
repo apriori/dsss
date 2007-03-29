@@ -308,6 +308,21 @@ int main(int argc, char *argv[])
             chooseProfile = p + 4;
             break;
         }
+        else if (strncmp(p + 1, "rf", 2) == 0)
+        {
+            // figure out the rf name
+            char *rf = p + 3;
+            if (!rf[0]) {
+                i++;
+                if (i >= argc) {
+                    i--;
+                    goto Lnoarg;
+                }
+                rf = argv[i];
+            }
+            
+            parseResponseFile(&argc, &argv, rf, i);
+        }
     }
     
     readConfig(argv[0], chooseProfile);
@@ -742,21 +757,6 @@ int main(int argc, char *argv[])
             {
                 global.params.candydoc = 1;
                 global.params.expbuild = 1;
-            }
-            else if (strncmp(p + 1, "rf", 2) == 0)
-            {
-                // figure out the rf name
-                char *rf = p + 3;
-                if (!rf[0]) {
-                    i++;
-                    if (i >= argc) {
-                        i--;
-                        goto Lnoarg;
-                    }
-                    rf = argv[i];
-                }
-                
-                parseResponseFile(&argc, &argv, rf, i);
             }
             else if (strncmp(p + 1, "dc=", 3) == 0) {}
             else if (strncmp(p + 1, "CFPATH", 6) == 0 ||
