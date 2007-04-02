@@ -79,9 +79,6 @@ void parseResponseFile(int *argc, char ***argv, char *rf, int argnum)
     
     nargv[nargc] = NULL;
     
-    // Free old memory
-    mem.free(oargv);
-    
     // Assign new memory
     *argc = nargc;
     *argv = nargv;

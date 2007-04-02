@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
             chooseProfile = p + 4;
             break;
         }
-        else if (strncmp(p + 1, "rf", 2) == 0)
+        else if (strncmp(p, "-rf", 3) == 0)
         {
             // figure out the rf name
             char *rf = p + 3;
@@ -765,7 +765,8 @@ int main(int argc, char *argv[])
                      strncmp(p + 1, "LIBOPT", 6) == 0 ||
                      strncmp(p + 1, "SHLIBOPT", 8) == 0 ||
                      strncmp(p + 1, "LIBPATH", 7) == 0 ||
-                     strcmp(p + 1, "test") == 0) {} /* compat with build */
+                     strcmp(p + 1, "test") == 0 ||
+		     strncmp(p + 1, "rf", 2) == 0) {} /* compat with build */
 	    else
 	    {
                 compileFlags += " ";
