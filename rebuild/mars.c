@@ -385,8 +385,8 @@ int main(int argc, char *argv[])
             
             // 3) get the prefix
             char *gdcdir, *gdcfil;
-            if (!whereAmI("gdc", &gdcdir, &gdcfil)) {
-                error("gdc is not in $PATH");
+            if (!whereAmI(compiler.c_str(), &gdcdir, &gdcfil)) {
+                error("%s is not in $PATH", compiler.c_str());
                 exit(1);
             }
             
