@@ -621,9 +621,9 @@ int main(int argc, char *argv[])
 	    }
 	    else if (p[1] == 'J')
 	    {
-		if (!global.params.fileImppath)
-		    global.params.fileImppath = new Array();
-		global.params.fileImppath->push(p + 2);
+                global.params.fullbuild = 1;
+                
+                addFlag(compileFlags, "compile", "importdir", "-J$i", p + 2);
 	    }
 	    else if (memcmp(p + 1, "version", 5) == 0)
 	    {
