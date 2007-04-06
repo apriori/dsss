@@ -119,6 +119,7 @@ struct Param
 
     // Linker stuff
     Array *objfiles;
+    Array *genobjfiles;
     Array *linkswitches;
     Array *libfiles;
     char *deffile;

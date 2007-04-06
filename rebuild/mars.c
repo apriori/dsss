@@ -286,6 +286,7 @@ int main(int argc, char *argv[])
     global.params.linkswitches = new Array();
     global.params.libfiles = new Array();
     global.params.objfiles = new Array();
+    global.params.genobjfiles = new Array();
     global.params.ddocfiles = new Array();
 
     // Predefine version identifiers
@@ -1254,6 +1255,7 @@ int main(int argc, char *argv[])
                 if (!global.params.objfiles)
                     global.params.objfiles = new Array();
                 global.params.objfiles->push(m->objfile->name->str);
+                global.params.genobjfiles->push(m->objfile->name->str);
             }
             
             // figure out the most recent dependency

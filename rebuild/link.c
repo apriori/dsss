@@ -247,12 +247,14 @@ int runLINK()
 
 void runClean()
 {
-    for (unsigned int i = 0; i < global.params.objfiles->dim; i++) {
-        char *s = (char *) global.params.objfiles->data[i];
+    for (unsigned int i = 0; i < global.params.genobjfiles->dim; i++) {
+        char *s = (char *) global.params.genobjfiles->data[i];
         
         if (global.params.listonly) {
             printf("rm -f %s\n", s);
         } else {
+            if (global.params.verbose)
+                printf("remove    %s\n", s);
             remove(s); // ignore errors
         }
     }
