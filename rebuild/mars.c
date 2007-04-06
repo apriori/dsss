@@ -174,6 +174,8 @@ Usage:\n\
                  runtime)\n\
   -dylib-support exit failure or success for whether dynamic libraries are\n\
                  supported\n\
+  -g             add symbolic debug info\n\
+  -gc            add symbolic debug info, pretend to be C\n\
   -files         list files which would be compiled (but don't compile)\n\
   -objfiles      list object files generated\n\
   -full          compile all source files, regardless of their age\n\
@@ -436,6 +438,20 @@ int main(int argc, char *argv[])
 	    else if (strcmp(p + 1, "c") == 0 ||
                      strcmp(p + 1, "obj") == 0 /* compat with build */)
 		global.params.link = 0;
+            else if (strcmp(p + 1, "g") == 0)
+            {
+                addFlag(compileFlags, "compile", "debug", "-g");
+                addFlag(linkFlags, "link", "debug", "-g");
+                addFlag(liblinkFlags, "liblink", "debug", "-g");
+                addFlag(shliblinkFlags, "shliblink", "debug", "-g");
+            }
+            else if (strcmp(p + 1, "gc") == 0)
+            {
+                addFlag(compileFlags, "compile", "debugc", "-gc");
+                addFlag(linkFlags, "link", "debugc", "-gc");
+                addFlag(liblinkFlags, "liblink", "debugc", "-gc");
+                addFlag(shliblinkFlags, "shliblink", "debugc", "-gc");
+            }
             else if (strcmp(p + 1, "lib") == 0)
             {
                 if (masterConfig.find("liblink") != masterConfig.end() &&
