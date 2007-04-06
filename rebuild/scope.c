@@ -232,9 +232,9 @@ Dsymbol *Scope::search(Loc loc, Identifier *ident, Dsymbol **pscopesym)
 		    sc->enclosing &&
 		    sc->enclosing->search(loc, ident, NULL))
 		{
-		    /*if (global.params.warnings)
+		    /* if (global.params.warnings)
 			fprintf(stdmsg, "warning - ");
-		    error("array 'length' hides other 'length' name in outer scope"); */
+		    error(s->loc, "array 'length' hides other 'length' name in outer scope"); */
 		}
 
 		//printf("\tfound %s.%s, kind = '%s'\n", s->parent ? s->parent->toChars() : "", s->toChars(), s->kind());

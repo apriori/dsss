@@ -1899,6 +1899,10 @@ void CtorDeclaration::semantic(Scope *sc)
     FuncDeclaration::semantic(sc);
 
     sc->pop();
+
+    // See if it's the default constructor
+    if (cd && varargs == 0 && Argument::dim(arguments) == 0)
+	cd->defaultCtor = this;
 }
 
 char *CtorDeclaration::kind()
