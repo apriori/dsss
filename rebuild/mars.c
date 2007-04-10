@@ -442,14 +442,14 @@ int main(int argc, char *argv[])
             {
                 addFlag(compileFlags, "compile", "debug", "-g");
                 addFlag(linkFlags, "link", "debug", "-g");
-                addFlag(liblinkFlags, "liblink", "debug", "-g");
+                addFlag(liblinkFlags, "liblink", "debug", "");
                 addFlag(shliblinkFlags, "shliblink", "debug", "-g");
             }
             else if (strcmp(p + 1, "gc") == 0)
             {
                 addFlag(compileFlags, "compile", "debugc", "-gc");
                 addFlag(linkFlags, "link", "debugc", "-gc");
-                addFlag(liblinkFlags, "liblink", "debugc", "-gc");
+                addFlag(liblinkFlags, "liblink", "debugc", "");
                 addFlag(shliblinkFlags, "shliblink", "debugc", "-gc");
             }
             else if (strcmp(p + 1, "lib") == 0)
