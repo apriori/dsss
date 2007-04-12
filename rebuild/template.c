@@ -2406,7 +2406,7 @@ TemplateInstance::TemplateInstance(Loc loc, Identifier *ident)
     this->withsym = NULL;
     this->nest = 0;
     this->havetempdecl = 0;
-    this->isnested = 0;
+    this->isnested = NULL;
     this->errors = 0;
 }
 
@@ -2428,7 +2428,7 @@ TemplateInstance::TemplateInstance(Loc loc, TemplateDeclaration *td, Objects *ti
     this->withsym = NULL;
     this->nest = 0;
     this->havetempdecl = 1;
-    this->isnested = 0;
+    this->isnested = NULL;
     this->errors = 0;
 
     assert((size_t)tempdecl->scope > 0x10000);
@@ -2539,9 +2539,10 @@ void TemplateInstance::semantic(Scope *sc)
 	// Nesting must match
 	if (isnested != ti->isnested)
 	    continue;
+#if 0
 	if (isnested && sc->parent != ti->parent)
 	    continue;
-
+#endif
 	for (size_t j = 0; j < tdtypes.dim; j++)
 	{   Object *o1 = (Object *)tdtypes.data[j];
 	    Object *o2 = (Object *)ti->tdtypes.data[j];
@@ -2575,8 +2576,10 @@ void TemplateInstance::semantic(Scope *sc)
 
     ident = genIdent();		// need an identifier for name mangling purposes.
 
+#if 1
     if (isnested)
-	parent = sc->parent;
+	parent = isnested;
+#endif
     //printf("parent = '%s'\n", parent->kind());
 
     // Add 'this' to the enclosing scope's members[] so the semantic routines
@@ -3070,7 +3073,7 @@ TemplateDeclaration *TemplateInstance::findBestMatch(Scope *sc)
  */
 
 int TemplateInstance::isNested(Objects *args)
-{
+{   int nested = 0;
     //printf("TemplateInstance::isNested('%s')\n", tempdecl->ident->toChars());
 
     /* A nested instance happens when an argument references a local
@@ -3104,8 +3107,11 @@ int TemplateInstance::isNested(Objects *args)
 	    {
 		// if module level template
 		if (tempdecl->toParent()->isModule())
-		{   isnested = 1;
-		    return 1;
+		{
+		    if (isnested && isnested != d->toParent())
+			error("inconsistent nesting levels %s and %s", isnested->toChars(), d->toParent()->toChars());
+		    isnested = d->toParent();
+		    nested |= 1;
 		}
 		/*else
 		    error("cannot use local '%s' as template parameter", d->toChars()); */
@@ -3113,11 +3119,10 @@ int TemplateInstance::isNested(Objects *args)
 	}
 	else if (va)
 	{
-	    if (isNested(&va->objects))
-		return 1;
+	    nested |= isNested(&va->objects);
 	}
     }
-    return 0;
+    return nested;
 }
 
 /****************************************

@@ -64,7 +64,7 @@ Global::Global()
 
     copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards";
     written = "written by Walter Bright and Gregor Richards";
-    version = "version 0.15 (based on DMD 1.011)";
+    version = "version 0.15 (based on DMD 1.012)";
     global.structalign = 8;
     cmodules = NULL;
 
@@ -248,14 +248,6 @@ int main(int argc, char *argv[])
 	if (!argv[i])
 	    goto Largs;
     }
-
-    // Initialization
-    Type::init();
-    Id::initialize();
-    Module::init();
-    initPrecedence();
-
-    //backend_init();
 
     files.reserve(argc - 1);
 
@@ -853,6 +845,14 @@ int main(int argc, char *argv[])
     if (global.params.cov)
 	VersionCondition::addPredefinedGlobalIdent("D_Coverage");
     
+    // Initialization
+    Type::init();
+    Id::initialize();
+    Module::init();
+    initPrecedence();
+
+    //backend_init();
+    
     if (global.params.listfiles &&
         global.params.objname) {
         global.listout = fopen(global.params.objname, "w");
@@ -860,9 +860,6 @@ int main(int argc, char *argv[])
     } else {
         global.listout = stdout;
     }
-    
-
-    //printf("%d source files\n",files.dim);
     
     // add include= paths
     if (masterConfig.find("") != masterConfig.end() &&
@@ -888,7 +885,9 @@ int main(int argc, char *argv[])
             global.params.imppath->push(p + 2);
         }
     }
-    
+
+    //printf("%d source files\n",files.dim);
+
     // Build import search path
     if (global.params.imppath)
     {

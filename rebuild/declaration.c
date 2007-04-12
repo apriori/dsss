@@ -691,7 +691,7 @@ void VarDeclaration::semantic(Scope *sc)
 	// Initialize by constructor only
 	storage_class = (storage_class & ~STCconst) | STCctorinit;
 
-    if (isConst() || isFinal())
+    if (isConst())
     {
     }
     else if (isStatic())
