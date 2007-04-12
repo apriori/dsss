@@ -1,5 +1,6 @@
 0.58+0.16 from 0.57+0.15:
         - Rebuild: Updated DMD frontend version (to DMD 1.012).
+        - Removed util/macro.d, which doesn't work with DMD 1.012.
 
 0.57+0.15 from 0.56+0.14:
         - Rebuild: Updated DMD frontend version (to DMD 1.010).
