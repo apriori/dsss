@@ -1,11 +1,13 @@
 
-// Copyright (c) 1999-2006 by Digital Mars, 2007 by Gregor Richards
-// written by Walter Bright and Gregor Richards
-// www.digitalmars.com
+
+// Copyright (c) 1999-2006 by Digital Mars
+// All Rights Reserved
+// written by Walter Bright
+// http://www.digitalmars.com
 // License for redistribution is by either the Artistic License
 // in artistic.txt, or the GNU General Public License in gnu.txt.
 // See the included readme.txt for details.
-
+  
 #include <iostream>
 #include <string>
 

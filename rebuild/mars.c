@@ -3,7 +3,7 @@
 // Copyright (c) 1999-2007 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
-// www.digitalmars.com
+// http://www.digitalmars.com
 // License for redistribution is by either the Artistic License
 // in artistic.txt, or the GNU General Public License in gnu.txt.
 // See the included readme.txt for details.
@@ -64,7 +64,7 @@ Global::Global()
 
     copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards";
     written = "written by Walter Bright and Gregor Richards";
-    version = "version 0.15 (based on DMD 1.010)";
+    version = "version 0.15 (based on DMD 1.011)";
     global.structalign = 8;
     cmodules = NULL;
 
@@ -155,7 +155,7 @@ void usage()
     printf("ReBuild %s\n%s %s\n",
 	global.version, global.copyright, global.written);
     printf("\
-Documentation: www.digitalmars.com/d/index.html\n\
+Documentation: http://www.digitalmars.com/d/index.html\n\
 Usage:\n\
   rebuild files.d ... { -switch }\n\
 \n\
@@ -199,6 +199,7 @@ Usage:\n\
   -exec          run resulting program\n\
   -v             verbose\n\
   -n             just list the commands to be run, don't run them\n\
+  -v1            D language version 1\n\
   -version=level compile in version code >= level\n\
   -version=ident compile in version code identified by ident\n\
   -debug         compile in debug code\n\

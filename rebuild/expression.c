@@ -3,7 +3,7 @@
 // Copyright (c) 1999-2007 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
-// www.digitalmars.com
+// http://www.digitalmars.com
 // License for redistribution is by either the Artistic License
 // in artistic.txt, or the GNU General Public License in gnu.txt.
 // See the included readme.txt for details.
@@ -498,21 +498,16 @@ void functionArguments(Loc loc, Scope *sc, TypeFunction *tf, Expressions *argume
 	    }
 
 	L1:
-	    if (!(p->inout == Lazy && p->type->ty == Tvoid))
+	    if (!(p->storageClass & STClazy && p->type->ty == Tvoid))
 		arg = arg->implicitCastTo(sc, p->type);
-	    if (p->inout == Out || p->inout == InOut)
+	    if (p->storageClass & (STCout | STCref))
 	    {
-		// BUG: should check that argument to inout is type 'invariant'
-		// BUG: assignments to inout should also be type 'invariant'
+		// BUG: should check that argument to ref is type 'invariant'
+		// BUG: assignments to ref should also be type 'invariant'
 		arg = arg->modifiableLvalue(sc, NULL);
 
 		//if (arg->op == TOKslice)
 		    //arg->error("cannot modify slice %s", arg->toChars());
-
-		// Don't have a way yet to do a pointer to a bit in array
-		/*if (arg->op == TOKarray &&
-		    arg->type->toBasetype()->ty == Tbit)
-		    error("cannot have out or inout argument of bit in array"); */
 	    }
 
 	    // Convert static arrays to pointers
@@ -523,7 +518,7 @@ void functionArguments(Loc loc, Scope *sc, TypeFunction *tf, Expressions *argume
 	    }
 
 	    // Convert lazy argument to a delegate
-	    if (p->inout == Lazy)
+	    if (p->storageClass & STClazy)
 	    {
 		arg = arg->toDelegate(sc, p->type);
 	    }
@@ -1618,7 +1613,7 @@ Expression *IdentifierExp::semantic(Scope *sc)
 
 		if (ti &&
 		    !ti->isTemplateMixin() &&
-		    (ti->idents.data[ti->idents.dim - 1] == f->ident ||
+		    (ti->name == f->ident ||
 		     ti->toAlias()->ident == f->ident)
 		    &&
 		    ti->tempdecl && ti->tempdecl->onemember)
@@ -2397,8 +2392,8 @@ void StringExp::toMangleBuffer(OutBuffer *buf)
 	    for (u = 0; u < len; )
 	    {
                 p = utf_decodeWchar((unsigned short *)string, len, &u, &c);
-                if (p)
-                    error("%s", p);
+                if (p) 0;
+                    //error("%s", p);
                 else
                     tmp.writeUTF8(c);
 	    }
@@ -2410,8 +2405,8 @@ void StringExp::toMangleBuffer(OutBuffer *buf)
             for (u = 0; u < len; u++)
             {
                 c = ((unsigned *)string)[u];
-                if (!utf_isValidDchar(c))
-                    error("invalid UCS-32 char \\U%08x", c);
+                if (!utf_isValidDchar(c)) 0;
+                    //error("invalid UCS-32 char \\U%08x", c);
                 else
                     tmp.writeUTF8(c);
             }
@@ -2824,8 +2819,8 @@ Lagain:
 	    /*else if (thisexp)
 		error("e.new is only for allocating nested classes"); */
 	}
-	else if (thisexp)
-	    error("e.new is only for allocating nested classes");
+	/* else if (thisexp)
+	    error("e.new is only for allocating nested classes"); */
 
 	FuncDeclaration *f = cd->ctor;
 	if (f)
@@ -3198,7 +3193,7 @@ Expression *VarExp::toLvalue(Scope *sc, Expression *e)
 	  tym == TYarray && e->Eoper == TOKaddr))
 	    synerr(EM_lvalue);	// lvalue expected
 #endif
-    /*if (var->storage_class & STClazy)
+    /* if (var->storage_class & STClazy)
 	error("lazy variables cannot be lvalues"); */
     return this;
 }
@@ -3206,14 +3201,15 @@ Expression *VarExp::toLvalue(Scope *sc, Expression *e)
 Expression *VarExp::modifiableLvalue(Scope *sc, Expression *e)
 {
     //printf("VarExp::modifiableLvalue('%s')\n", var->toChars());
-    /*if (sc->incontract && var->isParameter())
+    /* if (sc->incontract && var->isParameter())
 	error("cannot modify parameter '%s' in contract", var->toChars());
 
     if (type && type->toBasetype()->ty == Tsarray)
-	error("cannot change reference to static array '%s'", var->toChars());
+	error("cannot change reference to static array '%s'", var->toChars()); */
 
-    if (var->isConst())
-	error("cannot modify const variable '%s'", var->toChars()); */
+    VarDeclaration *v = var->isVarDeclaration();
+    /* if (v && v->canassign == 0 && (var->isConst() || var->isFinal()))
+	error("cannot modify final variable '%s'", var->toChars()); */
 
     if (var->isCtorinit())
     {	// It's only modifiable if inside the right constructor
@@ -3704,7 +3700,7 @@ Expression *IftypeExp::semantic(Scope *sc)
 		    args->reserve(cd->baseclasses.dim);
 		    for (size_t i = 0; i < cd->baseclasses.dim; i++)
 		    {	BaseClass *b = (BaseClass *)cd->baseclasses.data[i];
-			args->push(new Argument(In, b->type, NULL, NULL));
+			args->push(new Argument(STCin, b->type, NULL, NULL));
 		    }
 		    tded = new TypeTuple(args);
 		}
@@ -3737,7 +3733,7 @@ Expression *IftypeExp::semantic(Scope *sc)
 		for (size_t i = 0; i < dim; i++)
 		{   Argument *arg = Argument::getNth(params, i);
 		    assert(arg && arg->type);
-		    args->push(new Argument(arg->inout, arg->type, NULL, NULL));
+		    args->push(new Argument(arg->storageClass, arg->type, NULL, NULL));
 		}
 		tded = new TypeTuple(args);
 		break;
@@ -4047,14 +4043,15 @@ CompileExp::CompileExp(Loc loc, Expression *e)
 
 Expression *CompileExp::semantic(Scope *sc)
 {
-#if LOGSEMANTIC
+#if 1 || LOGSEMANTIC
     printf("CompileExp::semantic('%s')\n", toChars());
 #endif
     UnaExp::semantic(sc);
     e1 = resolveProperties(sc, e1);
     e1 = e1->optimize(WANTvalue | WANTinterpret);
+e1->print();
     if (e1->op != TOKstring)
-    {	error("argument to mixin must be a string, not (%s)", e1->toChars());
+    {	//error("argument to mixin must be a string, not (%s)", e1->toChars());
 	return this;
     }
     StringExp *se = (StringExp *)e1;
@@ -4062,8 +4059,8 @@ Expression *CompileExp::semantic(Scope *sc)
     Parser p(sc->module, (unsigned char *)se->string, se->len, 0);
     p.loc = loc;
     Expression *e = p.parseExpression();
-    if (p.token.value != TOKeof)
-	error("incomplete mixin expression (%s)", se->toChars());
+    /* if (p.token.value != TOKeof)
+	error("incomplete mixin expression (%s)", se->toChars()); */
     return e->semantic(sc);
 }
 
@@ -4092,7 +4089,7 @@ Expression *FileExp::semantic(Scope *sc)
     e1 = resolveProperties(sc, e1);
     e1 = e1->optimize(WANTvalue);
     if (e1->op != TOKstring)
-    {	error("file name argument must be a string, not (%s)", e1->toChars());
+    {	//error("file name argument must be a string, not (%s)", e1->toChars());
 	goto Lerror;
     }
     se = (StringExp *)e1;
@@ -4100,18 +4097,18 @@ Expression *FileExp::semantic(Scope *sc)
     name = (char *)se->string;
 
     if (!global.params.fileImppath)
-    {	error("need -Jpath switch to import text file %s", name);
+    {	//error("need -Jpath switch to import text file %s", name);
 	goto Lerror;
     }
 
     if (name != FileName::name(name))
-    {	error("use -Jpath switch to provide path for filename %s", name);
+    {	//error("use -Jpath switch to provide path for filename %s", name);
 	goto Lerror;
     }
 
     name = FileName::searchPath(global.filePath, name, 0);
     if (!name)
-    {	error("file %s cannot be found, check -Jpath", se->toChars());
+    {	//error("file %s cannot be found, check -Jpath", se->toChars());
 	goto Lerror;
     }
 
@@ -4120,7 +4117,7 @@ Expression *FileExp::semantic(Scope *sc)
 
     {	File f(name);
 	if (f.read())
-	{   error("cannot read file %s", f.toChars());
+	{   //error("cannot read file %s", f.toChars());
 	    goto Lerror;
 	}
 	else
@@ -4735,7 +4732,7 @@ Expression *DotTemplateInstanceExp::semantic(Scope *sc)
     }
 
     assert(s);
-    id = (Identifier *)ti->idents.data[0];
+    id = ti->name;
     s2 = s->search(loc, id, 0);
     if (!s2)
     {	//error("template identifier %s is not a member of %s %s", id->toChars(), s->kind(), s->ident->toChars());
@@ -5301,7 +5298,7 @@ Lagain:
 	{   TemplateInstance *ti = f->parent->isTemplateInstance();
 
 	    if (ti &&
-		(ti->idents.data[ti->idents.dim - 1] == f->ident ||
+		(ti->name == f->ident ||
 		 ti->toAlias()->ident == f->ident)
 		&&
 		ti->tempdecl)
@@ -5818,8 +5815,8 @@ void CastExp::checkEscape()
 	VarDeclaration *v = ve->var->isVarDeclaration();
 	if (v)
 	{
-	    if (!v->isDataseg())
-		error("escaping reference to local %s", v->toChars());
+	    /* if (!v->isDataseg())
+		error("escaping reference to local %s", v->toChars()); */
 	}
     }
 }
@@ -7318,8 +7315,13 @@ MulExp::MulExp(Loc loc, Expression *e1, Expression *e2)
 Expression *MulExp::semantic(Scope *sc)
 {   Expression *e;
 
+#if 0
+    printf("MulExp::semantic() %s\n", toChars());
+#endif
     if (type)
+    {
 	return this;
+    }
 
     BinExp::semanticp(sc);
     e = op_overload(sc);
