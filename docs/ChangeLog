@@ -1,5 +1,8 @@
+0.58+0.16 from 0.57+0.15:
+        - Rebuild: Updated DMD frontend version (to DMD 1.012).
+
 0.57+0.15 from 0.56+0.14:
-        - Rebuild: Updated DMD frontend version.
+        - Rebuild: Updated DMD frontend version (to DMD 1.010).
         - Fixed a bug with std.c.darwin.darwin vs std.c.unix.unix on OS X.
         - Rebuild: -dc is now allowed in response files (see ticket #19)
         - Rebuild: Fixed library linking order for DMD on Posix.
