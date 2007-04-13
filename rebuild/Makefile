@@ -8,6 +8,10 @@ EXEEXT=
 LDFLAGS=
 
 PREFIX=/usr
+BINDIR=$(PREFIX)/bin
+MANDIR=$(PREFIX)/share/man
+DOCDIR=$(PREFIX)/share/doc
+SYSCONFDIR=$(PREFIX)/etc
 
 OBJS=\
   access.o \
@@ -106,12 +110,14 @@ nwhereami.o: whereami.c
 	$(CXX) $(CXXFLAGS) -D_DH -DIN_DMDFE -c $< -o $@
 
 install:
-	mkdir -p $(PREFIX)/bin
-	mkdir -p $(PREFIX)/etc/rebuild
-	mkdir -p $(PREFIX)/share/doc/rebuild
-	cp -pf rebuild$(EXEEXT) $(PREFIX)/bin
-	cp -pRf rebuild.conf/* $(PREFIX)/etc/rebuild/
-	cp -pf README $(PREFIX)/share/doc/rebuild
+	mkdir -p $(BINDIR)
+	mkdir -p $(MANDIR)/man1
+	mkdir -p $(DOCDIR)/rebuild
+	mkdir -p $(SYSCONFDIR)/rebuild
+	cp -pf rebuild$(EXEEXT) $(BINDIR)
+	cp -rf rebuild.1 $(MANDIR)/man1
+	cp -pf README $(DOCDIR)/rebuild
+	cp -pRf rebuild.conf/* $(SYSCONFDIR)/rebuild/
 	./instdymods $(PREFIX)
 
 clean:
