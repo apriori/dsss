@@ -73,12 +73,20 @@ int net(char[][] args)
         writefln("Synchronizing...");
         
         if (!exists(srcListPrefix ~ std.path.sep ~ "mirror")) {
+            // find the full list.list file name
+            char[] listlist = etcPrefix ~ std.path.sep ~
+                "dsss" ~ std.path.sep ~
+                "list.list";
+            version (Posix) {
+                if (!std.file.exists(listlist)) {
+                    listlist = "/etc/dsss/list.list";
+                }
+            }
+            
             // select a source list mirror
             char[][] mirrorList = std.string.split(
                 std.string.replace(
-                    cast(char[]) std.file.read(etcPrefix ~ std.path.sep ~
-                                               "dsss" ~ std.path.sep ~
-                                               "list.list"),
+                    cast(char[]) std.file.read(listlist),
                     "\r", ""),
                 "\n");
             while (mirrorList[$-1] == "") mirrorList = mirrorList[0..$-1];
