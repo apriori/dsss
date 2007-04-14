@@ -38,7 +38,7 @@ import hcf.process;
 import sss.conf;
 
 /** Entry into the "install" command */
-int install(char[][] buildElems, char[][]* subManifest = null)
+int install(char[][] buildElems, char[] pname = null, char[][]* subManifest = null)
 {
     // get the configuration
     DSSSConf conf = readConfig(buildElems);
@@ -47,11 +47,14 @@ int install(char[][] buildElems, char[][]* subManifest = null)
     char[][] buildSources = sourcesByElems(buildElems, conf);
     
     // prepare to make a manifest
+    if (pname.length == 0) {
+        pname = conf.settings[""]["name"].dup;
+    }
     char[][] manifest;
     char[] manifestFile;
     manifestFile = manifestPrefix ~ std.path.sep ~ conf.settings[""]["name"] ~ ".manifest";
     manifest ~= "share" ~ std.path.sep ~ "dsss" ~ std.path.sep ~ "manifest" ~ std.path.sep ~
-        conf.settings[""]["name"] ~ ".manifest";
+        pname ~ ".manifest";
     
     /// Copy in the file and add it to the manifest
     void copyAndManifest(char[] file, char[] prefix, char[] from = "")
@@ -173,7 +176,7 @@ int install(char[][] buildElems, char[][]* subManifest = null)
             // recurse
             char[] origcwd = getcwd();
             chdir(build);
-            int installret = install(null, &manifest);
+            int installret = install(null, pname, &manifest);
             if (installret) return installret;
             chdir(origcwd);
         }
@@ -193,6 +196,42 @@ int install(char[][] buildElems, char[][]* subManifest = null)
         
         // extra line for clarity
         writefln("");
+    }
+    
+    // then install documentation
+    if (doDocs && exists("dsss_docs")) {
+        writefln("Installing documentation...");
+        
+        char[] docs = docPrefix ~ std.path.sep ~ pname;
+        mkdirP(docs);
+        
+        chdir("dsss_docs");
+        
+        // copy in everything
+        void copyDir(char[] cdir)
+        {
+            char[] subdocs = docs ~ std.path.sep ~ cdir;
+            mkdirP(subdocs);
+            
+            foreach (file; listdir(cdir)) {
+                char[] full = cdir ~ std.path.sep ~ file;
+                if (isdir(full)) {
+                    copyDir(full);
+                } else {
+                    copyInFile(file, subdocs, cdir ~ std.path.sep);
+                }
+            }
+        }
+        
+        foreach (file; listdir(".")) {
+            if (isdir(file)) {
+                copyDir(file);
+            } else {
+                copyInFile(file, docs);
+            }
+        }
+        
+        chdir("..");
     }
     
     return 0;
