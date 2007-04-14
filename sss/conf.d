@@ -85,6 +85,9 @@ char[] libPrefix;
 /** The prefix to which includes are installed */
 char[] includePrefix;
 
+/** The prefix to which documentation is installed */
+char[] docPrefix;
+
 /** The prefix to which manifests are installed */
 char[] manifestPrefix;
 
@@ -228,6 +231,10 @@ void getPrefix(char[] argvz)
         includePrefix = forcePrefix ~ std.path.sep ~
              "include" ~ std.path.sep ~
              "d";
+    if (!docPrefix.length)
+        docPrefix = forcePrefix ~ std.path.sep ~
+            "share" ~ std.path.sep ~
+            "doc";
     if (!manifestPrefix.length)
         manifestPrefix = forcePrefix ~ std.path.sep ~
             "share" ~ std.path.sep ~
@@ -253,6 +260,7 @@ void getPrefix(char[] argvz)
         setEnvVar("BIN_PREFIX", binPrefix);
         setEnvVar("LIB_PREFIX", libPrefix);
         setEnvVar("INCLUDE_PREFIX", includePrefix);
+        setEnvVar("DOC_PREFIX", docPrefix);
         setEnvVar("ETC_PREFIX", etcPrefix);
         setEnvVar("EXE_EXT", "");
         
@@ -275,6 +283,7 @@ void getPrefix(char[] argvz)
         setEnvVar("BIN_PREFIX", binPrefix);
         setEnvVar("LIB_PREFIX", libPrefix);
         setEnvVar("INCLUDE_PREFIX", includePrefix);
+        setEnvVar("DOC_PREFIX", docPrefix);
         setEnvVar("ETC_PREFIX", etcPrefix);
         setEnvVar("EXE_EXT", ".exe");
         

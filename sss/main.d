@@ -173,6 +173,9 @@ int main(char[][] args)
             } else if (parseArg(arg, "includedir", true, &val)) {
                 includePrefix = val;
                 
+            } else if (parseArg(arg, "docdir", true, &val)) {
+                docPrefix = val;
+                
             } else if (parseArg(arg, "sysconfdir", true, &val)) {
                 etcPrefix = val;
                 
@@ -331,6 +334,7 @@ Usage: dsss [dsss options] <command> [options]
     --bindir=<dir> [default <prefix>/bin]
     --libdir=<dir> [default <prefix>/lib]
     --includedir=<dir> [default <prefix>/include/d]
+    --docdir=<dir> [default <prefix>/share/doc]
     --sysconfdir=<dir> [default <prefix/etc]
     --scratchdir=<dir> [default /tmp]
 

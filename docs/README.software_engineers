@@ -103,6 +103,8 @@ There are quite a few other settings supported, such as:
         installed to $INCLUDE_PREFIX/foo/bar.di
       * This directory can also be used for .d files.
 
+    * $DOC_PREFIX : The prefix to which documentation is installed.
+
     * $ETC_PREFIX : The prefix to which configuration files are being
       installed.
 
