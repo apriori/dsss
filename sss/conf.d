@@ -1097,8 +1097,14 @@ void copyInFile(char[] file, char[] prefix, char[] from = "")
             
     writefln("+ copying %s", file);
     version (Posix) {
+        char[] target = prefix ~ std.path.sep ~ file;
+        
         // preserve permissions
-        saySystemDie("cp -fpRL " ~ from ~ file ~ " " ~ prefix ~ std.path.sep ~ file);
+        saySystemDie("cp -fpRL " ~ from ~ file ~ " " ~ target);
+        
+        // but then guarantee the permissions we made aren't too bad (ignore errors)
+        system("chmod a+rX " ~ target ~ " 2> /dev/null");
+        
     } else {
         copy(from ~ file, prefix ~ std.path.sep ~ file);
     }
