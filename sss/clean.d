@@ -91,7 +91,7 @@ int distclean(DSSSConf conf = null)
             dsssScriptedStep(conf, settings["preclean"]);
         }
         
-        if (type == "library" && libsSafe()) {
+        if (type == "library" || type == "sourcelibrary") {
             if (targetGNUOrPosix()) {
                 // first remove the static library
                 tryRemove("libS" ~ target ~ ".a");

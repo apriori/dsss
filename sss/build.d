@@ -81,25 +81,6 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
         char[] type = settings["type"];
         char[] target = settings["target"];
         
-        if (doDocs && type == "library") {
-            // prepare for documentation
-            char[] docdir = "dsss_docs" ~ std.path.sep ~ build;
-            mkdirP(docdir);
-            bl ~= "-Dq" ~ docdir ~ " -candydoc ";
-            
-            // now extract candydoc there
-            char[] origcwd = getcwd();
-            chdir(docdir);
-            
-            version (Windows) {
-                sayAndSystem("bsdtar -xf " ~ candyDocPrefix);
-            } else {
-                sayAndSystem("gunzip -c " ~ candyDocPrefix ~ " | tar -xf -");
-            }
-            
-            chdir(origcwd);
-        }
-        
         if (type == "library" && libsSafe()) {
             writefln("Creating imports for %s", target);
             
@@ -210,7 +191,7 @@ version (build) {
         char[] type = settings["type"];
         char[] target = settings["target"];
         
-        if (type == "library" && libsSafe()) {
+        if (type == "library" || type == "sourcelibrary") {
             char[] dotname = std.string.replace(build, std.path.sep, ".");
             
             // get the list of files
@@ -227,6 +208,26 @@ version (build) {
             // output what we're building
             writefln("%s => %s", build, target);
         
+            // prepare for documentation
+            char[] docbl = "";
+            if (doDocs) {
+                char[] docdir = "dsss_docs" ~ std.path.sep ~ build;
+                mkdirP(docdir);
+                docbl ~= "-Dq" ~ docdir ~ " -candydoc ";
+            
+                // now extract candydoc there
+                char[] origcwd = getcwd();
+                chdir(docdir);
+            
+                version (Windows) {
+                    sayAndSystem("bsdtar -xf " ~ candyDocPrefix);
+                } else {
+                    sayAndSystem("gunzip -c " ~ candyDocPrefix ~ " | tar -xf -");
+                }
+            
+                chdir(origcwd);
+            }
+            
             // do the prebuild
             if ("prebuild" in settings) {
                 dsssScriptedStep(conf, settings["prebuild"]);
@@ -235,30 +236,36 @@ version (build) {
             // get the file list
             char[] fileList = std.string.join(targetToFiles(build, conf), " ");
             
-            if (targetGNUOrPosix()) {
-                // first do a static library
-                if (exists("libS" ~ target ~ ".a")) std.file.remove("libS" ~ target ~ ".a");
-                char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -oflibS" ~ target ~ ".a";
-                saySystemRDie(stbl, "-rf", "temp.rf");
+            // if we should, build the library
+            if ((type == "library" && libsSafe()) ||
+                doDocs /* need to build the library to get docs */ ) {
                 
-                if (shLibSupport() &&
-                    ("shared" in settings)) {
-                    // then make the shared library
-                    if (exists(shlibname)) std.file.remove(shlibname);
-                    char[] shbl = bl ~ bflags ~ " -fPIC -explicit -shlib -full " ~ fileList ~ " -of" ~ shlibname ~
-                        " " ~ shlibflag;
+                if (targetGNUOrPosix()) {
+                    // first do a static library
+                    if (exists("libS" ~ target ~ ".a")) std.file.remove("libS" ~ target ~ ".a");
+                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -oflibS" ~ target ~ ".a";
+                    saySystemRDie(stbl, "-rf", "temp.rf");
                     
-                    // finally, the shared compile
-                    saySystemRDie(shbl, "-rf", "temp.rf");
+                    if (shLibSupport() &&
+                        ("shared" in settings)) {
+                        // then make the shared library
+                        if (exists(shlibname)) std.file.remove(shlibname);
+                        char[] shbl = bl ~ bflags ~ " -fPIC -explicit -shlib -full " ~ fileList ~ " -of" ~ shlibname ~
+                        " " ~ shlibflag;
+                        
+                        // finally, the shared compile
+                        saySystemRDie(shbl, "-rf", "temp.rf");
+                    }
+                    
+                } else if (targetVersion("Windows")) {
+                    // for the moment, only do a static library
+                    if (exists("S" ~ target ~ ".lib")) std.file.remove("S" ~ target ~ ".lib");
+                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -ofS" ~ target ~ ".lib";
+                    saySystemRDie(stbl, "-rf", "temp.rf");
+                } else {
+                    assert(0);
                 }
                 
-            } else if (targetVersion("Windows")) {
-                // for the moment, only do a static library
-                if (exists("S" ~ target ~ ".lib")) std.file.remove("S" ~ target ~ ".lib");
-                char[] stbl = bl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -ofS" ~ target ~ ".lib";
-                saySystemRDie(stbl, "-rf", "temp.rf");
-            } else {
-                assert(0);
             }
         
             // do the postbuild
@@ -268,7 +275,8 @@ version (build) {
             
             // an extra line for clarity
             writefln("");
-        }
+            
+        }         
     }
     
     // 4) Binaries and specials
