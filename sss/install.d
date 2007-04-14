@@ -159,9 +159,14 @@ int install(char[][] buildElems, char[][]* subManifest = null)
             // also fairly easy
             char[][] srcFiles = targetToFiles(build, conf);
             foreach (file; srcFiles) {
+                char[] fdir = getDirName(file);
+                char[] pdir = fdir.dup;
+                if (fdir != "") fdir ~= std.path.sep;
+                if (pdir != "") pdir = std.path.sep ~ pdir;
+                
                 copyAndManifest(getBaseName(file),
-                                includePrefix ~ std.path.sep ~ getDirName(file),
-                                getDirName(file) ~ std.path.sep);
+                                includePrefix ~ pdir,
+                                fdir);
             }
             
         } else if (type == "subdir") {
