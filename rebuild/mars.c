@@ -1237,9 +1237,11 @@ int main(int argc, char *argv[])
                 ofname = newofname;
                 
                 if (global.params.docdir) {
-                    char *newodname = FileName::combine(global.params.docdir, odname);
-                    mem.free(odname);
-                    odname = newodname;
+                    if (odname) {
+                        char *newodname = FileName::combine(global.params.docdir, odname);
+                        mem.free(odname);
+                        odname = newodname;
+                    }
                     
                     char *neworigdname = FileName::combine(global.params.docdir, origdname);
                     mem.free(origdname);
