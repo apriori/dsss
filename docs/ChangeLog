@@ -1,3 +1,6 @@
+0.60+0.18 from 0.59+0.17:
+        - Rebuild: Fixed a segfault bug.
+
 0.59+0.17 from 0.58+0.16:
         - Made it possible to install list.list to /etc rather than
           <prefix>/etc
