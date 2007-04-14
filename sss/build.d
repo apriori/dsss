@@ -81,6 +81,25 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
         char[] type = settings["type"];
         char[] target = settings["target"];
         
+        if (doDocs && type == "library") {
+            // prepare for documentation
+            char[] docdir = "dsss_docs" ~ std.path.sep ~ build;
+            mkdirP(docdir);
+            bl ~= "-Dq" ~ docdir ~ " -candydoc ";
+            
+            // now extract candydoc there
+            char[] origcwd = getcwd();
+            chdir(docdir);
+            
+            version (Windows) {
+                sayAndSystem("bsdtar -xf " ~ candyDocPrefix);
+            } else {
+                sayAndSystem("gunzip -c " ~ candyDocPrefix ~ " | tar -xf -");
+            }
+            
+            chdir(origcwd);
+        }
+        
         if (type == "library" && libsSafe()) {
             writefln("Creating imports for %s", target);
             

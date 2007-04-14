@@ -262,6 +262,7 @@ int main(int argc, char *argv[])
     global.params.listfiles = 0;
     global.params.listobjfiles = 0;
     global.params.fullqobjs = 1;
+    global.params.fullqdocs = 0;
     global.params.clean = 0;
     global.params.oneatatime = 0;
     global.params.reflect = 0;
@@ -602,12 +603,24 @@ int main(int argc, char *argv[])
             {
                 /* this is passed through, but we keep one piece of information
                  * we may need */
-                compileFlags += " ";
-                compileFlags += p;
                 
                 if (p[2] == 'd') {
                     // yes, it's a documentation directory. Needed for -candydoc
                     global.params.docdir = p + 3;
+                    compileFlags += " ";
+                    compileFlags += p;
+                    
+                } else if (p[2] == 'q') {
+                    // a doc dir, and fullqdocs
+                    global.params.docdir = p + 3;
+                    global.params.fullqdocs = 1;
+                    compileFlags += " ";
+                    p[2] = 'd';
+                    compileFlags += p;
+                    
+                } else {
+                    compileFlags += " ";
+                    compileFlags += p;
                 }
             }
 	    else if (strcmp(p + 1, "quiet") == 0)
@@ -1149,6 +1162,8 @@ int main(int argc, char *argv[])
 	m = (Module *)global.cmodules->data[i];
         GroupedCompile *gc;
         
+        int renames = 0; // rename count
+        
         if (global.params.fullqobjs)
         {
             // find the right compile to add this to
@@ -1180,6 +1195,11 @@ int main(int argc, char *argv[])
                 char *ofname = (char *) mem.malloc(strlen(mname) + strlen(global.obj_ext) + 2);
                 sprintf(ofname, "%s.%s", mname, global.obj_ext);
                 
+                // for docs as well
+                char *odname = (char *) mem.malloc(strlen(mname) + 6);
+                sprintf(odname, "%s.html", mname);
+                char *origdname = mem.strdup(odname);
+                
                 // figure out what we should really be using to combine them
                 std::string sep = ".";
                 if (masterConfig.find("") != masterConfig.end() &&
@@ -1196,6 +1216,11 @@ int main(int argc, char *argv[])
                         sprintf(newfname, "%s%s%s", id->string, sep.c_str(), ofname);
                         mem.free(ofname);
                         ofname = newfname;
+                        
+                        char *newdname = (char *) mem.malloc(strlen(id->string) + strlen(odname) + 2);
+                        sprintf(newdname, "%s.%s", id->string, odname);
+                        mem.free(odname);
+                        odname = newdname;
                     }
                 } else {
                     // to make sure there's no overlap, always add something
@@ -1203,6 +1228,7 @@ int main(int argc, char *argv[])
                     sprintf(newfname, "_%s", ofname);
                     mem.free(ofname);
                     ofname = newfname;
+                    odname = NULL;
                 }
                 
                 // then add the objdir
@@ -1210,11 +1236,34 @@ int main(int argc, char *argv[])
                 mem.free(ofname);
                 ofname = newofname;
                 
+                if (global.params.docdir) {
+                    char *newodname = FileName::combine(global.params.docdir, odname);
+                    mem.free(odname);
+                    odname = newodname;
+                    
+                    char *neworigdname = FileName::combine(global.params.docdir, origdname);
+                    mem.free(origdname);
+                    origdname = neworigdname;
+                }
+                
                 // make sure the name gets changed later
                 gc->origonames.push((void *) m->objfile->name->str);
                 gc->newonames.push((void *) ofname);
+                renames++;
                 
                 m->objfile = new File(ofname);
+                
+                // as well as the doc names (if applicable)
+                if (global.params.fullqdocs && odname) {
+                    gc->origonames.push((void *) origdname);
+                    gc->newonames.push((void *) odname);
+                    renames++;
+                    
+                } else {
+                    mem.free(origdname);
+                    mem.free(odname);
+                    
+                }
                 
             } else {
                 // ignore gcstats (argh)
@@ -1319,15 +1368,17 @@ int main(int argc, char *argv[])
             gc->imodules.push((void *) m);
         } else if (global.params.fullqobjs && m->md) {
             // we generated a rename, so remove it
-            gc->origonames.pop();
-            gc->newonames.pop();
+            for (; renames > 0; renames--) {
+                gc->origonames.pop();
+                gc->newonames.pop();
+            }
         }
         
 	if (global.params.verbose)
 	    printf("code      %s\n", m->toChars());
         
-        if (global.params.doDocComments)
-            m->gendocfile();
+        /* if (global.params.doDocComments)
+            m->gendocfile(); */
         
         // now possibly reflect this and add the reflected module as well
         if (global.params.reflect && m->md) {
@@ -1382,8 +1433,12 @@ int main(int argc, char *argv[])
                 
                 for (unsigned int j = 0; j < gc->imodules.dim; j++) {
                     Module *m = (Module *) gc->imodules.data[j];
-                    if (m->md)
-                        fprintf(mddf, "\t$(MODULE %s)\n", m->md->toChars());
+                    if (m->md) {
+                        if (global.params.fullqdocs)
+                            fprintf(mddf, "\t$(MODULE_FULL %s)\n", m->md->toChars());
+                        else
+                            fprintf(mddf, "\t$(MODULE %s)\n", m->md->toChars());
+                    }
                 }
             }
         }

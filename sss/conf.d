@@ -94,6 +94,12 @@ char[] etcPrefix;
 /** The prefix to which the source list is downloaded */
 char[] srcListPrefix;
 
+/** The location of candydoc.tar.gz */
+char[] candyDocPrefix;
+
+/** Are we doing documentation? */
+bool doDocs = false;
+
 /** The prefix for scratch work */
 char[] scratchPrefix;
 
@@ -161,6 +167,11 @@ void getPrefix(char[] argvz)
         }
         
         setEnvVar("DSSS_BUILD", dsss_build);
+        
+        if (!candyDocPrefix.length)
+            candyDocPrefix = canonPath(
+                installPrefix ~ std.path.sep ~
+                "candydoc.tar.gz");
     } else {
         inSourceDir = false;
         
@@ -199,6 +210,14 @@ void getPrefix(char[] argvz)
         }
         
         setEnvVar("DSSS_BUILD", dsss_build);
+        
+        if (!candyDocPrefix.length)
+            candyDocPrefix = canonPath(
+                installPrefix ~ std.path.sep ~
+                ".." ~ std.path.sep ~
+                "share" ~ std.path.sep ~
+                "dsss" ~ std.path.sep ~
+                "candydoc.tar.gz");
     }
     
     if (!binPrefix.length)

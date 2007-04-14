@@ -157,6 +157,9 @@ int main(char[][] args)
                 // force a use-dir
                 useDirs ~= val;
                 
+            } else if (parseArg(arg, "doc", false)) {
+                doDocs = true;
+                
             } else if (parseArg(arg, "prefix", true, &val)) {
                 // force a prefix
                 forcePrefix = val;
@@ -322,6 +325,7 @@ Usage: dsss [dsss options] <command> [options]
 `  Generic options:
     --help: display specific options and information
     --prefix=<prefix>: set the install prefix
+    --doc: Generate/install documentation for libraries
     --use=<directory containing import library includes and libs>
 
     --bindir=<dir> [default <prefix>/bin]

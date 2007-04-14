@@ -55,6 +55,8 @@ int clean(DSSSConf conf = null) {
         rmRecursive("dsss_objs");
     if (exists("dsss_imports"))
         rmRecursive("dsss_imports");
+    if (exists("dsss_docs"))
+        rmRecursive("dsss_docs");
     return 0;
 }
 
