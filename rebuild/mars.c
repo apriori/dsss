@@ -1272,8 +1272,23 @@ int main(int argc, char *argv[])
                 if (strcmp(m->srcfile->name->name(), "gcstats.d") &&
                     !global.params.listonly) {
                     fprintf(stderr, "WARNING: Module %s does not have a module declaration. This can cause problems\n"
-                                    "         with rebuild's -oq option. If an error occurs, fix this first.\n");
+                                    "         with rebuild's -oq option. If an error occurs, fix this first.\n",
+                            m->srcfile->name->name());
                 }
+                
+                // then rename it to nmd_<name>, to at least try to avoid conflicts
+                char *ofname = (char *) mem.malloc(
+                    strlen(m->objfile->name->name()) + 5);
+                sprintf(ofname, "nmd_%s", m->objfile->name->name());
+                char *oname = FileName::combine(global.params.objdir,
+                                                ofname);
+                mem.free(ofname);
+                
+                gc->origonames.push((void *) m->objfile->name->str);
+                gc->newonames.push((void *) oname);
+                renames++;
+                m->objfile = new File(oname);
+                
             }
         } else {
             // just add it
@@ -1368,7 +1383,7 @@ int main(int argc, char *argv[])
         
         if (!ignore) {
             gc->imodules.push((void *) m);
-        } else if (global.params.fullqobjs && m->md) {
+        } else if (global.params.fullqobjs) {
             // we generated a rename, so remove it
             for (; renames > 0; renames--) {
                 gc->origonames.pop();
@@ -1454,6 +1469,8 @@ int main(int argc, char *argv[])
         compileFlags += DIRSEP "candydoc" DIRSEP "modules.ddoc";
     }
     
+    mem.fullcollect();
+    
     // Now do the actual compilation
     for (unsigned int j = 0; global.params.obj && j < GroupedCompiles.dim; j++) {
         GroupedCompile *gc = (GroupedCompile *) GroupedCompiles.data[j];
@@ -1491,6 +1508,8 @@ int main(int argc, char *argv[])
             }
         }
     }
+    
+    mem.fullcollect();
     
 #if _WIN32 && __DMC__
   }
