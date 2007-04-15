@@ -40,6 +40,7 @@ version=-version=$i
 
 [link]
 cmd=dmd $i -of$o
+response=@
 
 libdir=-L+$i\
 lib=-L+$i
