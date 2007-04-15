@@ -51,7 +51,7 @@ flag=-L$i
 [liblink]
 safe=yes
 oneatatime=yes
-cmd=lib -c -p256 $o $i
+cmd=lib -c -p1024 $o $i
 response=@
 
 libdir=
