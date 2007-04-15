@@ -18,6 +18,10 @@ but they're generally only useful for software distribution maintainers. You
 can attain more information on them with the command:
 $ dsss build --help
 
+Of particular use is the option --doc, which generates .html documentation from
+DDoc comments of compiled libraries:
+$ dsss build --doc
+
 You can make DSSS remove all of the intermediate files it created, leaving only
 the fully-compiled binaries and libraries, with the command:
 $ dsss clean
@@ -40,6 +44,10 @@ $ dsss install
 If you'd like to install the software to some other directory, you can specify
 that directory with the "--prefix" option to DSSS, like so:
 $ dsss install --prefix=<directory>
+
+If you generated documentation at build time, and would like to install that
+documentation, use the --doc flag to `dsss install`:
+$ dsss install --doc
 
 You can also uninstall previously installed software. For example, to uninstall
 the hypothetical package "dhello":
