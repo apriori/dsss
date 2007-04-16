@@ -1,3 +1,11 @@
+0.61 from 0.60+0.18:
+        - Rebuild: Fixed a (potential) segfault bug in rebuild with modules
+          with no module declaration.
+        - Rebuild: Made a bit less intolerant of modules with no module
+          declarations.
+        - Rebuild: Fixed some problems with dmd-win profile.
+        - Synchronized DSSS and Rebuild version numbers.
+
 0.60+0.18 from 0.59+0.17:
         - Rebuild: Fixed a segfault bug.
 
