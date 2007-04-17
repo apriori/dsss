@@ -102,9 +102,13 @@ char[] canonPath(char[] origpath)
 {
     char[] ret;
     
-    // replace any altsep with sep
-    if (altsep.length) {
-        ret = replace(origpath, altsep, sep);
+    version (Windows) {
+        // replace any altsep with sep
+        if (altsep.length) {
+            ret = replace(origpath, altsep, sep);
+        } else {
+            ret = origpath.dup;
+        }
     } else {
         ret = origpath.dup;
     }
