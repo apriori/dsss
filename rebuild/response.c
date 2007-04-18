@@ -64,6 +64,9 @@ void parseResponseFile(int *argc, char ***argv, char *rf, int argnum)
         }
         if (l <= 0) continue;
         
+        // ignore comments
+        if (rdbuf[0] == '#') continue;
+        
         // now add the argument
         nargc++;
         nargv = (char **) mem.realloc(nargv, (nargc+1) * sizeof(char *));

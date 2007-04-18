@@ -8,6 +8,7 @@ SVN from 0.61:
           (see ticket #40).
         - Rebuild: Now closes the response file properly after using it (see
           ticket #42).
+        - Rebuild: Now supports comments in response files (see ticket #43).
 
 0.61 from 0.60+0.18:
         - Rebuild: Fixed a (potential) segfault bug in rebuild with modules
