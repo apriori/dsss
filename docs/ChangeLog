@@ -1,3 +1,7 @@
+SVN from 0.61:
+        - Added man page for DSSS.
+        - Made --prefix and family work with relative paths (see ticket #37).
+
 0.61 from 0.60+0.18:
         - Rebuild: Fixed a (potential) segfault bug in rebuild with modules
           with no module declaration.

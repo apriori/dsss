@@ -155,32 +155,32 @@ int main(char[][] args)
                 
             } else if (parseArg(arg, "use", true, &val)) {
                 // force a use-dir
-                useDirs ~= val;
+                useDirs ~= makeAbsolute(val);
                 
             } else if (parseArg(arg, "doc", false)) {
                 doDocs = true;
                 
             } else if (parseArg(arg, "prefix", true, &val)) {
                 // force a prefix
-                forcePrefix = val;
+                forcePrefix = makeAbsolute(val);
                 
             } else if (parseArg(arg, "bindir", true, &val)) {
-                binPrefix = val;
+                binPrefix = makeAbsolute(val);
                 
             } else if (parseArg(arg, "libdir", true, &val)) {
-                libPrefix = val;
+                libPrefix = makeAbsolute(val);
                 
             } else if (parseArg(arg, "includedir", true, &val)) {
-                includePrefix = val;
+                includePrefix = makeAbsolute(val);
                 
             } else if (parseArg(arg, "docdir", true, &val)) {
-                docPrefix = val;
+                docPrefix = makeAbsolute(val);
                 
             } else if (parseArg(arg, "sysconfdir", true, &val)) {
-                etcPrefix = val;
+                etcPrefix = makeAbsolute(val);
                 
             } else if (parseArg(arg, "scratchdir", true, &val)) {
-                scratchPrefix = val;
+                scratchPrefix = makeAbsolute(val);
                 
             } else if (arg.length >= 1 &&
                        arg[0] == '-') {
@@ -250,6 +250,15 @@ int main(char[][] args)
     }
     
     return 0;
+}
+
+/** Make a dir absolute */
+char[] makeAbsolute(char[] path)
+{
+    if (!isabs(path)) {
+        return getcwd() ~ std.path.sep ~ path;
+    }
+    return path;
 }
 
 void usage()
