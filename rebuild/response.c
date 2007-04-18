@@ -69,6 +69,7 @@ void parseResponseFile(int *argc, char ***argv, char *rf, int argnum)
         nargv = (char **) mem.realloc(nargv, (nargc+1) * sizeof(char *));
         nargv[nargc-1] = mem.strdup(rdbuf);
     }
+    fclose(rff);
     
     // Add remaining arguments
     for (i = argnum + 1; i < oargc; i++) {

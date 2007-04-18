@@ -6,6 +6,8 @@ SVN from 0.61:
           complexities of Posix linking) (see ticket #39).
         - Rebuild: Made export_version accept an identifier as well as a string
           (see ticket #40).
+        - Rebuild: Now closes the response file properly after using it (see
+          ticket #42).
 
 0.61 from 0.60+0.18:
         - Rebuild: Fixed a (potential) segfault bug in rebuild with modules
