@@ -725,6 +725,23 @@ int main(int argc, char *argv[])
                 addFlag(liblinkFlags, "link", "cflag", "$i", p + 1);
                 addFlag(shliblinkFlags, "link", "cflag", "$i", p + 1);
             }
+            else if (strcmp(p + 1, "arch") == 0 ||
+                     strcmp(p + 1, "isysroot") == 0)
+            {
+                // special flags for Mac OS X
+                addFlag(compileFlags, "compile", "forceflag", "$i", p);
+                addFlag(linkFlags, "link", "forceflag", "$i", p);
+                addFlag(shliblinkFlags, "shliblink", "forceflag", "$i", p);
+                
+                i++;
+                if (i >= argc)
+                    goto Lnoarg;
+                p = argv[i];
+                
+                addFlag(compileFlags, "compile", "forceflag", "$i", p);
+                addFlag(linkFlags, "link", "forceflag", "$i", p);
+                addFlag(shliblinkFlags, "shliblink", "forceflag", "$i", p);
+            }
             else if (strncmp(p + 1, "ll", 2) == 0)
             {
                 if (!p[3])
