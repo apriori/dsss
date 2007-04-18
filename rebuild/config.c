@@ -378,12 +378,13 @@ void addFlag(std::string &to, const std::string &section, const std::string &fla
 // Add a library to linkFlags
 void linkLibrary(const std::string &name)
 {
-    /*static set<string> mapped;
-
-    if (mapped.find(name) == mapped.end()) {
-        mapped.insert(name);*/
-        addFlag(linkFlags, "link", "lib", "$i", name, "", true);
-        addFlag(liblinkFlags, "liblink", "lib", "$i", name, "", true);
-        addFlag(shliblinkFlags, "shliblink", "lib", "$i", name, "", true);
-    //}
+    static string last = "";
+    
+    // don't add the same one more than once in a row ...
+    if (last == name) return;
+    last = name;
+    
+    addFlag(linkFlags, "link", "lib", "$i", name, "", true);
+    addFlag(liblinkFlags, "liblink", "lib", "$i", name, "", true);
+    addFlag(shliblinkFlags, "shliblink", "lib", "$i", name, "", true);
 }

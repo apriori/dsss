@@ -1,6 +1,9 @@
 SVN from 0.61:
         - Added man page for DSSS.
         - Made --prefix and family work with relative paths (see ticket #37).
+        - Rebuild: No longer links the same library more than once in a row
+          (though it will still link it multiple times in total, due to
+          complexities of Posix linking) (see ticket #39).
 
 0.61 from 0.60+0.18:
         - Rebuild: Fixed a (potential) segfault bug in rebuild with modules
