@@ -1890,18 +1890,25 @@ Statement *PragmaStatement::semantic(Scope *sc)
 	    {
 		Expression *e = (Expression *)args->data[i];
   
+                char *toadd = NULL;
+                
 		e = e->semantic(sc);
 		if (e->op == TOKstring)
 		{
 		    StringExp *se = (StringExp *)e;
-                    
-                    /* add this version flag to our own idea of versions, as
-                     * well as the compile line */
-                    VersionCondition::addPredefinedGlobalIdent((char *) se->string);
-                    addFlag(compileFlags, "compile", "version", "-version=$i", (char *) se->string);
+                    toadd = (char *) se->string;
+                }
+                else if (e->op == TOKidentifier)
+                {
+                    toadd = e->toChars();
                 }
                 else
-                    error("string expected for export_version, not '%s'", e->toChars());
+                    error("string or identifier expected for export_version, not '%s'", e->toChars());
+                
+                /* add this version flag to our own idea of versions, as
+                 * well as the compile line */
+                VersionCondition::addPredefinedGlobalIdent(toadd);
+                addFlag(compileFlags, "compile", "version", "-version=$i", toadd);
             }
         }
     }

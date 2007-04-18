@@ -4,6 +4,8 @@ SVN from 0.61:
         - Rebuild: No longer links the same library more than once in a row
           (though it will still link it multiple times in total, due to
           complexities of Posix linking) (see ticket #39).
+        - Rebuild: Made export_version accept an identifier as well as a string
+          (see ticket #40).
 
 0.61 from 0.60+0.18:
         - Rebuild: Fixed a (potential) segfault bug in rebuild with modules
