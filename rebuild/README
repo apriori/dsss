@@ -68,3 +68,14 @@ Rebuild has a large number of other available options. This document does not
 list all of them. Use
 rebuild --help
 to get the entire list.
+
+
+Rebuild uses configuration files for almost everything it does. These
+configuration files are in the directory rebuild.conf, which is installed
+either as /etc/rebuild or simply as rebuild.conf next to rebuild[.exe]. For the
+most part, you should not need to edit them, but there are some options you may
+wish to add:
+
+include=<path>          Adds <path> to the include path rebuild uses.
+path=<path>             Adds <path> to $PATH (or %PATH%) during each rebuild
+                        run.

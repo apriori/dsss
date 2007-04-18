@@ -324,6 +324,26 @@ int main(int argc, char *argv[])
     
     readConfig(argv[0], chooseProfile);
     
+    // if the configuration includes path=, add that path
+    if (masterConfig.find("") != masterConfig.end() &&
+        masterConfig[""].find("path") != masterConfig[""].end()) {
+        std::string newPath = masterConfig[""]["path"];
+        
+#ifdef __WIN32
+        newPath += ";";
+#else
+        newPath += ":";
+#endif
+        
+        newPath += getenv("PATH");
+        char *snewPath = mem.strdup(newPath.c_str());
+#ifdef __WIN32
+        SetEnvironmentVariable("PATH", snewPath);
+#else
+        setenv("PATH", snewPath, 1);
+#endif
+    }
+    
     // get include paths
     if (masterConfig.find("") != masterConfig.end() &&
         masterConfig[""].find("compiler") != masterConfig[""].end()) {
