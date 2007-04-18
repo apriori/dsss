@@ -1,0 +1,48 @@
+.TH dsss 1
+.SH NAME
+dsss - D Shared Software System
+.SH SYNOPSIS
+.B dsss
+.I [dsss options]
+<command>
+.I [rebuild options]
+.SH COMMANDS
+.IP build
+build all or some binaries or libraries
+.IP clean
+clean up object files from all or some builds
+.IP distclean
+clean up all files from all or some builds
+.IP install
+install all or some binaries or libraries
+.IP uninstall
+uninstall a specified tool or library
+.IP installed
+list installed software
+.IP net
+Internet-based installation and package management
+.IP genconfig
+generate a config file
+.SH OPTIONS
+.IP --help
+display specific options and information
+.IP --prefix=<prefix>
+set the install prefix
+.IP --use=<dir>
+directory containing import library includes and libs
+.IP --bindir=<dir>
+[default <prefix>/bin]
+.IP --libdir=<dir>
+[default <prefix>/lib]
+.IP --includedir=<dir>
+[default <prefix>/include/d]
+.IP --sysconfdir=<dir>
+[default <prefix/etc]
+.IP --scratchdir=<dir>
+[default /tmp]
+
+All other options are passed through to rebuild and ultimately the compiler.
+.SH AUTHOR
+written by Gregor Richards
+.SH COPYRIGHT
+Copyright (c) 2006-2007 by Gregor Richards
