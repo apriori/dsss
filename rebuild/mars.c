@@ -434,6 +434,9 @@ int main(int argc, char *argv[])
     // and from $BUILD_FLAGS
     getenv_setargv("BUILD_FLAGS", &argc, &argv);
     
+    // and finally, DFLAGS
+    getenv_setargv("DFLAGS", &argc, &argv);
+    
     // and from the configuration file
     if (masterConfig.find("") != masterConfig.end() &&
         masterConfig[""].find("flags") != masterConfig[""].end()) {
