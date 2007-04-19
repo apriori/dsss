@@ -41,6 +41,7 @@
 #include        "identifier.h"
 #include	"mars.h"
 #include	"mem.h"
+#include        "module.h"
 #include        "response.h"
 #include	"root.h"
 
@@ -156,8 +157,19 @@ int runLINK()
 	out = global.params.exefile;
     }
     else
-    {	// Generate exe file name from first obj name
-	char *n = (char *)global.params.objfiles->data[0];
+    {	/* Generate exe file name from first sourcefile name, or object file
+         * name if that fails */
+        char *n;
+        if (global.cmodules &&
+            global.cmodules->dim > 0) {
+            Module *m = (Module*)global.cmodules->data[0];
+            if (m->srcfile)
+                n = m->srcfile->name->str;
+        }
+        
+        if (!n)
+            n = (char *)global.params.objfiles->data[0];
+        
 	char *e;
 	char *ex;
         

@@ -12,6 +12,8 @@ SVN from 0.61:
         - Rebuild: Allow -arch and -isysroot flags on OS X (see ticket #27).
         - Rebuild: Added path= variable to config files (see ticket #29).
         - sources directory is now created during dsss install (see ticket #36).
+        - Rebuild: Executable file name is based on the first source file, not
+          the first object file (see ticket #44).
 
 0.61 from 0.60+0.18:
         - Rebuild: Fixed a (potential) segfault bug in rebuild with modules

@@ -861,8 +861,6 @@ void PragmaDeclaration::semantic(Scope *sc)
                 else if (e->op == TOKidentifier)
                 {
                     toadd = e->toChars();
-                    printf("%s\n", toadd);
-                    exit(1);
                 }
                 else
                     error("string or identifier expected for export_version, not '%s'", e->toChars());
