@@ -757,7 +757,8 @@ int main(int argc, char *argv[])
                 addFlag(shliblinkFlags, "link", "cflag", "$i", p + 1);
             }
             else if (strcmp(p + 1, "arch") == 0 ||
-                     strcmp(p + 1, "isysroot") == 0)
+                     strcmp(p + 1, "isysroot") == 0 ||
+                     strcmp(p + 1, "framework") == 0)
             {
                 // special flags for Mac OS X
                 addFlag(compileFlags, "compile", "forceflag", "$i", p);

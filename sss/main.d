@@ -183,7 +183,8 @@ int main(char[][] args)
                 scratchPrefix = makeAbsolute(val);
                 
             } else if (arg == "-arch" ||
-                       arg == "-isysroot") {
+                       arg == "-isysroot" ||
+                       arg == "-framework") {
                 // special Mac OS X flags
                 dsss_buildOptions ~= arg ~ " ";
                 i++;

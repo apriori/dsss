@@ -1,5 +1,6 @@
 SVN from 0.62:
-        - Made OS X -arch and -isysroot flags work with dsss (see ticket #27).
+        - Made OS X -arch, -isysroot and -framework flags work with dsss as
+          well as rebuild (see ticket #27).
         - Improved documentation.
         - Merged DMD 1.013.
         - Rebuild: Added flags= variable to configuration files (see ticket #44).
