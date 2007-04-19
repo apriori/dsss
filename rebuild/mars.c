@@ -774,6 +774,11 @@ int main(int argc, char *argv[])
                 addFlag(linkFlags, "link", "forceflag", "$i", p);
                 addFlag(shliblinkFlags, "shliblink", "forceflag", "$i", p);
             }
+            else if (strcmp(p + 1, "gui") == 0)
+            {
+                // for Windows, activate GUI mode
+                addFlag(linkFlags, "link", "gui", "");
+            }
             else if (strncmp(p + 1, "ll", 2) == 0)
             {
                 if (!p[3])

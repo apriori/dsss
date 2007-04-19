@@ -45,6 +45,7 @@ response=@
 libdir=-L+$i\
 lib=-L+$i.lib
 flag=-L$i
+gui=-L/subsystem:windows
 
 
 [liblink]
