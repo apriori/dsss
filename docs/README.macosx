@@ -1,0 +1,48 @@
+This Mac OS X document was written by Anders F Bjorklund <afb@users.sf.net>
+
+Building the software
+=====================
+
+To make a Universal Binary (of DSSS) use these commands:
+
+	sed -e 's/buildflags =/& -arch ppc -arch i386/' -i.orig dsss.conf
+
+	make -C rebuild CXX="g++ -arch ppc -arch i386"
+
+Then we ask DSSS to build itself, using the new version:
+
+	./rebuild/rebuild -full -Irebuild sss/main.d -ofdsss -arch ppc -arch i386
+
+	./dsss build -v -vdmd
+
+Alternatively, if you don't want a Universal Binary use:
+
+	make -f Makefile.gdc.posix
+
+Making the package
+==================
+
+* Install the software to the Package Contents Root:
+
+	./dsss install --prefix=`pwd`/Root
+
+* Strip the binaries from the big debugging symbols:
+
+	strip -S Root/bin/* Root/lib/lib*.a
+
+* Set the file ownership, for all the Package files:
+
+	sudo chown -R root:wheel Root
+
+* Open DSSS.pmproj with /Developer/Applications/Utilities/PackageMaker.app
+
+* Update the version info to match the current, see "Package Version" tab
+
+* Build the PKG bundle (DSSS.pkg), "Build..." item
+
+* Add the PKG to a DMG (dsss-x.yy-gdc-mac-10.z.dmg)
+
+* The name of the HFS+ disk image should be: "DSSS"
+
+* It should be "internet-enabled", to unpack itself
+
