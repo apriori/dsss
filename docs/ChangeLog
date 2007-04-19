@@ -1,4 +1,4 @@
-SVN from 0.62:
+0.63 from 0.62:
         - Made OS X -arch, -isysroot and -framework flags work with dsss as
           well as rebuild (see ticket #27).
         - Improved documentation.
