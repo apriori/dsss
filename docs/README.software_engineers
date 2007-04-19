@@ -40,6 +40,21 @@ target=dzip
 sensible)
 
 
+Sections creating libraries from directories will normally include all the .d
+files in that directory or any subdirectory of it. You may also specify
+subdirectories explicitly in dsss.conf, which will cause some .d files to be
+reassigned. For example, if you have these files:
+dzip/algorithm.d, foo/compression/zip.d
+and a section:
+[dzip]
+then the produced library will include algorithm.d and zip.d.
+If you have two sections:
+[dzip]
+[dzip/compression]
+then two libraries will be produced: The library from 'dzip' will contain
+algorithm.d, and the library from [dzip/compression] will contain zip.d.
+
+
 Furthermore, content in dsss.conf can be set up as version-specific, with a
 version keyword similar to the version keyword in D. For example, to make sure
 that a certain binary is only produced on Windows:
