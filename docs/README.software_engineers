@@ -10,41 +10,48 @@ To the average software engineer, the most important part is dsss.conf, the
 file added to your source code to configure how DSSS will compile it.
 
 dsss.conf is a plain-text file, with a similar syntax to Windows INI files. It
-can have any number of sections, each of which is headed with the name in
+can have any number of sections, each of which is headed with a name in
 brackets, like so:
 [foo/bar.d]
 
-Each section is named by a source file or directory. In general, sections named
-for source files will generate binaries, and sections named for directories
-will generate libraries, which are set up through DSSS to be equivalent to D
-packages. However, you can manually specify a binary, library or sourcelibrary
-(like a library, but not compiled until it's used in a binary) with the type
-setting:
+
+Most sections are named by a source file or directory. In general, sections
+named for source files will generate binaries, and sections named for
+directories will generate libraries. However, you can manually specify a
+binary, library or sourcelibrary (like a library, but not compiled until it's
+used in a binary) with the type setting:
+[wholedirbinary]
 type=binary
+
+[onefilelibrary.d]
 type=library
+
+[onefilesrclib.d]
 type=sourcelibrary
+
 
 In each section, there can be any number of settings. Each setting is a
 keyword, possibly followed by = or += and a value. For example, the "target"
 setting sets the name of the output binary or library in a given section:
-target=foobar
+[main.d]
+target=dzip
+
 (In general, the target setting will be automatically set to something
 sensible)
 
-Furthermore, any amount of content in dsss.conf can be set up as version-
-specific, with a version keyword similar to the version keyword in D. For
-example, to make sure that a certain binary is only produced on Windows:
+
+Furthermore, content in dsss.conf can be set up as version-specific, with a
+version keyword similar to the version keyword in D. For example, to make sure
+that a certain binary is only produced on Windows:
 version (Windows) {
- [foo/windows.d]
- target=foo_for_windows
+ [dzip/windows.d]
+ target=dzip_for_windows
 }
 
-The version statement in dsss.conf has a fairly strict syntax: the { must be on
-the same line as the statement, and the version being tested must be in
-parenthesis. Unlike D, DSSS' version statement supports the ! (not) operator:
+The version keyword in dsss.conf also supports negation:
 version (!Windows) {
- [foo/nowindows.d]
- target=foo_for_notwindows
+ [dzip/nonwindows.d]
+ target=dzip_for_nonwindows
 }
 
 The version statement also supports an 'else' clause:
@@ -56,16 +63,25 @@ version (Windows) {
  target=foo_for_notwindows
 }
 
+The version statement in dsss.conf has a fairly strict syntax: the { must be on
+the same line as the statement, and the version being tested must be in
+parenthesis.
 
-There are quite a few other settings supported, such as:
+
+There are quite a few other settings supported:
 
 * exclude
   * Exclude a list of .d files from being included in a library:
     exclude=foo.d bar.d
 
+* buildflags
+  * Flags that will be added to the command line for rebuild when building this
+    section.
+
 * prebuild, preinstall, preclean, postbuild, postinstall, postclean
-  * Commands to be run before/after building/installing/cleaning. Can be any
-    number of ;-separated commands, and supports some special command types:
+  * Commands to be run before/after building/installing/cleaning the current
+    section. Can be any number of ;-separated commands, and supports some
+    special command types:
     * .d files. If a .d file is specified as a command, it will be compiled and
       run.
       * Notably, D files can always use DSSS' headers. That is, the package
@@ -73,7 +89,7 @@ There are quite a few other settings supported, such as:
 
     * install: DSSS has an internal 'install' command, which takes the
       following syntax:
-      * install <file> <target directory>
+      install <file> <target directory>
 
     * eval: Run a command (.d file or otherwise), and execute its result
       * For example, the command could print "install chosen/file/to/install
@@ -83,6 +99,8 @@ There are quite a few other settings supported, such as:
       * set <section>.<setting> <value>
       * You may use * to apply a setting to all sections, or simply exclude the
         section (but still include the .) to set a global setting.
+      * This is most useful when used via eval, as in:
+        eval detectsettings.d
 
     * add: Like set, but adds to a setting.
 
@@ -108,10 +126,6 @@ There are quite a few other settings supported, such as:
     * $ETC_PREFIX : The prefix to which configuration files are being
       installed.
 
-* buildflags
-  * Flags that will be added to the output to build/bud when building this
-    section.
-
 
 Furthermore, there is a global section for settings which are not specific to
 any binary or library. You can add settings to this section simply by adding
@@ -122,9 +136,22 @@ global_setting=0
 
 The important global settings are 'name' (which will otherwise be gleaned from
 the directory name) and 'version' (which will otherwise be set to 'latest').
+With these settings, a dsss.conf file would conventionally look something like
+this:
+name = dzip
+version = 1.0
+[dzip.d]
+target = dzip
 
 
-It is possible to add a setting to all sections with the special [*] section.
+It is possible to add a setting to all sections with the special [*] section:
+name = dzip
+version = 1.0
+[*]
+buildflags=-g
+[main.d]
+target = dzipper
+[dzip]
 
 
 You can make 'special' build steps, which do not correspond to D source files
@@ -134,8 +161,21 @@ example:
 prebuild = gensource.d
 
 
-You can also recurse into subdirectories, by specifying the subdirectory as a
-section and setting the type to "subdir":
+It is possible to have source files spread out through several directories, and
+to support this in dsss.conf there is the special type "subdir":
 [subtool]
 type = subdir
 
+Each subdirectory must have its own dsss.conf . Note that setting type=subdir
+will cause DSSS to recurse into that directory, but will not cause that
+directory to be visible at compile time. If you want that feature, you will
+need to add -I flags to buildflags:
+name = dzip
+version = 1.0
+[*]
+buildflags=-g -Isubtool
+[subtool]
+type = subdir
+[main.d]
+target = dzipper
+[dzip]

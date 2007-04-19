@@ -182,6 +182,17 @@ int main(char[][] args)
             } else if (parseArg(arg, "scratchdir", true, &val)) {
                 scratchPrefix = makeAbsolute(val);
                 
+            } else if (arg == "-arch" ||
+                       arg == "-isysroot") {
+                // special Mac OS X flags
+                dsss_buildOptions ~= arg ~ " ";
+                i++;
+                if (i >= args.length) {
+                    writefln("Argument expected after %s", arg);
+                    return 1;
+                }
+                dsss_buildOptions ~= args[i] ~ " ";
+                
             } else if (arg.length >= 1 &&
                        arg[0] == '-') {
                 // pass through to build

@@ -18,6 +18,9 @@ but they're generally only useful for software distribution maintainers. You
 can attain more information on them with the command:
 $ dsss build --help
 
+You can build only a specified target by simply adding it to the command line:
+$ dsss build dzipper
+
 Of particular use is the option --doc, which generates .html documentation from
 DDoc comments of compiled libraries:
 $ dsss build --doc
