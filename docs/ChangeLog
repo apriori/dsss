@@ -1,4 +1,4 @@
-SVN from 0.61:
+0.62 from 0.61:
         - Added man page for DSSS.
         - Made --prefix and family work with relative paths (see ticket #37).
         - Rebuild: No longer links the same library more than once in a row
