@@ -159,6 +159,13 @@ version = 1.0
 target = dzip
 
 
+There is also a global setting, "requires", which may be used to explicitly
+list dependencies:
+requires = bintod
+In general, it is NOT necessary to use this setting, as DSSS will detect
+dependencies based on what is imported from the D source.
+
+
 It is possible to add a setting to all sections with the special [*] section:
 name = dzip
 version = 1.0
