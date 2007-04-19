@@ -2478,6 +2478,8 @@ Statement *ReturnStatement::semantic(Scope *sc)
 	    else if (fd->nrvo_var != v)
 		fd->nrvo_can = 0;
 	}
+	else
+	    fd->nrvo_can = 0;
 
 	if (fd->returnLabel && tbret->ty != Tvoid)
 	{

@@ -93,10 +93,12 @@ There are quite a few other settings supported:
   * Flags that will be added to the command line for rebuild when building this
     section.
 
-* prebuild, preinstall, preclean, postbuild, postinstall, postclean
-  * Commands to be run before/after building/installing/cleaning the current
-    section. Can be any number of ;-separated commands, and supports some
-    special command types:
+* prebuild, preinstall, preclean, predigen, postbuild, postinstall, postclean,
+  postdigen
+  * Commands to be run before or after (pre or post) building (build),
+    installing (install), cleaning (clean) or generating .di files (digen) for
+    the current section. Can be any number of ;-separated commands, and
+    supports some special command types:
     * .d files. If a .d file is specified as a command, it will be compiled and
       run.
       * Notably, D files can always use DSSS' headers. That is, the package

@@ -1,6 +1,6 @@
 
 
-// Copyright (c) 1999-2006 by Digital Mars
+// Copyright (c) 1999-2007 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -130,7 +130,7 @@ string linkCommand(const string &i, const string &o, string &response, bool &use
     
     return cline;
 }
-
+  
 int runLINK()
 {
     // get the list of input files, as well as the age if they're necessary
@@ -158,7 +158,7 @@ int runLINK()
     }
     else
     {	/* Generate exe file name from first sourcefile name, or object file
-         * name if that fails */
+    * name if that fails */
         char *n;
         if (global.cmodules &&
             global.cmodules->dim > 0) {
@@ -170,17 +170,17 @@ int runLINK()
         if (!n)
             n = (char *)global.params.objfiles->data[0];
         
-	char *e;
-	char *ex;
+        char *e;
+        char *ex;
         
-	n = FileName::name(n);
-	e = FileName::ext(n);
-	if (e)
-	{
-	    e--;			// back up over '.'
+        n = FileName::name(n);
+        e = FileName::ext(n);
+        if (e)
+        {
+            e--;			// back up over '.'
             out = string(n).substr(0, e - n);
-	}
-	else
+        }
+        else
         {
             out = "a.out";
         }
@@ -258,7 +258,7 @@ int runLINK()
     
     return 0;
 }
-
+  
 void runClean()
 {
     for (unsigned int i = 0; i < global.params.genobjfiles->dim; i++) {

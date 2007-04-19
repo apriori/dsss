@@ -84,6 +84,11 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
         if (type == "library" && libsSafe()) {
             writefln("Creating imports for %s", target);
             
+            // do the predigen
+            if ("predigen" in settings) {
+                dsssScriptedStep(conf, settings["predigen"]);
+            }
+            
             // this is a library, so make .di files
             char[][] srcFiles = targetToFiles(build, conf);
             
@@ -121,6 +126,11 @@ version (build) {
 `);
                     }
                 }
+            }
+            
+            // do the postdigen
+            if ("postdigen" in settings) {
+                dsssScriptedStep(conf, settings["postdigen"]);
             }
             
             writefln("");

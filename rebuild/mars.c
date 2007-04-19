@@ -49,6 +49,7 @@ long __cdecl __ehfilter(LPEXCEPTION_POINTERS ep);
 #include "config.h"
 
 void getenv_setargv(const char *envvar, int *pargc, char** *pargv);
+void string_setargv(const char *, int *, char***);
 
 Global global;
 
@@ -64,7 +65,7 @@ Global::Global()
 
     copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards";
     written = "written by Walter Bright and Gregor Richards";
-    version = "version 0.62 (based on DMD 1.012)";
+    version = "version 0.62 (based on DMD 1.013)";
     global.structalign = 8;
     cmodules = NULL;
 
@@ -427,7 +428,17 @@ int main(int argc, char *argv[])
         global.obj_ext = strdup(masterConfig[""]["objext"].c_str());
     }
     
-    getenv_setargv("DFLAGS", &argc, &argv);
+    // get any arguments from $REBUILD_FLAGS...
+    getenv_setargv("REBUILD_FLAGS", &argc, &argv);
+    
+    // and from $BUILD_FLAGS
+    getenv_setargv("BUILD_FLAGS", &argc, &argv);
+    
+    // and from the configuration file
+    if (masterConfig.find("") != masterConfig.end() &&
+        masterConfig[""].find("flags") != masterConfig[""].end()) {
+        string_setargv(masterConfig[""]["flags"].c_str(), &argc, &argv);
+    }
 
 #if 0
     for (i = 0; i < argc; i++)
@@ -1595,6 +1606,7 @@ int main(int argc, char *argv[])
 }
 
 
+void string_setargv(const char *, int *, char***);
 
 /***********************************
  * Parse and append contents of environment variable envvar
@@ -1603,6 +1615,22 @@ int main(int argc, char *argv[])
  */
 
 void getenv_setargv(const char *envvar, int *pargc, char** *pargv)
+{
+    char *env;
+    env = getenv(envvar);
+    if (!env)
+        return;
+    string_setargv(env, pargc, pargv);
+}
+
+
+/***********************************
+ * Parse and append contents of a string
+ * to argc and argv[].
+ * The string is separated into arguments, processing \ and ".
+ */
+
+void string_setargv(const char *string, int *pargc, char** *pargv)
 {
     char *env;
     char *p;
@@ -1615,11 +1643,7 @@ void getenv_setargv(const char *envvar, int *pargc, char** *pargv)
     char c;
     int j;
 
-    env = getenv(envvar);
-    if (!env)
-	return;
-
-    env = mem.strdup(env);	// create our own writable copy
+    env = mem.strdup(string);	// create our own writable copy
 
     argc = *pargc;
     argv = new Array();
