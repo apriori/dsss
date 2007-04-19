@@ -1,3 +1,12 @@
+SVN from 0.62:
+        - Made OS X -arch and -isysroot flags work with dsss (see ticket #27).
+        - Improved documentation.
+        - Merged DMD 1.013.
+        - Rebuild: Added flags= variable to configuration files (see ticket #44).
+        - Added predigen and postdigen commands (see ticket #49).
+        - Made `dsss install` install rebuild's man page as well as DSSS' (see
+          ticket #47).
+
 0.62 from 0.61:
         - Added man page for DSSS.
         - Made --prefix and family work with relative paths (see ticket #37).
