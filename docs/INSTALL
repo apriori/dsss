@@ -2,8 +2,8 @@ Due to bootstrapping and platform differences, installing DSSS from source can
 be a little bit complicated, but if you follow this list of steps it should
 work fine:
 
-1) Get a D compiler. DMD version 0.166 or newer should work, GDC 0.20 (or the
-   latest snapshot until 0.20 is released) should work.
+1) Get a D compiler. DMD version 1.0 or newer should work, GDC 0.22 or newer
+   should work.
 
 2) If you currently have DSSS installed, UNINSTALL IT. To do this easily, just
    use the command 'dsss uninstall dsss'
