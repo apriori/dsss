@@ -366,6 +366,19 @@ int main(int argc, char *argv[])
 #endif
     }
     
+    /* include <prefix>/include/d always, so that DSSS-installed things are
+     * usable with pure rebuild */
+    char *argdir, *argfil;
+    if (whereAmI(argv[0], &argdir, &argfil)) {
+        char *fulldir = FileName::combine(
+            argdir, ".." DIRSEP "include" DIRSEP "d");
+        
+        if (!global.params.imppath)
+            global.params.imppath = new Array();
+        global.params.imppath->push(fulldir);
+        addFlag(compileFlags, "compile", "incdir", "-I$i", fulldir);
+    }
+    
     // get include paths
     if (masterConfig.find("") != masterConfig.end() &&
         masterConfig[""].find("compiler") != masterConfig[""].end()) {

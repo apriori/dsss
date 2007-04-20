@@ -1,6 +1,9 @@
 SVN from 0.63:
         - Rebuild: Added "rerun" mode, which acts like a more robust rdmd (see
           ticket #28).
+        - Rebuild: <prefix>/include/d is always included automatically in the
+          import path, so that rebuild can be used more easily in isolation
+          with DSSS-installed software.
 
 0.63 from 0.62:
         - Made OS X -arch, -isysroot and -framework flags work with dsss as
