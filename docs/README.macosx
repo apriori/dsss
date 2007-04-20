@@ -22,6 +22,8 @@ Alternatively, if you don't want a Universal Binary use:
 Making the package
 ==================
 
+* Note that you need Admin priviledges, to make PKG
+
 * Install the software to the Package Contents Root:
 
 	./dsss install --prefix=`pwd`/Root
@@ -44,5 +46,30 @@ Making the package
 
 * The name of the HFS+ disk image should be: "DSSS"
 
+	hdiutil create -srcfolder DSSS -fs HFS+ -format UDZO -ov dsss.dmg
+
 * It should be "internet-enabled", to unpack itself
+
+	hdiutil internet-enable -yes dsss.dmg
+
+Stand-alone rebuild
+===================
+
+* Build the Universal Binary
+
+	make CXX="g++ -arch ppc -arch i386"
+
+* Strip out debugging symbols
+
+	strip -S rebuild
+
+* Make HTML manpage version (optional)
+
+	man2html <rebuild.1 >rebuild.1.html
+	touch -r rebuild.1 rebuild.1.html
+
+* Archive the distribution
+
+	zip -r -y rebuild.zip rebuild rebuild.1* rebuild.conf dymoduleinit.d
+	zip -r -y rebuild.zip README InstallMe.command *.txt
 
