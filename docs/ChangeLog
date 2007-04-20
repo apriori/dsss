@@ -1,3 +1,7 @@
+SVN from 0.63:
+        - Rebuild: Added "rerun" mode, which acts like a more robust rdmd (see
+          ticket #28).
+
 0.63 from 0.62:
         - Made OS X -arch, -isysroot and -framework flags work with dsss as
           well as rebuild (see ticket #27).

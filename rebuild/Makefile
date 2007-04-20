@@ -115,6 +115,7 @@ install:
 	mkdir -p $(DOCDIR)/rebuild
 	mkdir -p $(SYSCONFDIR)/rebuild
 	cp -pf rebuild$(EXEEXT) $(BINDIR)
+	ln -s rebuild$(EXEEXT) $(BINDIR)/rerun$(EXEEXT)
 	cp -rf rebuild.1 $(MANDIR)/man1
 	cp -pf README $(DOCDIR)/rebuild
 	cp -pRf rebuild.conf/* $(SYSCONFDIR)/rebuild/

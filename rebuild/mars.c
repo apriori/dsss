@@ -279,12 +279,33 @@ int main(int argc, char *argv[])
     global.params.obj = 1;
     global.params.Dversion = 2;
     global.params.listonly = 0;
+    global.params.run = 0;
+    
+    // set true if we're running as rerun
+    bool rerun = false;
 
     global.params.linkswitches = new Array();
     global.params.libfiles = new Array();
     global.params.objfiles = new Array();
     global.params.genobjfiles = new Array();
     global.params.ddocfiles = new Array();
+    
+    // Check for being run as rdmd, rgdmd or rerun
+    char *binname = FileName::name(argv[0]);
+    if (strncmp(binname, "rerun", 5) == 0 ||
+        strncmp(binname, "rdmd",  4) == 0 ||
+        strncmp(binname, "rgdmd", 5) == 0) {
+        // first argument is the source, then args for the program
+        if (argc < 2) {
+            error("No D source file provided.");
+            exit(1);
+        }
+        
+        global.params.run = 1;
+        global.params.runargs = &argv[2];
+        global.params.runargs_length = argc - 2;
+        rerun = true;
+    }
 
     // Predefine version identifiers
     VersionCondition::addPredefinedGlobalIdent("build");
@@ -299,7 +320,7 @@ int main(int argc, char *argv[])
     if (envProfile) chooseProfile = envProfile;
     
     // then in args
-    for (i = 1; i < argc; i++)
+    for (i = 1; !global.params.run && i < argc; i++)
     {
         p = argv[i];
         if (!strncmp(p, "-dc=", 4)) {
@@ -452,7 +473,7 @@ int main(int argc, char *argv[])
 
     dupArgs(&argc, &argv);
     
-    for (i = 1; i < argc; i++)
+    for (i = 1; (rerun && i < 2) || (!rerun && i < argc); i++)
     {
 	p = argv[i];
 	if (*p == '-')
