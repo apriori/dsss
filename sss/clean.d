@@ -5,7 +5,7 @@
  *  Gregor Richards
  * 
  * License:
- *  Copyright (c) 2006  Gregor Richards
+ *  Copyright (c) 2006, 2007  Gregor Richards
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a
  *  copy of this software and associated documentation files (the "Software"),
@@ -33,7 +33,6 @@ import std.path;
 import std.stdio;
 import std.string;
 
-import sss.build;
 import sss.conf;
 
 import hcf.path;
