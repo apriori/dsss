@@ -317,7 +317,7 @@ Usage: dsss [dsss options] <command> [options]
         
     } else if (command == cmd_t.UNINSTALL) {
         writefln(
-`Usage: dsss [dsss options] uninstall [uninstall options] [tools or libraries]`
+`Usage: dsss [dsss options] uninstall [uninstall options] <tools or libraries>`
             );
         
     } else if (command == cmd_t.INSTALLED) {

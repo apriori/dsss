@@ -5,6 +5,7 @@ SVN from 0.63:
           import path, so that rebuild can be used more easily in isolation
           with DSSS-installed software.
         - Added `dsss net deplist` command.
+        - Made `dsss uninstall` explicitly require an argument.
 
 0.63 from 0.62:
         - Made OS X -arch, -isysroot and -framework flags work with dsss as
