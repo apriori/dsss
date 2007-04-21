@@ -157,20 +157,37 @@ int net(char[][] args)
     }
     switch (args[0]) {
         case "deps":
+        case "depslist":
         {
-            // install dependencies
             DSSSConf dconf = readConfig(null);
             char[][] deps = sourceToDeps(conf, dconf);
-            foreach (dep; deps) {
-                if (dep == "" || dep == dconf.settings[""]["name"]) continue;
+            
+            if (args[0] == "deps") {
+                // install dependencies
+                foreach (dep; deps) {
+                    if (dep == "" || dep == dconf.settings[""]["name"]) continue;
                 
-                char[][] netcommand;
-                netcommand ~= "assert";
-                netcommand ~= dep;
+                    char[][] netcommand;
+                    netcommand ~= "assert";
+                    netcommand ~= dep;
                 
-                writefln("\n\nInstalling %s\n", dep);
-                int netret = net(netcommand);
-                if (netret) return netret;
+                    writefln("\n\nInstalling %s\n", dep);
+                    int netret = net(netcommand);
+                    if (netret) return netret;
+                }
+                
+            } else {
+                // just list them
+                deps = deps.dup.sort;
+                char[] last = "";
+                foreach (dep; deps) {
+                    if (dep != last && dep != "" &&
+                        dep != dconf.settings[""]["name"]) {
+                        writefln("%s", dep);
+                        last = dep;
+                    }
+                }
+                
             }
             
             return 0;

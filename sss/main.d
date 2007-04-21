@@ -331,6 +331,7 @@ Usage: dsss [dsss options] <command> [options]
   Net Commands:
     deps:    install (from the network source) dependencies of the present
              package
+    depslist:list dependencies, but do not install them
     install: install a package via the network source
     fetch:   fetch but do not compile or install a package
     list:    list all installable packages

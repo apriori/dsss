@@ -4,6 +4,7 @@ SVN from 0.63:
         - Rebuild: <prefix>/include/d is always included automatically in the
           import path, so that rebuild can be used more easily in isolation
           with DSSS-installed software.
+        - Added `dsss net deplist` command.
 
 0.63 from 0.62:
         - Made OS X -arch, -isysroot and -framework flags work with dsss as
