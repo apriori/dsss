@@ -789,9 +789,9 @@ int main(int argc, char *argv[])
 	    }
             else if (p[1] == 'K')
             {
-                addFlag(linkFlags, "link", "cflag", "$i", p + 1);
-                addFlag(liblinkFlags, "link", "cflag", "$i", p + 1);
-                addFlag(shliblinkFlags, "link", "cflag", "$i", p + 1);
+                addFlag(linkFlags, "link", "cflag", "$i", p + 2);
+                addFlag(liblinkFlags, "link", "cflag", "$i", p + 2);
+                addFlag(shliblinkFlags, "link", "cflag", "$i", p + 2);
             }
             else if (strcmp(p + 1, "arch") == 0 ||
                      strcmp(p + 1, "isysroot") == 0 ||

@@ -6,6 +6,7 @@ SVN from 0.63:
           with DSSS-installed software.
         - Added `dsss net deplist` command.
         - Made `dsss uninstall` explicitly require an argument.
+        - Rebuild: Fixed -K flag (see ticket #56).
 
 0.63 from 0.62:
         - Made OS X -arch, -isysroot and -framework flags work with dsss as
