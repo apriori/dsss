@@ -181,6 +181,8 @@ void getPrefix(char[] argvz)
         // slightly more complicated for a real install
         if (forcePrefix == "") {
             forcePrefix = getDirName(installPrefix);
+        } else {
+            forcePrefix = canonPath(forcePrefix);
         }
         
         char[] sssBaseLoc = forcePrefix ~ std.path.sep ~

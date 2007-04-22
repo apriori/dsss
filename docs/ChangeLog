@@ -7,6 +7,8 @@ SVN from 0.63:
         - Added `dsss net deplist` command.
         - Made `dsss uninstall` explicitly require an argument.
         - Rebuild: Fixed -K flag (see ticket #56).
+        - Rebuild: Made --prefix=<absolute path> work properly on Windows when
+          backslashes are used (see ticket #53).
 
 0.63 from 0.62:
         - Made OS X -arch, -isysroot and -framework flags work with dsss as
