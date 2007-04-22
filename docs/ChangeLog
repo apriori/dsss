@@ -1,10 +1,10 @@
-SVN from 0.63:
+0.64 from 0.63:
         - Rebuild: Added "rerun" mode, which acts like a more robust rdmd (see
           ticket #28).
         - Rebuild: <prefix>/include/d is always included automatically in the
           import path, so that rebuild can be used more easily in isolation
           with DSSS-installed software.
-        - Added `dsss net deplist` command.
+        - Added `dsss net depslist` command.
         - Made `dsss uninstall` explicitly require an argument.
         - Rebuild: Fixed -K flag (see ticket #56).
         - Rebuild: Made --prefix=<absolute path> work properly on Windows when
