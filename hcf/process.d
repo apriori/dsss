@@ -264,7 +264,7 @@ void systemOrDie(char[] cmd)
         int p = cmd.find(' ');
         if(p!=-1) cmd=cmd[0..p];
         writefln("Command " ~ cmd ~ " returned with code ", res, ", aborting.");
-        exit(res);
+        exit(1);
     }
 }
 
@@ -309,7 +309,7 @@ void systemROrDie(char[] cmd, char[] rflag, char[] rfile)
         int p = cmd.find(' ');
         if(p!=-1) cmd=cmd[0..p];
         writefln("Command " ~ cmd ~ " returned with code ", res, ", aborting.");
-        exit(res);
+        exit(1);
     }
 }
 
