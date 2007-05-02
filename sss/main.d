@@ -33,6 +33,8 @@ import std.path;
 import std.stdio;
 import std.string;
 
+import std.c.stdlib;
+
 import sss.build;
 import sss.clean;
 import sss.conf;
