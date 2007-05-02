@@ -144,6 +144,9 @@ int main(char[][] args)
                 commandSet = true;
                 command = cmd_t.GENCONFIG;
                 
+            } else {
+                writefln("Unrecognized argument: %s", arg);
+                exit(1);
             }
             
         } else {
@@ -347,7 +350,7 @@ Usage: dsss [dsss options] <command> [options]
     }
     
     writefln(
-`  Generic options:
+`  Generic options (must proceed the command):
     --help: display specific options and information
     --prefix=<prefix>: set the install prefix
     --doc: Generate/install documentation for libraries
