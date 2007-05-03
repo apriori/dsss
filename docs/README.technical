@@ -1,7 +1,6 @@
 This document intends to explain how DSSS works on a low level, its theory of
 operation, and how it is implemented. It is assumed that the reader is
 experienced with the D language, build tools such as bud and rebuild, and DSSS.
-This document is not yet complete.
 
 DSSS' function is simple in principle, but rather complex in practice.
 Essentially, the goal of DSSS is to minimize the amount of information the user
