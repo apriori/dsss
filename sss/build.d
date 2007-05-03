@@ -135,21 +135,6 @@ version (build) {
             
             writefln("");
             
-        } else if (type == "subdir") {
-            // recurse
-            char[] origcwd = getcwd();
-            chdir(build);
-            
-            // the one thing that's passed in is build flags
-            char[] orig_dsss_build = dsss_build.dup;
-            if ("buildflags" in settings) {
-                dsss_build ~= settings["buildflags"] ~ " ";
-            }
-            
-            int buildret = sss.build.build(null);
-            chdir(origcwd);
-            
-            dsss_build = orig_dsss_build;
         }
     }
     
@@ -193,7 +178,7 @@ version (build) {
         }
     }
     
-    // 3) Make real libraries
+    // 3) Make real libraries and do special steps and subdirs
     foreach (build; buildSources) {
         char[][char[]] settings = conf.settings[build];
         
@@ -286,10 +271,38 @@ version (build) {
             // an extra line for clarity
             writefln("");
             
+        } else if (type == "special") {
+            // special type, do pre/post
+            writefln("%s", target);
+            if ("prebuild" in settings) {
+                dsssScriptedStep(conf, settings["prebuild"]);
+            }
+            
+            if ("postbuild" in settings) {
+                dsssScriptedStep(conf, settings["postbuild"]);
+            }
+            writefln("");
+            
+        } else if (type == "subdir") {
+            // recurse
+            char[] origcwd = getcwd();
+            chdir(build);
+            
+            // the one thing that's passed in is build flags
+            char[] orig_dsss_build = dsss_build.dup;
+            if ("buildflags" in settings) {
+                dsss_build ~= settings["buildflags"] ~ " ";
+            }
+            
+            int buildret = sss.build.build(null);
+            chdir(origcwd);
+            
+            dsss_build = orig_dsss_build;
+            
         }         
     }
     
-    // 4) Binaries and specials
+    // 4) Binaries
     foreach (build; buildSources) {
         char[][char[]] settings = conf.settings[build];
         
@@ -334,18 +347,6 @@ version (build) {
             }
             
             // an extra line for clarity
-            writefln("");
-            
-        } else if (type == "special") {
-            // special type, do pre/post
-            writefln("%s", target);
-            if ("prebuild" in settings) {
-                dsssScriptedStep(conf, settings["prebuild"]);
-            }
-            
-            if ("postbuild" in settings) {
-                dsssScriptedStep(conf, settings["postbuild"]);
-            }
             writefln("");
             
         }

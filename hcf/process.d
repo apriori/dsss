@@ -35,6 +35,7 @@ import std.stdio;
 import std.string;
 import std.stream;
 
+import std.c.stdio;
 import std.c.stdlib;
 
 private {
@@ -258,6 +259,7 @@ class PStream : Stream {
 void systemOrDie(char[] cmd)
 {
     int res;
+    fflush(stdout); fflush(stderr);
     res = system(cmd);
     if (res)  // CyberShadow 2007.02.22: Display a message before exiting
     {
@@ -272,6 +274,7 @@ void systemOrDie(char[] cmd)
 int sayAndSystem(char[] cmd)
 {
     writefln("+ %s", cmd);
+    fflush(stdout); fflush(stderr);
     return system(cmd);
 }
 
@@ -292,6 +295,7 @@ int systemResponse(char[] cmd, char[] rflag, char[] rfile)
     char[] resp = std.string.join(elems[1..$], "\n");
     std.file.write(rfile, resp);
     
+    fflush(stdout); fflush(stderr);
     ret = system(elems[0] ~ " " ~ rflag ~ rfile);
     
     std.file.remove(rfile);
