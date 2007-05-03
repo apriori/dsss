@@ -1,4 +1,4 @@
-There are currently three READMEs:
+There are currently four READMEs:
 
 1) README.overview, which doesn't provide much on how to actually use DSSS, but
    provides a description of what DSSS is and how it's useful.
@@ -6,3 +6,4 @@ There are currently three READMEs:
    install things from the net.
 3) README.software_engineers, for people maintaining software that they'd like
    to use DSSS to build.
+4) README.technical, which describes how DSSS works internally.
