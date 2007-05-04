@@ -77,7 +77,7 @@ Import path:    <DSSS' prefix>/include/d
 Lib path:       <DSSS' prefix>/lib
 Bin path:       <DSSS' prefix>/bin
 
-DSSS keeps track of everything it insalls for a given software package in the file:
+DSSS keeps track of everything it intalls for a given software package in the file:
 <DSSS' prefix>/share/dsss/manifest/<package name>.manifest
 so that it can be uninstalled in the future.
 
