@@ -160,7 +160,12 @@ int net(char[][] args)
         case "depslist":
         {
             DSSSConf dconf = readConfig(null);
-            char[][] deps = sourceToDeps(conf, dconf);
+            char[][] deps;
+            if (args[0] == "deps") {
+                deps = sourceToDeps(true, conf, dconf);
+            } else {
+                deps = sourceToDeps(false, conf, dconf);
+            }
             
             if (args[0] == "deps") {
                 // install dependencies
@@ -399,7 +404,7 @@ NetConfig ReadNetConfig()
 }
 
 /** Generate a list of dependencies for the current source */
-char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
+char[][] sourceToDeps(bool unresolvedOnly, NetConfig nconf = null, DSSSConf conf = null)
 {
     if (nconf is null) {
         nconf = ReadNetConfig();
@@ -426,7 +431,7 @@ char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
             // recurse
             char[] origcwd = getcwd();
             chdir(section);
-            deps ~= sourceToDeps(nconf);
+            deps ~= sourceToDeps(unresolvedOnly, nconf);
             chdir(origcwd);
             continue;
         } else {
@@ -434,8 +439,11 @@ char[][] sourceToDeps(NetConfig nconf = null, DSSSConf conf = null)
             continue;
         }
         
-        // use dsss_build -files to get the list of files
-        systemResponse(dsss_build ~ " -files -offiles.tmp " ~
+        // use dsss_build -files or -notfound to get the list of files
+        char[] filesFlag = "-files";
+        if (unresolvedOnly)
+            filesFlag = "-notfound";
+        systemResponse(dsss_build ~ " " ~ filesFlag ~ " -offiles.tmp " ~
                        std.string.join(files, " "), "-rf", "temp.rf");
         
         // read the uses
