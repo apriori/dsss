@@ -178,6 +178,8 @@ Usage:\n\
   -g             add symbolic debug info\n\
   -gc            add symbolic debug info, pretend to be C\n\
   -files         list files which would be compiled (but don't compile)\n\
+  -notfound      list files which are imported, but do not exist (and don't\n\
+                 compile)\n\
   -objfiles      list object files generated\n\
   -full          compile all source files, regardless of their age\n\
   -explicit      only compile files explicitly named, not dependencies\n\
@@ -261,6 +263,7 @@ int main(int argc, char *argv[])
     global.params.fullbuild = 0;
     global.params.expbuild = 0;
     global.params.listfiles = 0;
+    global.params.listnffiles = 0;
     global.params.listobjfiles = 0;
     global.params.fullqobjs = 1;
     global.params.fullqdocs = 0;
@@ -591,6 +594,12 @@ int main(int argc, char *argv[])
             else if (strcmp(p + 1, "files") == 0)
             {
                 global.params.listfiles = 1;
+                global.params.obj = 0;
+                global.params.link = 0;
+            }
+            else if (strcmp(p + 1, "notfound") == 0)
+            {
+                global.params.listnffiles = 1;
                 global.params.obj = 0;
                 global.params.link = 0;
             }
@@ -1361,7 +1370,9 @@ int main(int argc, char *argv[])
             } else {
                 // ignore gcstats (argh)
                 if (strcmp(m->srcfile->name->name(), "gcstats.d") &&
-                    !global.params.listonly) {
+                    !global.params.listonly &&
+                    !global.params.listfiles &&
+                    !global.params.listnffiles) {
                     fprintf(stderr, "WARNING: Module %s does not have a module declaration. This can cause problems\n"
                                     "         with rebuild's -oq option. If an error occurs, fix this first.\n",
                             m->srcfile->name->name());

@@ -45,6 +45,7 @@ struct Param
     char fullbuild;     // build all files, regardless of age
     char expbuild;      // build only listed files
     char listfiles;     // list files which would be built
+    char listnffiles;   // list files which would be built but weren't found
     char listobjfiles;  // list object files which were built
     char fullqobjs;     // use fully-qualified object names
     char fullqdocs;     // use fully-qualified document names

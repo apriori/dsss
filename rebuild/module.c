@@ -342,10 +342,15 @@ void Module::read(Loc loc)
     if (srcfile->read())
     {
         // don't need to read it if we're only looking for a list of files
-        if (!global.params.listfiles) {
+        if (!global.params.listfiles &&
+            !global.params.listnffiles) {
             error(loc, "cannot read file '%s'", srcfile->toChars());
             fatal();
         } else {
+            if (global.params.listnffiles) {
+                fprintf(global.listout, "%s\n", srcfile->name->str);
+            }
+            
             // we need to have something
             srcfile->buffer = (unsigned char *) mem.malloc(1);
             srcfile->buffer[0] = '\0';
