@@ -3,17 +3,15 @@ This Mac OS X document was written by Anders F Bjorklund <afb@users.sf.net>
 Building the software
 =====================
 
-To make a Universal Binary (of DSSS) use these commands:
+To make a Universal Binary (of DSSS) use this command to build rebuild:
 
-	sed -e 's/buildflags =/& -arch ppc -arch i386/' -i.orig dsss.conf
-
-	make -C rebuild CXX="g++ -arch ppc -arch i386"
+	make -C rebuild CXXFLAGS="-O2 -g -arch ppc -arch i386"
 
 Then we ask DSSS to build itself, using the new version:
 
 	./rebuild/rebuild -full -Irebuild sss/main.d -ofdsss -arch ppc -arch i386
 
-	./dsss build -v -vdmd
+	./dsss build -v -vdmd -version=OSXUniversalBinary
 
 Alternatively, if you don't want a Universal Binary use:
 
@@ -57,7 +55,7 @@ Stand-alone rebuild
 
 * Build the Universal Binary
 
-	make CXX="g++ -arch ppc -arch i386"
+	make CXXFLAGS="-O2 -g -arch ppc -arch i386"
 
 * Strip out debugging symbols
 
