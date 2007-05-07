@@ -676,30 +676,35 @@ int main(int argc, char *argv[])
 			goto Lerror;
 		}
 	    }
-            else if (p[1] == 'D')
-            {
-                /* this is passed through, but we keep one piece of information
-                 * we may need */
-                
-                if (p[2] == 'd') {
-                    // yes, it's a documentation directory. Needed for -candydoc
-                    global.params.docdir = p + 3;
-                    compileFlags += " ";
-                    compileFlags += p;
-                    
-                } else if (p[2] == 'q') {
-                    // a doc dir, and fullqdocs
-                    global.params.docdir = p + 3;
-                    global.params.fullqdocs = 1;
-                    compileFlags += " ";
-                    p[2] = 'd';
-                    compileFlags += p;
-                    
-                } else {
-                    compileFlags += " ";
-                    compileFlags += p;
-                }
-            }
+	    else if (p[1] == 'D')
+	    {	global.params.doDocComments = 1;
+		switch (p[2])
+		{
+		    case 'd':
+			if (!p[3])
+			    goto Lnoarg;
+			global.params.docdir = p + 3;
+			break;
+                    case 'q':
+                        // a doc dir, and fullqdocs
+			if (!p[3])
+			    goto Lnoarg;
+                        global.params.docdir = p + 3;
+                        global.params.fullqdocs = 1;
+                        break;
+		    case 'f':
+			if (!p[3])
+			    goto Lnoarg;
+			global.params.docname = p + 3;
+			break;
+
+		    case 0:
+			break;
+
+		    default:
+			goto Lerror;
+		}
+	    }
 	    else if (strcmp(p + 1, "quiet") == 0)
             {
 		global.params.quiet = 1;
@@ -1496,8 +1501,8 @@ int main(int argc, char *argv[])
 	if (global.params.verbose)
 	    printf("code      %s\n", m->toChars());
         
-        /* if (global.params.doDocComments)
-            m->gendocfile(); */
+        if (global.params.doDocComments)
+            m->gendocfile();
         
         // now possibly reflect this and add the reflected module as well
         if (global.params.reflect && m->md) {
