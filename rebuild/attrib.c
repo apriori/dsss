@@ -871,6 +871,12 @@ void PragmaDeclaration::semantic(Scope *sc)
                 addFlag(compileFlags, "compile", "version", "-version=$i", toadd);
             }
         }
+        
+    } else if (ident == Id::nolink) {
+        if (sc && sc->module) {
+            sc->module->nolink = 1;
+        }
+        
     }
 
     if (decl)

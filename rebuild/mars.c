@@ -1405,6 +1405,8 @@ int main(int argc, char *argv[])
         
         char ignore = 0;
         // don't generate if we should ignore this module
+        if (m->nolink)
+            ignore = 1;
         if (m->md) {
             std::string modname = m->md->id->string;
             if (m->md->packages) {

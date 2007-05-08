@@ -68,6 +68,7 @@ struct Module : Package
     int isHtml;		// if it is an HTML file
     int isDocFile;	// if it is a documentation input file, not D source
     int needmoduleinfo;
+    char nolink;        // do not link this module
 #ifdef IN_GCC
     int strictlyneedmoduleinfo;
 #endif

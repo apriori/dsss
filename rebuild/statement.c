@@ -27,6 +27,7 @@
 #include "hdrgen.h"
 #include "parse.h"
 #include "config.h"
+#include "module.h"
 
 /******************************** Statement ***************************/
 
@@ -1911,6 +1912,12 @@ Statement *PragmaStatement::semantic(Scope *sc)
                 addFlag(compileFlags, "compile", "version", "-version=$i", toadd);
             }
         }
+        
+    } else if (ident == Id::nolink) {
+        if (sc && sc->module) {
+            sc->module->nolink = 1;
+        }
+        
     }
     
     if (body)

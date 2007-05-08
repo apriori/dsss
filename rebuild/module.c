@@ -74,6 +74,7 @@ Module::Module(char *filename, Identifier *ident, int doDocComment, int doHdrGen
     isHtml = 0;
     isDocFile = 0;
     needmoduleinfo = 0;
+    nolink = 0;
 #ifdef IN_GCC
     strictlyneedmoduleinfo = 0;
 #endif

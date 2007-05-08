@@ -203,6 +203,7 @@ Msgtable msgtable[] =
     
     { "link" },
     { "export_version" },
+    { "nolink" },
 
     // For toHash/toString
     { "tohash", "toHash" },
