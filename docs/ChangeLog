@@ -1,6 +1,18 @@
 SVN from 0.64:
         - Now exits with the proper exit code when a subcommand fails (see
           ticket #58).
+        - Argument parsing now fails properly with invalid arguments before the
+          command.
+        - Now always fflush's before doing a system() call, to improve output.
+        - Rearranged build order to be a bit more explicit.
+        - Added the new technical README.
+        - Improved the process of making universal binaries for OS X.
+        - Rebuild: Added -notfound, which lists imports which correspond with
+          non-existing files.
+        - DSSS should now only install dependencies which are not handled (even
+          if they're handled externally to DSSS).
+        - Rebuild: Moved document generation back into rebuild.
+        - Rebuild: Support for pragma(nolink) (see ticket #57).
 
 0.64 from 0.63:
         - Rebuild: Added "rerun" mode, which acts like a more robust rdmd (see
