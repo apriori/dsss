@@ -291,7 +291,8 @@ int net(char[][] args)
                 return 0;
             } else {
                 // 4) make sure it's not installed
-                uninstall(args[1..2], true);
+                if (args[1] != "dsss")
+                    uninstall(args[1..2], true);
                 
                 // 5) install prerequisites
                 char[][] netcmd;

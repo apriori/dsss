@@ -13,6 +13,8 @@ SVN from 0.64:
           if they're handled externally to DSSS).
         - Rebuild: Moved document generation back into rebuild.
         - Rebuild: Support for pragma(nolink) (see ticket #57).
+        - Future versions should be upgradeable with `dsss net install dsss`
+          (see ticket #26).
 
 0.64 from 0.63:
         - Rebuild: Added "rerun" mode, which acts like a more robust rdmd (see
