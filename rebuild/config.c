@@ -96,6 +96,14 @@ founddir:
             return;
         } else {
             cerr << "Profile '" << profile << "' does not exist." << endl;
+            if (profile == "default") {
+                cerr << "You may generate it by running rebuild_choosedc";
+#ifndef __WIN32
+                cerr << ", as root, if necessary" << endl;
+#else
+                cerr << ".exe" << endl;
+#endif
+            }
             exit(1);
         }
     }

@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
         }
     }
     
-    readConfig(argv[0], chooseProfile);
+    readConfig(argv[0], chooseProfile, (chooseProfile == "default"));
     
     // if the configuration includes path=, add that path
     if (masterConfig.find("") != masterConfig.end() &&

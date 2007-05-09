@@ -29,7 +29,7 @@ extern std::string liblinkFlags;
 extern std::string shliblinkFlags;
 
 // Read a configuration file
-void readConfig(char *argvz, const std::string &profile);
+void readConfig(char *argvz, const std::string &profile, bool generate);
 
 // Read from a command
 int readCommand(std::string cmd, char *buf, int len);
