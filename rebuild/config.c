@@ -47,7 +47,7 @@ std::string shliblinkFlags;
 
 void readConfigFile(const string &dir, const string &fname, string &versionFile);
 
-void readConfig(char *argvz, const string &profile)
+void readConfig(char *argvz, const string &profile, bool generate)
 {
     // find where we're installed
     char *dir, *file;
@@ -89,8 +89,15 @@ founddir:
     // OK, now look for the profile
     string conffile = confdir + DIRSEP + profile;
     if (!exists(conffile.c_str())) {
-        cerr << "Profile '" << profile << "' does not exist." << endl;
-        exit(1);
+        // perhaps generate it
+        if (generate) {
+            system("rebuild_choosedc");
+            readConfig(argvz, profile, false);
+            return;
+        } else {
+            cerr << "Profile '" << profile << "' does not exist." << endl;
+            exit(1);
+        }
     }
     
     // OK, read it

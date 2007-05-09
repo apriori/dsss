@@ -15,6 +15,7 @@ SVN from 0.64:
         - Rebuild: Support for pragma(nolink) (see ticket #57).
         - Future versions should be upgradeable with `dsss net install dsss`
           (see ticket #26).
+        - Rebuild: Made rebuild choose a D compiler at runtime when possible.
 
 0.64 from 0.63:
         - Rebuild: Added "rerun" mode, which acts like a more robust rdmd (see

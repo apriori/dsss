@@ -9,8 +9,9 @@ LDFLAGS=
 
 PREFIX=/usr
 BINDIR=$(PREFIX)/bin
-MANDIR=$(PREFIX)/share/man
-DOCDIR=$(PREFIX)/share/doc
+SHAREDIR=$(PREFIX)/share
+MANDIR=$(SHAREDIR)/man
+DOCDIR=$(SHAREDIR)/doc
 SYSCONFDIR=$(PREFIX)/etc
 
 OBJS=\
@@ -92,11 +93,11 @@ impcnvgen$(EXEEXT): impcnvgen.o
 impcnvgen.o: impcnvgen.c
 	$(NATIVECXX) $(CXXFLAGS) -c impcnvgen.c -o impcnvgen.o
   
-rebuild.conf/default: choosedc$(EXEEXT)
-	./choosedc$(EXEEXT)
+rebuild.conf/default: rebuild_choosedc$(EXEEXT)
+	./rebuild_choosedc$(EXEEXT)
 
-choosedc$(EXEEXT): choosedc.o nwhereami.o
-	$(NATIVECXX) $(CXXFLAGS) $(LDFLAGS) choosedc.o nwhereami.o -o choosedc$(EXEEXT)
+rebuild_choosedc$(EXEEXT): choosedc.o nwhereami.o
+	$(NATIVECXX) $(CXXFLAGS) $(LDFLAGS) choosedc.o nwhereami.o -o rebuild_choosedc$(EXEEXT)
 
 choosedc.o: choosedc.c
 	$(NATIVECXX) $(CXXFLAGS) -c choosedc.c -o choosedc.o
@@ -114,15 +115,18 @@ install:
 	mkdir -p $(MANDIR)/man1
 	mkdir -p $(DOCDIR)/rebuild
 	mkdir -p $(SYSCONFDIR)/rebuild
+	mkdir -p $(SHAREDIR)/rebuild
 	cp -pf rebuild$(EXEEXT) $(BINDIR)
+	cp -pf rebuild_choosedc$(EXEEXT) $(BINDIR)
 	ln -s rebuild$(EXEEXT) $(BINDIR)/rerun$(EXEEXT)
 	cp -rf rebuild.1 $(MANDIR)/man1
 	cp -pf README $(DOCDIR)/rebuild
 	cp -pRf rebuild.conf/* $(SYSCONFDIR)/rebuild/
+	cp -pf testtango.d $(SHAREDIR)/rebuild
 	./instdymods $(PREFIX)
 
 clean:
 	rm -f rebuild$(EXEEXT) $(OBJS)
 	rm -f id.c id.h idgen$(EXEEXT) idgen.o
 	rm -f impcnvtab.c impcnvtab.h impcnvgen$(EXEEXT) impcnvgen.o
-	rm -f rebuild.conf/default choosedc$(EXEEXT) choosedc.o nwhereami.o
+	rm -f rebuild.conf/default rebuild_choosedc$(EXEEXT) choosedc.o nwhereami.o
