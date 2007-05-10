@@ -74,7 +74,9 @@ int net(char[][] args)
         
         if (!exists(srcListPrefix ~ std.path.sep ~ "mirror")) {
             // find the full list.list file name
-            char[] listlist = etcPrefix ~ std.path.sep ~
+            char[] listlist = installPrefix ~ std.path.sep ~
+                ".." ~ std.path.sep ~
+                "etc" ~ std.path.sep ~
                 "dsss" ~ std.path.sep ~
                 "list.list";
             version (Posix) {

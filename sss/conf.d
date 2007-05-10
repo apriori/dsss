@@ -55,6 +55,14 @@ alias std.process.system system;
 alias std.string.find find;
 alias std.string.iswhite iswhite;
 
+extern (C) int access(char*, int);
+enum accessRights : int {
+        F_OK = 0,
+        X_OK,
+        W_OK,
+        R_OK
+};
+
 /** The default config file name */
 const char[] configFName = "dsss.conf";
 
@@ -114,7 +122,7 @@ char[] dsssDllLoc;
 
 /** Usedirs (dirs to import both includes and libs from */
 char[][] useDirs;
-    
+
 /** Tested versions (for the target) */
 bool[char[]] versions;
     
@@ -138,6 +146,15 @@ void getPrefix(char[] argvz)
     }
     
     installPrefix = canonPath(installPrefix);
+    
+    // get some default usedirs
+    useDirs ~= canonPath(installPrefix ~ std.path.sep ~ "..");
+    version (Posix) {
+        char[] home = getEnvVar("HOME");
+        if (home != "") {
+            useDirs ~= canonPath(home ~ std.path.sep ~ "d");
+        }
+    }
     
     // set the prefix to actually install things to
     
@@ -181,6 +198,20 @@ void getPrefix(char[] argvz)
         // slightly more complicated for a real install
         if (forcePrefix == "") {
             forcePrefix = getDirName(installPrefix);
+            
+            // if this is inaccessible, we need to make a better decision
+            version (Posix) {
+                if (access((forcePrefix ~ '\0').ptr, accessRights.W_OK) != 0) {
+                    // choose $HOME/d
+                    if (home != "") {
+                        char[] newPrefix = canonPath(home ~ "/d");
+                        writefln("Default prefix %s is unwritable, using %s instead.",
+                                 forcePrefix, newPrefix);
+                        forcePrefix = newPrefix;
+                    }
+                }
+            }
+            
         } else {
             forcePrefix = canonPath(forcePrefix);
         }
@@ -247,8 +278,7 @@ void getPrefix(char[] argvz)
             "etc";
     if (!srcListPrefix.length)
         srcListPrefix = canonPath(
-            installPrefix ~ std.path.sep ~
-            ".." ~ std.path.sep ~
+            forcePrefix ~ std.path.sep ~
             "share" ~ std.path.sep ~
             "dsss" ~ std.path.sep ~
             "sources");

@@ -971,7 +971,8 @@ int main(int argc, char *argv[])
 
     //backend_init();
     
-    if (global.params.listfiles &&
+    if ((global.params.listfiles ||
+         global.params.listnffiles) &&
         global.params.objname) {
         global.listout = fopen(global.params.objname, "w");
         if (!global.listout) { perror(global.params.objname); fatal(); }
