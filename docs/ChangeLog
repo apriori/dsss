@@ -18,6 +18,7 @@ SVN from 0.64:
         - Rebuild: Made rebuild choose a D compiler at runtime when possible.
         - The 'sss' package now installs as a sourcelibrary, so it should be
           compilable during X-compilation, etc.
+        - Rebuild: Fixed import timestamping.
 
 0.64 from 0.63:
         - Rebuild: Added "rerun" mode, which acts like a more robust rdmd (see
