@@ -77,7 +77,7 @@ Dsymbol *Import::syntaxCopy(Dsymbol *s)
     return si;
 }
 
-void Import::load(Scope *sc)
+void Import::load(Module *src, Scope *sc)
 {
     DsymbolTable *dst;
     Dsymbol *s;
@@ -105,6 +105,11 @@ void Import::load(Scope *sc)
 	if (!mod->importedFrom)
 	    mod->importedFrom = sc ? sc->module->importedFrom : Module::rootModule;
     }
+
+    // Modules need a list of each imported module
+    if (src)
+        src->aimports.push(mod);
+    
     if (!pkg)
 	pkg = mod;
     //mod->semantic();
@@ -117,7 +122,7 @@ void Import::semantic(Scope *sc)
 {
     //printf("Import::semantic('%s')\n", toChars());
 
-    load(sc);
+    load(NULL, sc);
 
     if (mod)
     {
@@ -140,9 +145,6 @@ void Import::semantic(Scope *sc)
 		prot = PROTprivate;
 	    sc->scopesym->importScope(mod, prot);
 	}
-
-	// Modules need a list of each imported module
-	sc->module->aimports.push(mod);
 
 	if (mod->needmoduleinfo)
 	    sc->module->needmoduleinfo = 1;
@@ -230,7 +232,7 @@ Dsymbol *Import::search(Loc loc, Identifier *ident, int flags)
     //printf("%s.Import::search(ident = '%s', flags = x%x)\n", toChars(), ident->toChars(), flags);
 
     if (!pkg)
-	load(NULL);
+	load(NULL, NULL);
 
     // Forward it to the package/module
     return pkg->search(loc, ident, flags);

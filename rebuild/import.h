@@ -50,7 +50,7 @@ struct Import : Dsymbol
 
     char *kind();
     Dsymbol *syntaxCopy(Dsymbol *s);	// copy only syntax trees
-    void load(Scope *sc);
+    void load(Module *src, Scope *sc);
     void semantic(Scope *sc);
     void semantic2(Scope *sc);
     Dsymbol *toAlias();

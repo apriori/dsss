@@ -826,7 +826,7 @@ void Module::parsepragmas()
                 
             } else if (ds->isImport()) {
                 Import *im = (Import *) ds;
-                im->load(NULL);
+                im->load(this, NULL);
                 im->mod->parsepragmas();
                 
             } else if (dynamic_cast<VersionSymbol*>(ds)) {

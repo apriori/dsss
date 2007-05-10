@@ -273,7 +273,7 @@ void AttribDeclaration::parsepragmas(Module *m)
                 
             } else if (ds->isImport()) {
                 Import *im = (Import *) ds;
-                im->load(NULL);
+                im->load(m, NULL);
                 im->mod->parsepragmas();
                 
             } else if (dynamic_cast<VersionSymbol*>(ds)) {
@@ -1084,7 +1084,7 @@ void ConditionalDeclaration::parsepragmas(Module *m)
                 
             } else if (ds->isImport()) {
                 Import *im = (Import *) ds;
-                im->load(NULL);
+                im->load(m, NULL);
                 im->mod->parsepragmas();
                 
             } else if (dynamic_cast<VersionSymbol*>(ds)) {
