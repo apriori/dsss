@@ -1,4 +1,4 @@
-SVN from 0.64:
+0.65 from 0.64:
         - Now exits with the proper exit code when a subcommand fails (see
           ticket #58).
         - Argument parsing now fails properly with invalid arguments before the
