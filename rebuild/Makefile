@@ -70,7 +70,7 @@ OBJS=\
   version.o \
   whereami.o
 
-all: rebuild$(EXEEXT) rebuild.conf/default
+all: rebuild$(EXEEXT) rebuild_choosedc$(EXEEXT) rebuild.conf/default
 
 rebuild$(EXEEXT): id.c impcnvtab.c $(OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(OBJS) -o rebuild$(EXEEXT)
@@ -92,15 +92,18 @@ impcnvgen$(EXEEXT): impcnvgen.o
 
 impcnvgen.o: impcnvgen.c
 	$(NATIVECXX) $(CXXFLAGS) -c impcnvgen.c -o impcnvgen.o
-  
-rebuild.conf/default: rebuild_choosedc$(EXEEXT)
-	./rebuild_choosedc$(EXEEXT)
 
-rebuild_choosedc$(EXEEXT): choosedc.o nwhereami.o
-	$(NATIVECXX) $(CXXFLAGS) $(LDFLAGS) choosedc.o nwhereami.o -o rebuild_choosedc$(EXEEXT)
+rebuild.conf/default: choosedc$(EXEEXT)
+	./choosedc$(EXEEXT)
 
-choosedc.o: choosedc.c
-	$(NATIVECXX) $(CXXFLAGS) -c choosedc.c -o choosedc.o
+choosedc$(EXEEXT): nchoosedc.o nwhereami.o
+	$(NATIVECXX) $(CXXFLAGS) $(LDFLAGS) nchoosedc.o nwhereami.o -o choosedc$(EXEEXT)
+
+rebuild_choosedc$(EXEEXT): choosedc.o whereami.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) choosedc.o whereami.o -o rebuild_choosedc$(EXEEXT)
+
+nchoosedc.o: choosedc.c
+	$(NATIVECXX) $(CXXFLAGS) -c choosedc.c -o nchoosedc.o
 
 nwhereami.o: whereami.c
 	$(NATIVECXX) $(CXXFLAGS) -c whereami.c -o nwhereami.o
@@ -129,4 +132,5 @@ clean:
 	rm -f rebuild$(EXEEXT) $(OBJS)
 	rm -f id.c id.h idgen$(EXEEXT) idgen.o
 	rm -f impcnvtab.c impcnvtab.h impcnvgen$(EXEEXT) impcnvgen.o
-	rm -f rebuild.conf/default rebuild_choosedc$(EXEEXT) choosedc.o nwhereami.o
+	rm -f rebuild_choosedc$(EXEEXT) choosedc.o whereami.o
+	rm -f rebuild.conf/default choosedc$(EXEEXT) nchoosedc.o nwhereami.o
