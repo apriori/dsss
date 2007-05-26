@@ -3,6 +3,9 @@ SVN from 0.65:
           ticket #66).
         - Some dsss-net-installs which failed due to the above bug should
           now work (see ticket #66).
+        - Rebuild: Now (again) converts all paths to backslash-delimited paths
+          on Windows. Apparently DMD only does this conversion internally in
+          some scenarios (see ticket #70).
 
 0.65 from 0.64:
         - Now exits with the proper exit code when a subcommand fails (see

@@ -1056,14 +1056,14 @@ int main(int argc, char *argv[])
 
 	p = (char *) files.data[i];
 
-/*#if _WIN32
+#if _WIN32
 	// Convert / to \ so linker will work
 	for (int j = 0; p[j]; j++)
 	{
 	    if (p[j] == '/')
 		p[j] = '\\';
 	}
-#endif */
+#endif
 
 	p = FileName::name(p);		// strip path
 	ext = FileName::ext(p);
