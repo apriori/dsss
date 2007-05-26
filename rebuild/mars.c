@@ -954,7 +954,10 @@ int main(int argc, char *argv[])
     }
     else
     {
-	if (global.params.objname && !global.params.listfiles && files.dim > 1)
+	if (global.params.objname &&
+	    !global.params.listfiles &&
+	    !global.params.listnffiles &&
+	    files.dim > 1)
 	{
 	    error("multiple source files, but only one .obj name");
 	    fatal();
