@@ -19,7 +19,8 @@ than any of them.
  * DSSS can transparently build libraries from any D package.
  * DSSS automatically generates .di (D import) files for libraries which cause
    code using the library to link it in automatically.
- * Since DSSS uses bud, DSSS has all of bud's features as well.
+ * DSSS is based on the build tool 'rebuild', which, like bud, has a suite
+   of its own features which DSSS can employ.
  * DSSS can automatically choose names for libraries generated from D packages
    which will not conflict with libraries from other sources, or incompatible
    compilers. So you do not need to concern yourself with library names.
