@@ -896,7 +896,7 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
             }
             
             // and run it
-            dsssScriptedStep(conf, readbuf);
+            manifest ~= dsssScriptedStep(conf, readbuf);
             
             proc.close();
             
