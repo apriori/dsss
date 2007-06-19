@@ -6,6 +6,8 @@ SVN from 0.65:
         - Rebuild: Now (again) converts all paths to backslash-delimited paths
           on Windows. Apparently DMD only does this conversion internally in
           some scenarios (see ticket #70).
+        - Rebuild: Fixed a bug with documentation generation causing a segfault
+          in some situations (see ticket #74).
 
 0.65 from 0.64:
         - Now exits with the proper exit code when a subcommand fails (see

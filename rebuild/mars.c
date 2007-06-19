@@ -1538,7 +1538,7 @@ int main(int argc, char *argv[])
                 
                 // now add the module to the list
                 global.cmodules->push(new Module(
-                    mem.strdup(fn.c_str()), m->md->id, 0, 0));
+                    mem.strdup(fn.c_str()), m->md->id, global.params.doDocComments, global.params.doHdrGeneration));
             }
         }
     }

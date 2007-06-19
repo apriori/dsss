@@ -263,7 +263,7 @@ Module *Module::load(Loc loc, Array *packages, Identifier *ident)
 	filename = (char *)buf.extractData();
     }
 
-    m = new Module(filename, ident, 0, 0);
+    m = new Module(filename, ident, global.params.doDocComments, global.params.doHdrGeneration);
     m->loc = loc;
 
     /* Search along global.path for .di file, then .d file.
