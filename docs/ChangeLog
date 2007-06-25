@@ -8,6 +8,8 @@ SVN from 0.65:
           some scenarios (see ticket #70).
         - Rebuild: Fixed a bug with documentation generation causing a segfault
           in some situations (see ticket #74).
+        - Rebuild: Again moved documentation into the compiler, to fix a bug
+          causing docs to be generated without candydoc.
 
 0.65 from 0.64:
         - Now exits with the proper exit code when a subcommand fails (see
