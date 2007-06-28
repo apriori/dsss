@@ -521,7 +521,7 @@ int main(int argc, char *argv[])
             {
                 if (masterConfig.find("liblink") != masterConfig.end() &&
                     masterConfig["liblink"].find("oneatatime") != masterConfig["liblink"].end() &&
-                    masterConfig["liblink"]["oneatatime"] != "yes") {
+                    masterConfig["liblink"]["oneatatime"] != "no") {
                     global.params.oneatatime = 1;
                 }
                 global.params.lib = 1;
@@ -530,7 +530,7 @@ int main(int argc, char *argv[])
             {
                 if (masterConfig.find("shliblink") != masterConfig.end() &&
                     masterConfig["shliblink"].find("oneatatime") != masterConfig["shliblink"].end() &&
-                    masterConfig["shliblink"]["oneatatime"] != "yes") {
+                    masterConfig["shliblink"]["oneatatime"] != "no") {
                     global.params.oneatatime = 1;
                 }
                 global.params.shlib = 1;
@@ -539,7 +539,7 @@ int main(int argc, char *argv[])
             {
                 if (masterConfig.find("dyliblink") != masterConfig.end() &&
                     masterConfig["dyliblink"].find("oneatatime") != masterConfig["dyliblink"].end() &&
-                    masterConfig["dyliblink"]["oneatatime"] != "yes") {
+                    masterConfig["dyliblink"]["oneatatime"] != "no") {
                     global.params.oneatatime = 1;
                 }
                 global.params.dylib = 1;
