@@ -34,6 +34,26 @@ static real_t zero;	// work around DMC bug for now
 
 #define LOG 0
 
+/* FreeBSD Workaround */
+#if defined(__FreeBSD__)
+           long double
+           fmodl (long double x, long double y)
+           {
+               long double ax, ay;
+
+               if (y == 0)
+                 return 0;
+
+               ay = fabsl (y);
+               ax = fabsl (x);
+
+               if (ax < ay)
+                 return x;
+
+               return copysignl(ax - (floorl (ax / ay)) * ay, x);
+           }
+#endif
+
 Expression *expType(Type *type, Expression *e)
 {
     if (type != e->type)
@@ -486,6 +506,7 @@ Expression *Mod(Type *type, Expression *e1, Expression *e2)
 #elif defined(IN_GCC)
 	    c = complex_t(e1->toReal() % r2, e1->toImaginary() % r2);
 #else
+
 	    c = complex_t(fmodl(e1->toReal(), r2), fmodl(e1->toImaginary(), r2));
 #endif
 	}

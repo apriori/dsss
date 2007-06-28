@@ -27,9 +27,8 @@
 
 #if _WIN32
 #include	<process.h>
-#endif
+#else
 
-#if linux
 #include	<sys/types.h>
 #include	<sys/wait.h>
 #include	<unistd.h>
