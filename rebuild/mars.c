@@ -943,6 +943,14 @@ int main(int argc, char *argv[])
     if (!global.params.obj)
 	global.params.link = 0;
 
+#if _WIN32
+    // Convert / to \ so linker will work
+    for (int j = 0; global.params.objname[j]; j++)
+    {
+        if (global.params.objname[j] == '/')
+            global.params.objname[j] = '\\';
+    }
+#endif
     if (global.params.link)
     {
 	global.params.exefile = global.params.objname;

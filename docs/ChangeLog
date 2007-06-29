@@ -1,3 +1,6 @@
+SVN from 0.67:
+        - Rebuild: -of<name> now converts / to \ on Windows (see ticket #85).
+
 0.67 from 0.66:
         - Rebuild: Fixed generation of libraries with DMD+GNU/Linux (see ticket
           #75).
