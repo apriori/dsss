@@ -2,8 +2,8 @@ This document is intended as a reference for Gregor or, if Gregor should fail
 to continue maintaining DSSS, whoever the current maintainer is. It contains
 instructions on how to make a release of the current version of DSSS.
 
-1) sss/main.d, docs/ChangeLog, docs/NEWS and rebuild/mars.c all need to be
-   updated.
+1) sss/main.d, docs/ChangeLog, docs/NEWS, rebuild/mars.c, rebuild/rebuild.exe
+   and rebuild/rebuild_choosedc.exe all need to be updated.
 
 2) svn export to dsss-<version>
 
