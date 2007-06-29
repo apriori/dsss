@@ -204,11 +204,20 @@ int main(char[][] args)
                 
             } else if (arg.length >= 1 &&
                        arg[0] == '-') {
-                // pass through to build
-                dsss_buildOptions ~= arg ~ " ";
+                // perhaps specific to a command
+                if (command == cmd_t.NET) {
+                    if (parseArg(arg, "source", true, &val)) {
+                        forceMirror = val;
+                    } else {
+                        dsss_buildOptions ~= arg ~ " ";
+                    }
+                    
+                } else {
+                    // pass through to build
+                    dsss_buildOptions ~= arg ~ " ";
+                }
                 
             } else {
-                
                 // something to pass in
                 buildElems ~= arg;
             }
@@ -343,7 +352,10 @@ Usage: dsss [dsss options] <command> [options]
     install: install a package via the network source
     fetch:   fetch but do not compile or install a package
     list:    list all installable packages
-    search:  find an installable package by name`
+    search:  find an installable package by name
+  Net options:
+    --source=<URL>: Use the given URL for the sources list, rather than asking
+            or using the last URL used.`
             );
 
         

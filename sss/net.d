@@ -47,6 +47,9 @@ import sss.uninstall;
 import hcf.path;
 import hcf.process;
 
+/// If set, the given mirror will be used
+char[] forceMirror;
+
 /*import mango.http.client.HttpClient;
 import mango.http.client.HttpGet;*/
 
@@ -95,33 +98,40 @@ int net(char[][] args)
             
             int sel = -1;
             
-            if (mirrorList.length == 1) {
-                // easy choice :)
-                sel = 0;
+            if (forceMirror.length == 0) {
+                if (mirrorList.length == 1) {
+                    // easy choice :)
+                    sel = 0;
+                } else {
+                    writefln("Please choose a mirror for the source list:");
+                    writefln("(Note that you may choose another mirror at any time by removing the directory");
+                    writefln("%s)", srcListPrefix);
+                    writefln("");
+                    
+                    foreach (i, mirror; mirrorList) {
+                        writefln("%d) %s", i + 1, mirror);
+                    }
+                    
+                    // choose
+                    char[] csel;
+                    while (sel < 0 || sel >= mirrorList.length) {
+                        csel = din.readLine();
+                        sel = atoi(csel) - 1;
+                    }
+                }
+            }
+            
+            char[] mirror;
+            if (sel == -1) {
+                mirror = forceMirror;
             } else {
-                writefln("Please choose a mirror for the source list:");
-                writefln("(Note that you may choose another mirror at any time by removing the directory");
-                writefln("%s)", srcListPrefix);
-                writefln("");
-                
-                foreach (i, mirror; mirrorList) {
-                    writefln("%d) %s", i + 1, mirror);
-                }
-                
-                // choose
-                char[] csel;
-                while (sel < 0 || sel >= mirrorList.length) {
-                    csel = din.readLine();
-                    sel = atoi(csel) - 1;
-                }
+                mirror = mirrorList[sel];
             }
             
             // get it
             mkdirP(srcListPrefix);
             std.file.write(srcListPrefix ~ std.path.sep ~ "mirror",
-                           mirrorList[sel]);
-            char[] mirror = cast(char[]) std.file.read(
-                srcListPrefix ~ std.path.sep ~ "mirror");
+                           mirror);
             sayAndSystem("curl -s -S -k " ~ mirror ~ "/source.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "source.list");
             sayAndSystem("curl -s -S -k " ~ mirror ~ "/pkgs.list "
@@ -129,8 +139,14 @@ int net(char[][] args)
             sayAndSystem("curl -s -S -k " ~ mirror ~ "/mirrors.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "mirrors.list");
         } else {
-            char[] mirror = cast(char[]) std.file.read(
-                srcListPrefix ~ std.path.sep ~ "mirror");
+            char[] mirror;
+            if (forceMirror.length == 0) {
+                mirror = cast(char[]) std.file.read(
+                    srcListPrefix ~ std.path.sep ~ "mirror");
+            } else {
+                mirror = forceMirror;
+            }
+            
             char[] srcList = srcListPrefix ~ std.path.sep ~ "source.list";
             char[] pkgsList = srcListPrefix ~ std.path.sep ~ "pkgs.list";
             char[] mirrorsList = srcListPrefix ~ std.path.sep ~ "mirrors.list";
