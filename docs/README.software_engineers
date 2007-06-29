@@ -206,4 +206,8 @@ target = dzipper
 
 
 At build time, sections will be handled in the order that they appear in the
-dsss.conf file, with the exception that binaries are always built last.
+dsss.conf file, with the exception that binaries are always built last. By
+default, every section will be built. This can be overridden with the global
+option 'defaulttargets', which allows you to specify a list of targets to build
+by default. All targets will be built if 'all' is explicitly specified on the
+command line.

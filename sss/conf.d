@@ -974,36 +974,45 @@ char[][] sourcesByElems(char[][] buildElems, DSSSConf conf)
 {
     char[][] buildSources;
     
+    if (buildElems.length == 0 && "defaulttargets" in conf.settings[""]) {
+        buildElems = split(conf.settings[""]["defaulttargets"], " ");
+    }
+    
     if (buildElems.length) {
-        // now select the builds that have been requested
-        foreach (be; buildElems) {
-            // search for a section or target with this name
-            bool found = false;
+        if (buildElems.length == 1 && buildElems[0] == "all") {
+            buildSources = conf.sections;
             
-            foreach (section; conf.sections) {
-                if (fnmatch(section, be)) {
-                    // build this
-                    buildSources ~= section;
-                    found = true;
-                    continue;
+        } else {
+            // now select the builds that have been requested
+            foreach (be; buildElems) {
+                // search for a section or target with this name
+                bool found = false;
+                
+                foreach (section; conf.sections) {
+                    if (fnmatch(section, be)) {
+                        // build this
+                        buildSources ~= section;
+                        found = true;
+                        continue;
+                    }
+                    
+                    // not the section name, so try "target"
+                    if (fnmatch(conf.settings[section]["target"], be)) {
+                        
+                        // build this (by section name)
+                        buildSources ~= section;
+                        found = true;
+                    }
                 }
                 
-                // not the section name, so try "target"
-                if (fnmatch(conf.settings[section]["target"], be)) {
-                    
-                    // build this (by section name)
-                    buildSources ~= section;
-                    found = true;
+                if (!found) {
+                    // didn't match anything!
+                    writefln("%s is not described in the configuration file.", be);
+                    exit(1);
                 }
             }
-            
-            if (!found) {
-                // didn't match anything!
-                writefln("%s is not described in the configuration file.", be);
-                exit(1);
-            }
-        }
         
+        }
     } else {
         // no builds selected, build them all
         buildSources = conf.sections;
