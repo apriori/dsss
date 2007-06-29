@@ -31,7 +31,7 @@ $ dsss clean
 
 Finally, you can cause DSSS to remove /all/ compiled files, essentially leaving
 the source directory as it was before DSSS was used at all, with the command:
-$ dsss distbuild
+$ dsss distclean
 
 
 Installing Software with DSSS

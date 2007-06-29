@@ -378,7 +378,7 @@ Usage: dsss [dsss options] <command> [options]
     --libdir=<dir> [default <prefix>/lib]
     --includedir=<dir> [default <prefix>/include/d]
     --docdir=<dir> [default <prefix>/share/doc]
-    --sysconfdir=<dir> [default <prefix/etc]
+    --sysconfdir=<dir> [default <prefix>/etc]
     --scratchdir=<dir> [default /tmp]
 
   All other options are passed through to rebuild and ultimately the compiler.`);
