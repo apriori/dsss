@@ -169,6 +169,9 @@ int main(char[][] args)
                 // force a prefix
                 forcePrefix = makeAbsolute(val);
                 
+            } else if (parseArg(arg, "keep-response-files", false)) {
+                deleteRFiles = false;
+                
             } else if (parseArg(arg, "bindir", true, &val)) {
                 binPrefix = makeAbsolute(val);
                 
@@ -357,6 +360,7 @@ Usage: dsss [dsss options] <command> [options]
     --prefix=<prefix>: set the install prefix
     --doc: Generate/install documentation for libraries
     --use=<directory containing import library includes and libs>
+    --keep-response-files: Do not delete temporary rebuild response files
 
     --bindir=<dir> [default <prefix>/bin]
     --libdir=<dir> [default <prefix>/lib]

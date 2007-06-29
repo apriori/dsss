@@ -47,6 +47,7 @@ struct Param
     char listfiles;     // list files which would be built
     char listnffiles;   // list files which would be built but weren't found
     char listobjfiles;  // list object files which were built
+    char keeprfiles;    // keep response files
     char fullqobjs;     // use fully-qualified object names
     char fullqdocs;     // use fully-qualified document names
     char clean;         // clean after building

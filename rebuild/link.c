@@ -214,7 +214,7 @@ int runLINK()
                 res = 0;
             } else {
                 if (useresponse)
-                    res = systemResponse(cline.c_str(), response.c_str(), "rsp");
+                    res = systemResponse(cline.c_str(), response.c_str(), "link.rf", !(global.params.keeprfiles));
                 else
                     res = system(cline.c_str());
             }
@@ -239,7 +239,7 @@ int runLINK()
                     res = 0;
                 } else {
                     if (useresponse)
-                        res = systemResponse(cline.c_str(), response.c_str(), "rsp");
+                        res = systemResponse(cline.c_str(), response.c_str(), "postlink.rf", !(global.params.keeprfiles));
                     else
                         res = system(cline.c_str());
                 }

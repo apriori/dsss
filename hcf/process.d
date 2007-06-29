@@ -286,7 +286,7 @@ void saySystemDie(char[] cmd)
 }
 
 /** system + use a response file */
-int systemResponse(char[] cmd, char[] rflag, char[] rfile)
+int systemResponse(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
 {
     int ret;
     char[][] elems = std.string.split(cmd, " ");
@@ -298,16 +298,16 @@ int systemResponse(char[] cmd, char[] rflag, char[] rfile)
     fflush(stdout); fflush(stderr);
     ret = system(elems[0] ~ " " ~ rflag ~ rfile);
     
-    std.file.remove(rfile);
+    if (deleteRFile) std.file.remove(rfile);
     
     return ret;
 }
 
 /** systemResponse + guarantee success */
-void systemROrDie(char[] cmd, char[] rflag, char[] rfile)
+void systemROrDie(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
 {
     int res;
-    res = systemResponse(cmd, rflag, rfile);
+    res = systemResponse(cmd, rflag, rfile, deleteRFile);
     if (res)  // CyberShadow 2007.02.22: Display a message before exiting
     {
         int p = cmd.find(' ');
@@ -318,15 +318,15 @@ void systemROrDie(char[] cmd, char[] rflag, char[] rfile)
 }
 
 /** systemResponse + output */
-int sayAndSystemR(char[] cmd, char[] rflag, char[] rfile)
+int sayAndSystemR(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
 {
     writefln("+ %s", cmd);
-    return systemResponse(cmd, rflag, rfile);
+    return systemResponse(cmd, rflag, rfile, deleteRFile);
 }
 
 /** systemROrDie + output */
-void saySystemRDie(char[] cmd, char[] rflag, char[] rfile)
+void saySystemRDie(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
 {
     writefln("+ %s", cmd);
-    systemROrDie(cmd, rflag, rfile);
+    systemROrDie(cmd, rflag, rfile, deleteRFile);
 }

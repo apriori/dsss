@@ -72,7 +72,7 @@ void runCompile(const std::string &files)
             printf("%s\n", cline.c_str());
         } else {
             if (useresponse)
-                res = systemResponse(cline.c_str(), response.c_str(), "rsp");
+                res = systemResponse(cline.c_str(), response.c_str(), "compile.rf", !(global.params.keeprfiles));
             else
                 res = system(cline.c_str());
         }

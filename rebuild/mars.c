@@ -181,6 +181,7 @@ Usage:\n\
   -notfound      list files which are imported, but do not exist (and don't\n\
                  compile)\n\
   -objfiles      list object files generated\n\
+  -keeprfiles    Keep response files (if they are used)\n\
   -full          compile all source files, regardless of their age\n\
   -explicit      only compile files explicitly named, not dependencies\n\
   --help         print help\n\
@@ -265,6 +266,7 @@ int main(int argc, char *argv[])
     global.params.listfiles = 0;
     global.params.listnffiles = 0;
     global.params.listobjfiles = 0;
+    global.params.keeprfiles = 0;
     global.params.fullqobjs = 1;
     global.params.fullqdocs = 0;
     global.params.clean = 0;
@@ -606,6 +608,10 @@ int main(int argc, char *argv[])
             else if (strcmp(p + 1, "objfiles") == 0)
             {
                 global.params.listobjfiles = 1;
+            }
+            else if (strcmp(p + 1, "keeprfiles") == 0)
+            {
+                global.params.keeprfiles = 1;
             }
             else if (strcmp(p + 1, "full") == 0)
                 global.params.fullbuild = 1;

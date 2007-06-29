@@ -13,6 +13,6 @@ void dupArgs(int *argc, char ***argv);
 
 void parseResponseFile(int *argc, char ***argv, char *rf, int argnum);
 
-int systemResponse(const char *cmd, const char *rflag, const char *rfile);
+int systemResponse(const char *cmd, const char *rflag, const char *rfile, bool deleteRFile);
 
 #endif

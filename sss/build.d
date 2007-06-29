@@ -163,7 +163,7 @@ version (build) {
                 if (targetGNUOrPosix()) {
                     char[] stubbl = bl ~ "-fPIC -shlib " ~ stubDLoc ~ " -of" ~ shlibname ~
                         " " ~ shlibflag;
-                    saySystemRDie(stubbl, "-rf", "temp.rf");
+                    saySystemRDie(stubbl, "-rf", shlibname ~ "_stub.rf", deleteRFiles);
                     if (targetVersion("Posix")) {
                         foreach (ssln; shortshlibnames) {
                             saySystemDie("ln -sf " ~ shlibname ~ " " ~ ssln);
@@ -239,7 +239,7 @@ version (build) {
                     // first do a static library
                     if (exists("libS" ~ target ~ ".a")) std.file.remove("libS" ~ target ~ ".a");
                     char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -oflibS" ~ target ~ ".a";
-                    saySystemRDie(stbl, "-rf", "temp.rf");
+                    saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
                     
                     if (shLibSupport() &&
                         ("shared" in settings)) {
@@ -249,14 +249,14 @@ version (build) {
                         " " ~ shlibflag;
                         
                         // finally, the shared compile
-                        saySystemRDie(shbl, "-rf", "temp.rf");
+                        saySystemRDie(shbl, "-rf", target ~ "_shared.rf", deleteRFiles);
                     }
                     
                 } else if (targetVersion("Windows")) {
                     // for the moment, only do a static library
                     if (exists("S" ~ target ~ ".lib")) std.file.remove("S" ~ target ~ ".lib");
                     char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -ofS" ~ target ~ ".lib";
-                    saySystemRDie(stbl, "-rf", "temp.rf");
+                    saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
                 } else {
                     assert(0);
                 }
@@ -339,7 +339,7 @@ version (build) {
             }
             
             // then do it
-            saySystemRDie(bbl, "-rf", "temp.rf");
+            saySystemRDie(bbl, "-rf", target ~ ".rf", deleteRFiles);
             
             // do the postbuild
             if ("postbuild" in settings) {

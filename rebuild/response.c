@@ -88,7 +88,7 @@ void parseResponseFile(int *argc, char ***argv, char *rf, int argnum)
     *argv = nargv;
 }
 
-int systemResponse(const char *cmd, const char *rflag, const char *rfile)
+int systemResponse(const char *cmd, const char *rflag, const char *rfile, bool deleteRFile)
 {
     char *newcmd = mem.strdup(cmd);
     int res;
@@ -125,7 +125,7 @@ int systemResponse(const char *cmd, const char *rflag, const char *rfile)
     char *newcmdr = (char *) mem.malloc(strlen(newcmd) + strlen(rflag) + strlen(rfile) + 2);
     sprintf(newcmdr, "%s %s%s", newcmd, rflag, rfile);
     res = system(newcmdr);
-    remove(rfile);
+    if (deleteRFile) remove(rfile);
     
     mem.free(newcmdr);
     mem.free(newcmd);

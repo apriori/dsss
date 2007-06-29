@@ -447,7 +447,7 @@ char[][] sourceToDeps(bool unresolvedOnly, NetConfig nconf = null, DSSSConf conf
         if (unresolvedOnly)
             filesFlag = "-notfound";
         systemResponse(dsss_build ~ " " ~ filesFlag ~ " -offiles.tmp " ~
-                       std.string.join(files, " "), "-rf", "temp.rf");
+                       std.string.join(files, " "), "-rf", "temp.rf", true);
         
         // read the uses
         char[][] uses = std.string.split(cast(char[]) std.file.read("files.tmp"),

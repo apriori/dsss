@@ -111,6 +111,9 @@ char[] candyDocPrefix;
 /** Are we doing documentation? */
 bool doDocs = false;
 
+/** Should we delete response files? */
+bool deleteRFiles = true;
+
 /** The prefix for scratch work */
 char[] scratchPrefix;
 
