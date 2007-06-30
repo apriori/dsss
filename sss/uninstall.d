@@ -71,6 +71,7 @@ int uninstall(char[][] toolList, bool quiet = false)
                 
                 writefln("Removing %s", file);
                 tryRemove(file);
+                cleanTree(getDirName(file));
             }
         }
         

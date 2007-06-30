@@ -47,6 +47,17 @@ void tryRemove(char[] fn)
     }
 }
 
+/** Clean a tree: Remove all empty directories in the tree */
+void cleanTree(char[] dirn)
+{
+    try {
+        rmdir(dirn);
+        cleanTree(getDirName(dirn));
+    } catch (Exception e) {
+        // ignored
+    }
+}
+
 /** The entry function to the DSSS "clean" command */
 int clean(DSSSConf conf = null) {
     // fairly simple, get rid of easy things - dsss_objs and dsss_imports
