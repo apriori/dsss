@@ -588,12 +588,14 @@ Expression *Type::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	}
 	else if (ident == Id::init)
 	{
+#if 0
 	    if (v->init)
 	    {
 		if (v->init->isVoidInitializer()) {}
 		    //error(e->loc, "%s.init is void", v->toChars());
 		else
-		{   e = v->init->toExpression();
+		{   Loc loc = e->loc;
+		    e = v->init->toExpression();
 		    if (e->op == TOKassign || e->op == TOKconstruct)
 		    {
 			e = ((AssignExp *)e)->e2;
@@ -608,9 +610,14 @@ Expression *Type::dotExp(Scope *sc, Expression *e, Identifier *ident)
 			    e = v->type->defaultInit();
 			}
 		    }
+		    e = e->optimize(WANTvalue | WANTinterpret);
+//		    if (!e->isConst())
+//			error(loc, ".init cannot be evaluated at compile time");
 		}
 		return e;
 	    }
+#endif
+	    return defaultInit();
 	}
     }
     if (ident == Id::typeinfo)
@@ -2003,6 +2010,7 @@ Type *TypeDArray::semantic(Loc loc, Scope *sc)
     {
 	case Tfunction:
 	case Tnone:
+        case Ttuple:
 	    //error(loc, "can't have array of %s", tbn->toChars());
 	    tn = next = tint32;
 	    break;
@@ -2190,8 +2198,8 @@ Type *TypeAArray::semantic(Loc loc, Scope *sc)
 #if 0
 	    // Convert to Tarray
 	    key = key->next->arrayOf();
-	    break;
 #endif
+	    break;
 	case Tbit:
 	case Tbool:
 	case Tfunction:
@@ -2225,7 +2233,7 @@ Expression *TypeAArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	FuncDeclaration *fd;
 	Expressions *arguments;
 
-	fd = FuncDeclaration::genCfunc(Type::tsize_t, "_aaLen");
+	fd = FuncDeclaration::genCfunc(Type::tsize_t, Id::aaLen);
 	ec = new VarExp(0, fd);
 	arguments = new Expressions();
 	arguments->push(e);
@@ -2240,7 +2248,7 @@ Expression *TypeAArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	int size = key->size(e->loc);
 
 	assert(size);
-	fd = FuncDeclaration::genCfunc(Type::tindex, "_aaKeys");
+	fd = FuncDeclaration::genCfunc(Type::tindex, Id::aaKeys);
 	ec = new VarExp(0, fd);
 	arguments = new Expressions();
 	arguments->push(e);
@@ -2254,7 +2262,7 @@ Expression *TypeAArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	FuncDeclaration *fd;
 	Expressions *arguments;
 
-	fd = FuncDeclaration::genCfunc(Type::tindex, "_aaValues");
+	fd = FuncDeclaration::genCfunc(Type::tindex, Id::aaValues);
 	ec = new VarExp(0, fd);
 	arguments = new Expressions();
 	arguments->push(e);
@@ -2271,7 +2279,7 @@ Expression *TypeAArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	FuncDeclaration *fd;
 	Expressions *arguments;
 
-	fd = FuncDeclaration::genCfunc(Type::tint64, "_aaRehash");
+	fd = FuncDeclaration::genCfunc(Type::tint64, Id::aaRehash);
 	ec = new VarExp(0, fd);
 	arguments = new Expressions();
 	arguments->push(e->addressOf(sc));
@@ -2346,6 +2354,13 @@ Type *TypePointer::semantic(Loc loc, Scope *sc)
 {
     //printf("TypePointer::semantic()\n");
     Type *n = next->semantic(loc, sc);
+    switch (n->toBasetype()->ty)
+    {
+	case Ttuple:
+	    error(loc, "can't have pointer to %s", n->toChars());
+	    n = tint32;
+	    break;
+    }
     if (n != next)
 	deco = NULL;
     next = n;
@@ -2716,12 +2731,6 @@ Type *TypeFunction::semantic(Loc loc, Scope *sc)
 	    if (inuse == 1) inuse--;
 	    t = arg->type->toBasetype();
 
-	    /* If arg turns out to be a tuple, the number of parameters may
-	     * change.
-	     */
-	    if (t->ty == Ttuple)
-		dim = Argument::dim(parameters);
-
 	    if (arg->storageClass & (STCout | STCref | STClazy))
 	    {
 		/* if (t->ty == Tsarray)
@@ -2735,6 +2744,14 @@ Type *TypeFunction::semantic(Loc loc, Scope *sc)
 		arg->defaultArg = arg->defaultArg->semantic(sc);
 		arg->defaultArg = resolveProperties(sc, arg->defaultArg);
 		arg->defaultArg = arg->defaultArg->implicitCastTo(sc, arg->type);
+	    }
+
+	    /* If arg turns out to be a tuple, the number of parameters may
+	     * change.
+	     */
+	    if (t->ty == Ttuple)
+	    {	dim = Argument::dim(parameters);
+		i--;
 	    }
 	}
     }
@@ -3889,20 +3906,7 @@ Expression *TypeTypedef::dotExp(Scope *sc, Expression *e, Identifier *ident)
 #endif
     if (ident == Id::init)
     {
-	if (e->op == TOKvar)
-	{
-	    VarExp *ve = (VarExp *)e;
-	    VarDeclaration *v = ve->var->isVarDeclaration();
-
-	    assert(v);
-	    if (v->init)
-	    {	if (v->init->isVoidInitializer()) {}
-		    //error(e->loc, "%s.init is void", v->toChars());
-		else
-		    return v->init->toExpression();
-	    }
-	}
-	return defaultInit();
+	return Type::dotExp(sc, e, ident);
     }
     return sym->basetype->dotExp(sc, e, ident);
 }

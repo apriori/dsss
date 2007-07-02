@@ -23,6 +23,7 @@ struct Type;
 struct dt_t;
 struct AggregateDeclaration;
 struct VoidInitializer;
+struct ArrayInitializer;
 struct ExpInitializer;
 #ifdef _DH
 struct HdrGenState;
@@ -43,6 +44,7 @@ struct Initializer : Object
     static Initializers *arraySyntaxCopy(Initializers *ai);
 
     virtual VoidInitializer *isVoidInitializer() { return NULL; }
+    virtual ArrayInitializer  *isArrayInitializer()  { return NULL; }
     virtual ExpInitializer  *isExpInitializer()  { return NULL; }
 };
 
@@ -89,9 +91,12 @@ struct ArrayInitializer : Initializer
     Initializer *semantic(Scope *sc, Type *t);
     Type *inferType(Scope *sc);
     Expression *toExpression();
+    Initializer *toAssocArrayInitializer();
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 
     dt_t *toDtBit();	// for bit arrays
+
+    ArrayInitializer *isArrayInitializer() { return this; }
 };
 
 struct ExpInitializer : Initializer

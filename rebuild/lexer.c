@@ -400,6 +400,7 @@ Token *Lexer::peekPastParen(Token *tk)
 {
     //printf("peekPastParen()\n");
     int parens = 1;
+    int curlynest = 0;
     while (1)
     {
 	tk = peek(tk);
@@ -415,6 +416,20 @@ Token *Lexer::peekPastParen(Token *tk)
 		if (parens)
 		    continue;
 		tk = peek(tk);
+		break;
+
+	    case TOKlcurly:
+		curlynest++;
+		continue;
+
+	    case TOKrcurly:
+		if (--curlynest >= 0)
+		    continue;
+		break;
+
+	    case TOKsemicolon:
+		if (curlynest)
+		    continue;
 		break;
 
 	    case TOKeof:
@@ -629,9 +644,8 @@ void Lexer::scan(Token *t)
 
 		    if (mod && id == Id::FILE)
 		    {
-			t->value = TOKstring;
 			t->ustring = (unsigned char *)(loc.filename ? loc.filename : mod->ident->toChars());
-			goto Llen;
+			goto Lstring;
 		    }
 		    else if (mod && id == Id::LINE)
 		    {
@@ -640,23 +654,46 @@ void Lexer::scan(Token *t)
 		    }
 		    else if (id == Id::DATE)
 		    {
-			t->value = TOKstring;
 			t->ustring = (unsigned char *)date;
-			goto Llen;
+			goto Lstring;
 		    }
 		    else if (id == Id::TIME)
 		    {
-			t->value = TOKstring;
 			t->ustring = (unsigned char *)time;
-			goto Llen;
+			goto Lstring;
+		    }
+		    else if (id == Id::VENDOR)
+		    {
+			t->ustring = (unsigned char *)"Digital Mars D";
+			goto Lstring;
 		    }
 		    else if (id == Id::TIMESTAMP)
 		    {
-			t->value = TOKstring;
 			t->ustring = (unsigned char *)timestamp;
+		     Lstring:
+			t->value = TOKstring;
 		     Llen:
 			t->postfix = 0;
 			t->len = strlen((char *)t->ustring);
+		    }
+		    else if (id == Id::VERSIONX)
+		    {	unsigned major = 0;
+			unsigned minor = 0;
+
+			for (char *p = global.version + 1; 1; p++)
+			{
+			    char c = *p;
+			    if (isdigit(c))
+				minor = minor * 10 + c - '0';
+			    else if (c == '.')
+			    {	major = minor;
+				minor = 0;
+			    }
+			    else
+				break;
+			}
+			t->value = TOKint64v;
+			t->uns64value = major * 1000 + minor;
 		    }
 		}
 		//printf("t->value = %d\n",t->value);
@@ -2730,6 +2767,7 @@ void Lexer::initKeywords()
     Token::tochars[TOKarraylength]	= "arraylength";
     Token::tochars[TOKarrayliteral]	= "arrayliteral";
     Token::tochars[TOKassocarrayliteral] = "assocarrayliteral";
+    Token::tochars[TOKstructliteral]	= "structliteral";
     Token::tochars[TOKstring]		= "string";
     Token::tochars[TOKdsymbol]		= "symbol";
     Token::tochars[TOKtuple]		= "tuple";

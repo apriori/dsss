@@ -25,6 +25,7 @@ struct Expression;
 struct HdrGenState;
 #endif
 
+
 struct EnumDeclaration : ScopeDsymbol
 {
     Type *type;			// the TypeEnum
@@ -47,6 +48,9 @@ struct EnumDeclaration : ScopeDsymbol
     EnumDeclaration *isEnumDeclaration() { return this; }
 
     void toDebug();
+
+    Symbol *sinit;
+    Symbol *toInitializer();
 };
 
 

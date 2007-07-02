@@ -563,7 +563,7 @@ MATCH TemplateDeclaration::deduceMatch(Objects *targsi, Expressions *fargs,
     printf("\nTemplateDeclaration::deduceMatch() %s\n", toChars());
     for (i = 0; i < fargs->dim; i++)
     {	Expression *e = (Expression *)fargs->data[i];
-	printf("\tfarg[%d] = %s\n", i, e->toChars());
+	printf("\tfarg[%d] is %s, type is %s\n", i, e->toChars(), e->type->toChars());
     }
 #endif
 
@@ -694,8 +694,8 @@ L2:
 	else
 	{   farg = (Expression *)fargs->data[i];
 #if 0
-	    printf("farg->type   = %s\n", farg->type->toChars());
-	    printf("fparam->type = %s\n", fparam->type->toChars());
+	    printf("\tfarg->type   = %s\n", farg->type->toChars());
+	    printf("\tfparam->type = %s\n", fparam->type->toChars());
 #endif
 
 	    m = farg->type->deduceType(scope, fparam->type, parameters, &dedtypes);
@@ -764,6 +764,13 @@ Lmatch:
 	    {	o = tp->defaultArg(paramscope);
 		if (!o)
 		    goto Lnomatch;
+#if 0
+		Match m;
+		Declaration *sparam;
+		m = tp->matchArg(paramscope, dedargs, i, parameters, &sparam);
+		if (!m)
+		    goto Lnomatch;
+#endif
 	    }
 	    declareParameter(paramscope, tp, o);
 	    dedargs->data[i] = (void *)o;
@@ -793,7 +800,7 @@ Lnomatch:
 
 void TemplateDeclaration::declareParameter(Scope *sc, TemplateParameter *tp, Object *o)
 {
-    //printf("TemplateDeclaration::declareParameter('%s')\n", tp->ident->toChars());
+    //printf("TemplateDeclaration::declareParameter('%s', o = %p)\n", tp->ident->toChars(), o);
 
     Type *targ = isType(o);
     Expression *ea = isExpression(o);
@@ -1091,7 +1098,6 @@ MATCH Type::deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters,
     if (!tparam)
 	goto Lnomatch;
 
-  Lagain:
     if (this == tparam)
 	goto Lexact;
 
@@ -1108,7 +1114,7 @@ MATCH Type::deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters,
 	     */
 	    tparam = tparam->semantic(0, sc);
 	    assert(tparam->ty != Tident);
-	    goto Lagain;
+	    return deduceType(sc, tparam, parameters, dedtypes);
 	}
 
 	TemplateParameter *tp = (TemplateParameter *)parameters->data[i];
@@ -1124,6 +1130,10 @@ MATCH Type::deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters,
 	}
 	if (equals(at))
 	    goto Lexact;
+	else if (ty == Tclass && at->ty == Tclass)
+	{
+	    return (MATCH) implicitConvTo(at);
+	}
 	else if (ty == Tsarray && at->ty == Tarray &&
 	    next->equals(at->next))
 	{
@@ -2505,7 +2515,12 @@ void TemplateInstance::semantic(Scope *sc)
 	assert((size_t)tempdecl->scope > 0x10000);
 	// Deduce tdtypes
 	tdtypes.setDim(tempdecl->parameters->dim);
-	tempdecl->matchWithInstance(this, &tdtypes, 0);
+	if (!tempdecl->matchWithInstance(this, &tdtypes, 0))
+	{
+	    error("incompatible arguments for template instantiation");
+	    inst = this;
+	    return;
+	}
     }
     else
     {
@@ -2962,6 +2977,9 @@ TemplateDeclaration *TemplateInstance::findBestMatch(Scope *sc)
     MATCH m_best = MATCHnomatch;
     Objects dedtypes;
 
+#if LOG
+    printf("TemplateInstance::findBestMatch()\n");
+#endif
     for (TemplateDeclaration *td = tempdecl; td; td = td->overnext)
     {
 	MATCH m;
