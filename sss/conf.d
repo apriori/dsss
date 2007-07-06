@@ -845,7 +845,7 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
             // check for / or \
             int slloc = std.string.rfind(comps[1], '/');
             if (slloc == -1)
-                std.string.rfind(comps[1], '\\');
+                slloc = std.string.rfind(comps[1], '\\');
             
             // strip off the prefix from our manifest path
             char[] manifestPath = comps[2] ~ std.path.sep;
