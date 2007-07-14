@@ -165,6 +165,11 @@ Usage:\n\
   -dc=<compiler> use the specified compiler configuration\n\
   -p             do not compile (or link)\n\
   -c             do not link\n\
+  -D             generate documentation\n\
+  -Dddocdir      write documentation files to docdir directory\n\
+  -Dffilename    write documentation file to filename\n\
+  -Dqdocdir      write documentation files to docdir directory with\n\
+                 fully-qualified file names\n\
   -lib           link a static library\n\
   -libs-safe     exit failure or success for whether libraries can be safely\n\
                  be used with any D code\n\
@@ -217,7 +222,7 @@ Usage:\n\
                  defined\n\
   -reflect       use drefgen to make rodin-compatible reflections of all\n\
                  included modules\n\
-  -candydoc      generate the modules.ddoc file for candydoc (must specify -Dd,\n\
+  -candydoc      generate the modules.ddoc file for candydoc (must specify -Dq,\n\
                  implies -explicit)\n\
   All other flags are passed to the compiler.\n\
 ");
