@@ -1,4 +1,4 @@
-SVN from 0.67:
+0.68 from 0.67:
         - Rebuild: -of<name> now converts / to \ on Windows (see ticket #85).
         - `dsss uninstall` now removes (empty) directories as well as files
           (see ticket #84).
