@@ -90,10 +90,13 @@ string linkCommand(const string &i, const string &o, string &response, bool &use
     // config: compile=[g]dmd -c $i -o $o
     string cline = masterConfig[linkset]["cmd"];
     
-    // there are some flags that should be added only on non-darwin
-    if (!findCondition(global.params.versionids, new Identifier("darwin", 0))) {
-        if (masterConfig[linkset].find("nodarwinflag") != masterConfig[linkset].end()) {
-            cline += " " + masterConfig[linkset]["nodarwinflag"];
+    // export_dynamic is used on all POSIXes except Darwin, where that's default
+    if (global.params.exportDynamic) {
+        if (!findCondition(global.params.versionids, new Identifier("darwin", 0))) {
+            if (masterConfig[linkset].find("export_dynamic") !=
+                masterConfig[linkset].end()) {
+                cline += " " + masterConfig[linkset]["export_dynamic"];
+            }
         }
     }
     

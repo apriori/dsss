@@ -215,6 +215,8 @@ Usage:\n\
   -debug=level   compile in debug code <= level\n\
   -debug=ident   compile in debug code identified by ident\n\
   -clean         remove object files after done building\n\
+  -no-export-dynamic do not export dynamic symbols. Dynamic symbols are\n\
+                 exported by default on POSIX to support .so files\n\
   -circular      allow circular dependencies to work on some compilers (namely\n\
                  GDC) \n\
   -testversion=<version>\n\
@@ -287,6 +289,7 @@ int main(int argc, char *argv[])
     global.params.useSwitchError = 1;
     global.params.useInline = 0;
     global.params.obj = 1;
+    global.params.exportDynamic = 1;
     global.params.Dversion = 2;
     global.params.listonly = 0;
     global.params.run = 0;
@@ -874,6 +877,10 @@ int main(int argc, char *argv[])
             else if (strcmp(p + 1, "circular") == 0)
             {
                 addFlag(compileFlags, "compile", "circular", "");
+            }
+            else if (strcmp(p + 1, "no-export-dynamic") == 0)
+            {
+                global.params.exportDynamic = 0;
             }
             else if (strncmp(p + 1, "testversion=", 12) == 0)
             {

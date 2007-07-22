@@ -80,6 +80,7 @@ struct Param
     char warnings;	// enable warnings
     char pic;		// generate position-independent-code for shared libs
     char cov;		// generate code coverage data
+    char exportDynamic; // export dynamic symbols
     char nofloat;	// code should not pull in floating point support
     char Dversion;	// D version number
 
