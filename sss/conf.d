@@ -276,9 +276,15 @@ void getPrefix(char[] argvz)
             "share" ~ std.path.sep ~
             "dsss" ~ std.path.sep ~
             "manifest";
-    if (!etcPrefix.length)
-        etcPrefix = forcePrefix ~ std.path.sep ~
-            "etc";
+    if (!etcPrefix.length) {
+        if (forcePrefix == "/usr") {
+            // in the case of /usr, use /etc instead of /usr/etc
+            etcPrefix = "/etc";
+        } else {
+            etcPrefix = forcePrefix ~ std.path.sep ~
+                "etc";
+        }
+    }
     if (!srcListPrefix.length)
         srcListPrefix = canonPath(
             forcePrefix ~ std.path.sep ~
