@@ -205,7 +205,14 @@ int main(char[][] args)
             } else if (arg.length >= 1 &&
                        arg[0] == '-') {
                 // perhaps specific to a command
-                if (command == cmd_t.NET) {
+                if (command == cmd_t.BUILD) {
+                    if (parseArg(arg, "test", false)) {
+                        testLibs = true;
+                    } else {
+                        dsss_buildOptions ~= arg ~ " ";
+                    }
+
+                } else if (command == cmd_t.NET) {
                     if (parseArg(arg, "source", true, &val)) {
                         forceMirror = val;
                     } else {
@@ -314,7 +321,9 @@ Usage: dsss [dsss options] <command> [options]
         
     } else if (command == cmd_t.BUILD) {
         writefln(
-`Usage: dsss [dsss options] build [build options] [sources, binaries or packages]`
+`Usage: dsss [dsss options] build [build options] [sources, binaries or packages]
+  Build options:
+    --test: test compiled libraries`
             );
         
     } else if (command == cmd_t.CLEAN) {
@@ -345,7 +354,7 @@ Usage: dsss [dsss options] <command> [options]
     } else if (command == cmd_t.NET) {
         writefln(
 `Usage: dsss [dsss options] net <net command> [options] <package name>
-  Net Commands:
+  Net commands:
     deps:    install (from the network source) dependencies of the present
              package
     depslist:list dependencies, but do not install them

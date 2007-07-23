@@ -105,6 +105,9 @@ int distclean(DSSSConf conf = null)
             if (targetGNUOrPosix()) {
                 // first remove the static library
                 tryRemove("libS" ~ target ~ ".a");
+
+                // then any testing binary
+                tryRemove("test_" ~ target);
                 
                 // then remove the shared libraries
                 char[] shlibname = getShLibName(settings);
@@ -118,6 +121,9 @@ int distclean(DSSSConf conf = null)
             } else if (targetVersion("Windows")) {
                 // first remove the static library
                 tryRemove("S" ~ target ~ ".lib");
+
+                // then any testing binary
+                tryRemove("test_" ~ target);
                 
                 // then remove the shared libraries
                 char[] shlibname = getShLibName(settings);

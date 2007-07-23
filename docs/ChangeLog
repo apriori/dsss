@@ -1,3 +1,6 @@
+SVN from 0.68:
+	- Added --test option to test built libraries.
+
 0.68 from 0.67:
         - Rebuild: -of<name> now converts / to \ on Windows (see ticket #85).
         - `dsss uninstall` now removes (empty) directories as well as files

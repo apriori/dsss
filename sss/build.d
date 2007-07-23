@@ -233,13 +233,22 @@ version (build) {
             
             // if we should, build the library
             if ((type == "library" && libsSafe()) ||
-                doDocs /* need to build the library to get docs */ ) {
+                doDocs /* need to build the library to get docs */ ||
+                testLibs /* need to build the ilbrary to test it */) {
                 
                 if (targetGNUOrPosix()) {
                     // first do a static library
                     if (exists("libS" ~ target ~ ".a")) std.file.remove("libS" ~ target ~ ".a");
                     char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -oflibS" ~ target ~ ".a";
                     saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
+
+                    // perhaps test the static library
+                    if (testLibs) {
+                        writefln("Testing %s", target);
+                        char[] tbl = bl ~ bflags ~ " -unittest -full " ~ fileList ~ " " ~ dsssLibTestDPrefix ~ " -oftest_" ~ target;
+                        saySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
+                        saySystemDie("./test_" ~ target);
+                    }
                     
                     if (shLibSupport() &&
                         ("shared" in settings)) {
@@ -257,6 +266,15 @@ version (build) {
                     if (exists("S" ~ target ~ ".lib")) std.file.remove("S" ~ target ~ ".lib");
                     char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -ofS" ~ target ~ ".lib";
                     saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
+
+                    // perhaps test the static library
+                    if (testLibs) {
+                        writefln("Testing %s", target);
+                        char[] tbl = bl ~ bflags ~ " -unittest -full " ~ fileList ~ " " ~ dsssLibTestDPrefix ~ " -oftest_" ~ target ~ ".exe";
+                        saySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
+                        saySystemDie("test_" ~ target ~ ".exe");
+                    }
+
                 } else {
                     assert(0);
                 }

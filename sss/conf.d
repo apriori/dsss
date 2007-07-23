@@ -108,11 +108,17 @@ char[] srcListPrefix;
 /** The location of candydoc.tar.gz */
 char[] candyDocPrefix;
 
+/** The location of dsss_lib_test.d */
+char[] dsssLibTestDPrefix;
+
 /** Are we doing documentation? */
 bool doDocs = false;
 
 /** Should we delete response files? */
 bool deleteRFiles = true;
+
+/** Should we generate test binaries? */
+bool testLibs = false;
 
 /** The prefix for scratch work */
 char[] scratchPrefix;
@@ -195,6 +201,11 @@ void getPrefix(char[] argvz)
             candyDocPrefix = canonPath(
                 installPrefix ~ std.path.sep ~
                 "candydoc.tar.gz");
+        if (!dsssLibTestDPrefix.length)
+            dsssLibTestDPrefix = canonPath(
+                installPrefix ~ std.path.sep ~
+                "sss" ~ std.path.sep ~
+                "dsss_lib_test.d");
     } else {
         inSourceDir = false;
         
@@ -257,6 +268,13 @@ void getPrefix(char[] argvz)
                 "share" ~ std.path.sep ~
                 "dsss" ~ std.path.sep ~
                 "candydoc.tar.gz");
+        if (!dsssLibTestDPrefix.length)
+            dsssLibTestDPrefix = canonPath(
+                installPrefix ~ std.path.sep ~
+                ".." ~ std.path.sep ~
+                "share" ~ std.path.sep ~
+                "dsss" ~ std.path.sep ~
+                "dsss_lib_test.d");
     }
     
     if (!binPrefix.length)
