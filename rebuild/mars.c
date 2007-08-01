@@ -957,6 +957,7 @@ int main(int argc, char *argv[])
 
 #if _WIN32
     // Convert / to \ so linker will work
+    if (global.params.objname)
     for (int j = 0; global.params.objname[j]; j++)
     {
         if (global.params.objname[j] == '/')
