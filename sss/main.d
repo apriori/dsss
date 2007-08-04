@@ -217,10 +217,12 @@ int main(char[][] args)
                     }
 
                 } else if (command == cmd_t.NET) {
-                    if (parseArg(arg, "source", true, &val)) {
-                        forceMirror = val;
-                    } else {
-                        dsss_buildOptions ~= arg ~ " ";
+                    version (DSSS_Light) {} else {
+                        if (parseArg(arg, "source", true, &val)) {
+                            forceMirror = val;
+                        } else {
+                            dsss_buildOptions ~= arg ~ " ";
+                        }
                     }
                     
                 } else {

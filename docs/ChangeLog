@@ -3,6 +3,7 @@
         - Rebuild: Fixed an intermittent segfault on Windows.
         - Added --doc-binaries option to generate documentation for binary
           builds.
+        - Fixed DSSS_Light build.
 
 0.68 from 0.67:
         - Rebuild: -of<name> now converts / to \ on Windows (see ticket #85).
