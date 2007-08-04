@@ -1,6 +1,8 @@
-SVN from 0.68:
+0.69 from 0.68:
         - Added --test option to test built libraries.
         - Rebuild: Fixed an intermittent segfault on Windows.
+        - Added --doc-binaries option to generate documentation for binary
+          builds.
 
 0.68 from 0.67:
         - Rebuild: -of<name> now converts / to \ on Windows (see ticket #85).

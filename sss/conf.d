@@ -114,6 +114,9 @@ char[] dsssLibTestDPrefix;
 /** Are we doing documentation? */
 bool doDocs = false;
 
+/** Are we doing documentation for binaries? */
+bool doDocBinaries = false;
+
 /** Should we delete response files? */
 bool deleteRFiles = true;
 

@@ -45,7 +45,7 @@ version (DSSS_Light) {} else {
 }
 import sss.uninstall;
 
-const char[] DSSS_VERSION = "0.68";
+const char[] DSSS_VERSION = "0.69";
 
 private {
     /** Possible commands */
@@ -165,6 +165,10 @@ int main(char[][] args)
             } else if (parseArg(arg, "doc", false)) {
                 doDocs = true;
                 
+            } else if (parseArg(arg, "doc-binaries", false)) {
+                doDocs = true;
+                doDocBinaries = true;
+
             } else if (parseArg(arg, "prefix", true, &val)) {
                 // force a prefix
                 forcePrefix = makeAbsolute(val);
@@ -380,6 +384,9 @@ Usage: dsss [dsss options] <command> [options]
     --help: display specific options and information
     --prefix=<prefix>: set the install prefix
     --doc: Generate/install documentation for libraries
+    --doc-binaries: Generate/install documentation for libraries and binaries.
+        This will generate a lot of needless documentation for prerequisite
+        libraries, and is therefore not recommended for general use.
     --use=<directory containing import library includes and libs>
     --keep-response-files: Do not delete temporary rebuild response files
 

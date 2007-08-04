@@ -177,8 +177,32 @@ version (build) {
             }
         }
     }
-    
-    // 3) Make real libraries and do special steps and subdirs
+
+    char[] docbl = "";
+    /// A function to prepare for creating documentation for this build
+    void prepareDocs(char[] build, bool doc) {
+        // prepare for documentation
+        docbl = "";
+        if (doc) {
+            char[] docdir = "dsss_docs" ~ std.path.sep ~ build;
+            mkdirP(docdir);
+            docbl ~= "-full -Dq" ~ docdir ~ " -candydoc ";
+        
+            // now extract candydoc there
+            char[] origcwd = getcwd();
+            chdir(docdir);
+        
+            version (Windows) {
+                sayAndSystem("bsdtar -xf " ~ candyDocPrefix);
+            } else {
+                sayAndSystem("gunzip -c " ~ candyDocPrefix ~ " | tar -xf -");
+            }
+        
+            chdir(origcwd);
+        }
+   }
+
+   // 3) Make real libraries and do special steps and subdirs
     foreach (build; buildSources) {
         char[][char[]] settings = conf.settings[build];
         
@@ -202,27 +226,10 @@ version (build) {
             
             // output what we're building
             writefln("%s => %s", build, target);
+
+            // prepare to do documentation
+            prepareDocs(build, doDocs);
         
-            // prepare for documentation
-            char[] docbl = "";
-            if (doDocs) {
-                char[] docdir = "dsss_docs" ~ std.path.sep ~ build;
-                mkdirP(docdir);
-                docbl ~= "-Dq" ~ docdir ~ " -candydoc ";
-            
-                // now extract candydoc there
-                char[] origcwd = getcwd();
-                chdir(docdir);
-            
-                version (Windows) {
-                    sayAndSystem("bsdtar -xf " ~ candyDocPrefix);
-                } else {
-                    sayAndSystem("gunzip -c " ~ candyDocPrefix ~ " | tar -xf -");
-                }
-            
-                chdir(origcwd);
-            }
-            
             // do the prebuild
             if ("prebuild" in settings) {
                 dsssScriptedStep(conf, settings["prebuild"]);
@@ -339,6 +346,10 @@ version (build) {
             
             // output what we're building
             writefln("%s => %s", build, target);
+
+            // prepare for documentation
+            prepareDocs(build, doDocs && doDocBinaries);
+            bbl ~= docbl;
             
             // do the prebuild
             if ("prebuild" in settings) {

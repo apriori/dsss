@@ -65,7 +65,7 @@ Global::Global()
 
     copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards,";
     written = "written by Walter Bright and Gregor Richards";
-    version = "version 0.68 (based on DMD 1.018)";
+    version = "version 0.69 (based on DMD 1.018)";
     global.structalign = 8;
     cmodules = NULL;
 
@@ -224,8 +224,7 @@ Usage:\n\
                  defined\n\
   -reflect       use drefgen to make rodin-compatible reflections of all\n\
                  included modules\n\
-  -candydoc      generate the modules.ddoc file for candydoc (must specify -Dq,\n\
-                 implies -explicit)\n\
+  -candydoc      generate the modules.ddoc file for candydoc (must specify -Dq)\n\
   All other flags are passed to the compiler.\n\
 ");
 }
@@ -897,7 +896,6 @@ int main(int argc, char *argv[])
             else if (strcmp(p + 1, "candydoc") == 0)
             {
                 global.params.candydoc = 1;
-                global.params.expbuild = 1;
             }
             else if (strncmp(p + 1, "dc=", 3) == 0) {}
             else if (strncmp(p + 1, "CFPATH", 6) == 0 ||
