@@ -526,7 +526,7 @@ bool getSources(char[] pkg, NetConfig conf)
         switch (srcFormat) {
             case "svn":
                 // Subversion, check it out
-                res = sayAndSystem("svn co " ~ conf.srcURL[pkg]);
+                res = sayAndSystem("svn export " ~ conf.srcURL[pkg]);
                 break;
                 
             default:

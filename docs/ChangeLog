@@ -2,6 +2,7 @@ SVN from 0.69:
         - Rebuild: Merged DMD 1.020.
         - Should now trim whitespace in "name" (and other) settings (see
           ticket #93).
+        - Now uses 'svn export' instead of 'svn co' (see ticket #96).
 
 0.69 from 0.68:
         - Added --test option to test built libraries.
