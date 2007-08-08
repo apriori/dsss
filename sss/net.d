@@ -274,7 +274,7 @@ int net(char[][] args)
             chdir(srcDir);
             
             // make sure the directory gets removed
-            scope(success) {      // CyberShadow 2007.02.21: don't clean up if we failed, so we wouldn't have to redownload everything - and allow the user to figure out what went wrong
+            scope(exit) {
                 chdir(origcwd);
                 rmRecursive(tmpDir);
             }

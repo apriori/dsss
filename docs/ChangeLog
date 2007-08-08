@@ -3,6 +3,8 @@ SVN from 0.69:
         - Should now trim whitespace in "name" (and other) settings (see
           ticket #93).
         - Now uses 'svn export' instead of 'svn co' (see ticket #96).
+        - Will now always remove temporary directories, even if the build
+          failed (I decided this wasn't worth the difficulty it causes).
 
 0.69 from 0.68:
         - Added --test option to test built libraries.
