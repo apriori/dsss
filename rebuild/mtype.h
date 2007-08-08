@@ -102,14 +102,6 @@ enum TY
 extern int Tsize_t;
 extern int Tptrdiff_t;
 
-enum MATCH
-{
-    MATCHnomatch,	// no match
-    MATCHconvert,	// match with conversions
-    MATCHexact		// exact match
-};
-
-
 struct Type : Object
 {
     TY ty;
@@ -223,7 +215,7 @@ struct Type : Object
     virtual Dsymbol *toDsymbol(Scope *sc);
     virtual Type *toBasetype();
     virtual int isBaseOf(Type *t, int *poffset);
-    virtual int implicitConvTo(Type *to);
+    virtual MATCH implicitConvTo(Type *to);
     virtual ClassDeclaration *isClassHandle();
     virtual Expression *getProperty(Loc loc, Identifier *ident);
     virtual Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
@@ -268,7 +260,7 @@ struct TypeBasic : Type
     int iscomplex();
     int isscalar();
     int isunsigned();
-    int implicitConvTo(Type *to);
+    MATCH implicitConvTo(Type *to);
     Expression *defaultInit();
     int isZeroInit();
 
@@ -302,7 +294,7 @@ struct TypeSArray : TypeArray
     int isString();
     int isZeroInit();
     unsigned memalign(unsigned salign);
-    int implicitConvTo(Type *to);
+    MATCH implicitConvTo(Type *to);
     Expression *defaultInit();
     dt_t **toDtElem(dt_t **pdt, Expression *e);
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
@@ -325,7 +317,7 @@ struct TypeDArray : TypeArray
     int isString();
     int isZeroInit();
     int checkBoolean();
-    int implicitConvTo(Type *to);
+    MATCH implicitConvTo(Type *to);
     Expression *defaultInit();
     int hasPointers();
 };
@@ -358,7 +350,7 @@ struct TypePointer : Type
     Type *semantic(Loc loc, Scope *sc);
     d_uns64 size(Loc loc);
     void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
-    int implicitConvTo(Type *to);
+    MATCH implicitConvTo(Type *to);
     int isscalar();
     Expression *defaultInit();
     int isZeroInit();
@@ -517,7 +509,7 @@ struct TypeEnum : Type
     int isfloating();
     int isscalar();
     int isunsigned();
-    int implicitConvTo(Type *to);
+    MATCH implicitConvTo(Type *to);
     Type *toBasetype();
     Expression *defaultInit();
     int isZeroInit();
@@ -550,7 +542,7 @@ struct TypeTypedef : Type
     int isunsigned();
     int checkBoolean();
     Type *toBasetype();
-    int implicitConvTo(Type *to);
+    MATCH implicitConvTo(Type *to);
     Expression *defaultInit();
     int isZeroInit();
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
@@ -572,7 +564,7 @@ struct TypeClass : Type
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     ClassDeclaration *isClassHandle();
     int isBaseOf(Type *t, int *poffset);
-    int implicitConvTo(Type *to);
+    MATCH implicitConvTo(Type *to);
     Expression *defaultInit();
     int isZeroInit();
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
