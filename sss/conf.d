@@ -412,6 +412,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
                 
                 // trim whitespace of the setting
                 while (tok.length && iswhite(tok[0])) tok = tok[1..$];
+                while (tok.length && iswhite(tok[$-1])) tok = tok[0..($-1)];
                 
                 if (tok.length) addToken();
                 break;

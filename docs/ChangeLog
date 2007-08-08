@@ -1,3 +1,8 @@
+SVN from 0.69:
+        - Rebuild: Merged DMD 1.020.
+        - Should now trim whitespace in "name" (and other) settings (see
+          ticket #93).
+
 0.69 from 0.68:
         - Added --test option to test built libraries.
         - Rebuild: Fixed an intermittent segfault on Windows.
