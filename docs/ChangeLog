@@ -1,4 +1,4 @@
-SVN from 0.69:
+0.70 from 0.69:
         - Rebuild: Merged DMD 1.020.
         - Should now trim whitespace in "name" (and other) settings (see
           ticket #93).
