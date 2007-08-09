@@ -6,6 +6,302 @@ DSSS is a tool to:
 * Maintain a repository of DSSS-compatible D sources to be easily installable
   via the Internet.
 
+This document explains the use of DSSS by software engineers wishing to use
+DSSS as a project management solution.
+
+
+== OVERVIEW ==
+
+Software utilizing DSSS is configured with a file named "dsss.conf". This file
+describes the components of the complete software package and how each component
+should be built.
+
+dsss.conf files are plain text files, in a format similar to Windows INI files.
+They are intentionally minimalistic, and require very little maintenance to keep
+working.
+
+Because dsss.conf files are minimalistic, most software packages can be
+configured for use by DSSS with very simple dsss.conf files. For example, most
+software packages containing one binary can have a dsss.conf file like the
+following:
+[example.d]
+target = example_binary
+
+This is all you need for a simple application. DSSS will parse your imports, so
+you only need to list the file with the entry function (main). In most cases,
+DSSS is very easy to use. Simple instructions on basic dsss.conf files is
+available at http://www.dsource.org/projects/dsss/wiki/DSSSByExample
+
+
+== THE BASICS ==
+
+dsss.conf files are divided into a number of sections. Most sections describes a
+single binary or library to be built.
+
+A section is started with the file name of the source module or package in
+brackets. In general, sections which are named for modules produce binaries, and
+sections which are named for packages produce libraries. Each section may have
+any number of settings, which customize how that section is built.
+
+= SETTINGS =
+
+Settings are simple name-value pairs which customize the building of sections.
+The format is simple:
+<name>=<value>
+
+For example,
+target=example_binary
+
+It is also possible to add to a setting:
+<name>+=<value>
+
+e.g.:
+a=Hello
+a+=World
+
+The setting 'a' is now 'Hello World'. This is most useful with versioning,
+described later.
+
+= FLAGS =
+
+Any section may have a 'buildflags' setting, which specifies the flags to be
+used while building that section. For example,
+buildflags=-O
+
+= BINARIES =
+
+Sections which are named for D modules (.d files) produce executable binaries
+when built with DSSS. The target binary file name will be deduced from the name
+of the .d file, or can be set explicitly with a 'target' line, such as:
+[example.d]
+target=example_binary
+
+Windows users: Be careful not to set the target of a binary build to the name of
+a directory. This will work on Windows because it gains the .exe suffix, but
+will fail on other operating systems.
+
+= LIBRARIES =
+
+Sections which are named for D packages (directories) produce libraries when
+built with DSSS. The name of the library file is derived from the name of the
+package and the platform. There is no reason to remember this name, however,
+because DSSS will detect library dependencies and link them in automatically.
+This name can partially be overridden if desired, in the same way as binaries:
+[mydpackage]
+target=dlibrary
+
+However, the platform will always affect the output library name. On POSIX
+systems, the above library will be named libSdlibrary.a and libdlibrary.so. On
+Windows, the above library will be named Sdlibrary.lib.
+
+By default, all of the .d files within the directory and any subdirectory will
+be included in the library. Files may be excluded with the 'exclude' setting:
+[mydpackage]
+exclude=mydpackage/broken.d
+
+Entire directories may also be excluded:
+[mydpackage]
+exclude=mydpackage/brokenpackage
+
+The 'exclude' setting is useful in concert with versioning, described in a later
+section.
+
+= SOURCE LIBRARIES =
+
+Source libraries are libraries which are not compiled until they are used in a
+binary. They are installed in their source form. Otherwise, they act identically
+to normal libraries. A source library may be specified by setting the 'type'
+setting to 'sourcelibrary':
+[mydpackage]
+type=sourcelibrary
+
+= SPECIAL SECTIONS =
+
+It is also possible to create sections which are not associated with compiling
+a binary or library. These sections are given names starting with a '+', such
+as:
+[+generate]
+
+The utility of these sections will be seen below, in the section on hooks.
+
+
+== INSTALLATION ==
+
+DSSS is capable of installing binaries and libraries to a predetermined
+directory, usually the prefix in which it is installed. When libraries are
+installed in this way, they will be usable by DSSS without being explicitly
+specified.
+
+
+== HOOKS ==
+
+DSSS can run arbitrary commands while building software. There are a number of
+points at which commands can be run: before and after building, before and after
+installing, and before and after cleaning up. These commands are added to
+'prebuild', 'postbuild', 'preinstall', 'postinstall', 'preclean' and 'postclean'
+lines, respectively.
+
+Hook commands can be anything which can be run on the shell of the host system,
+such as:
+prebuild = echo Hello
+
+Any number of hook commands may be strung together between semicolons:
+prebuild = echo Hello ; echo World
+
+And may span multiple lines by ending each line with a backslash:
+prebuild = echo \
+    Hello ; \
+    echo World
+
+Hook commands may include references to environment variables:
+prebuild = echo $PREFIX
+
+DSSS provides several environment variables for this purpose:
+PREFIX: The prefix to which the software is being installed.
+BIN_PREFIX: The prefix for binaries.
+LIB_PREFIX: The prefix for libraries.
+INCLUDE_PREFIX: The base prefix for .di files.
+DOC_PREFIX: The prefix for documentation.
+ETC_PREFIX: The prefix for configuration files.
+EXE_EXT: The extension for executable files. Empty on POSIX, ".exe" on Windows.
+
+
+There are also a number of special, builtin commands available.
+
+= install =
+
+The 'install' command installs a file to the specified directory. If the
+directory does not exist, it is created. For example:
+postinstall = install docs/README $DOC_PREFIX
+
+Files installed in this way are recorded, so that they may be uninstalled
+easily.
+
+= cd =
+
+The 'cd' command changes the current directory. It works exactly as on POSIX
+and Windows shells:
+prebuild = cd c_source ; make
+
+= .d files =
+
+Any .d file may be used as a command. It will be compiled and run on-the-fly:
+prebuild = generateBindings.d
+
+= set =
+
+The 'set' command sets a setting in the dsss.conf file on-the-fly. The
+parameters are:
+set <section>:<setting> <value>
+
+It is also possible to omit the section from the command to set in the current
+section:
+set <setting> <value>
+
+The special section '*' may be used to set a setting in all sections:
+set *:<setting> <value>
+
+For example,
+set example.d:postbuild echo Hello
+
+'set' is most useful in concert with the 'eval' command (described below), but
+can also be used alone.
+
+= add =
+
+The 'add' command is identical to the 'set' command, except that it appends to
+the current value instead of replacing it.
+
+For example,
+add example.d:postbuild World
+
+= eval =
+
+The 'eval' command runs a specified command, captures its output, and then runs
+its output as a command. This allows for very general processes to be
+encapsulated into binaries, rather than the dsss.conf file itself.
+
+For example, imagine the scenario that some system specifics need to be detected
+and utilized in the building of a section. There can be a program, analyze.d,
+which does the analysis and outputs commands such as
+add *:postbuild echo Hello
+
+This program could be run and used with the hook command:
+prebuild=eval analyze.d
+
+
+== VERSIONING ==
+
+dsss.conf files support version statements with a similar syntax to D's own
+version statements:
+
+version (Windows) {
+    postbuild=setupWindows.d
+} else version (Posix) {
+    postbuild=setupPosix.d
+}
+
+Unlike D, dsss.conf files support negative versions:
+
+version (!Windows) {
+    postbuild=giveUserCandy.d
+}
+
+dsss.conf's version statements can be used at any point in the dsss.conf file.
+They can even conditionally include different sections:
+version (Windows) {
+    [winlib]
+} else version (Posix) {
+    [posixlib]
+}
+type = library
+
+
+== GLOBAL SETTINGS ==
+
+There are several settings that DSSS supports which are global. That is, they
+are specified for the software package as a whole, rather than any section.
+These are included at the top of the dsss.conf file. Common settings are 'name'
+(the name of the software package) and 'version'.
+
+It is also possible to specify global settings later in the dsss.conf file by
+adding an empty section header:
+[]
+name=exampleSoft
+
+
+== DEFAULT SETTINGS ==
+
+It is possible to create default settings with a special "*" section. This is
+most useful for settings such as 'buildflags':
+
+[*]
+buildflags=-O
+
+
+To-be-written:
+== SUBDIRECTORIES ==
+== INTERNAL OPERATION ==
+
+
+-put this somewhere-
+When a library is installed via DSSS, the .d files are translated into .di (D
+import) files, which are then installed to /include/d with the appropriate
+names. These D import files contain references to the library itself, which
+allows DSSS to include it when necessary without the user specifying it.
+
+
+
+OLD CONTENT:
+
+DSSS is a tool to:
+
+* Build D software.
+* Install D software.
+* Configure D software dependencies and libraries.
+* Maintain a repository of DSSS-compatible D sources to be easily installable
+  via the Internet.
+
 To the average software engineer, the most important part is dsss.conf, the
 file added to your source code to configure how DSSS will compile it.
 
