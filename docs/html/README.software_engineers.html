@@ -1,4 +1,5 @@
-= DSSS Documentation for Software Engineers =
+<HTML><head><title>README.software_engineers</title></head><body><pre>
+<h3> DSSS Documentation for Software Engineers </h3>
 
 DSSS is a tool to:
 
@@ -12,7 +13,7 @@ This document explains the use of DSSS by software engineers wishing to use
 DSSS as a project management solution.
 
 
-== OVERVIEW ==
+<h2> OVERVIEW </h2>
 
 Software utilizing DSSS is configured with a file named "dsss.conf". This file
 describes the components of the complete software package and how each component
@@ -35,7 +36,7 @@ DSSS is very easy to use. Simple instructions on basic dsss.conf files is
 available at http://www.dsource.org/projects/dsss/wiki/DSSSByExample
 
 
-== THE BASICS ==
+<h2> THE BASICS </h2>
 
 dsss.conf files are divided into a number of sections. Most sections describes a
 single binary or library to be built.
@@ -45,7 +46,7 @@ brackets. In general, sections which are named for modules produce binaries, and
 sections which are named for packages produce libraries. Each section may have
 any number of settings, which customize how that section is built.
 
-= SETTINGS =
+<h3> SETTINGS </h3>
 
 Settings are simple name-value pairs which customize the building of sections.
 The format is simple:
@@ -64,13 +65,13 @@ a+=World
 The setting 'a' is now 'Hello World'. This is most useful with versioning,
 described later.
 
-= FLAGS =
+<h3> FLAGS </h3>
 
 Any section may have a 'buildflags' setting, which specifies the flags to be
 used while building that section. For example,
 buildflags=-O
 
-= BINARIES =
+<h3> BINARIES </h3>
 
 Sections which are named for D modules (.d files) produce executable binaries
 when built with DSSS. The target binary file name will be deduced from the name
@@ -82,7 +83,7 @@ Windows users: Be careful not to set the target of a binary build to the name of
 a directory. This will work on Windows because it gains the .exe suffix, but
 will fail on other operating systems.
 
-= LIBRARIES =
+<h3> LIBRARIES </h3>
 
 Sections which are named for D packages (directories) produce libraries when
 built with DSSS. The name of the library file is derived from the name of the
@@ -108,7 +109,7 @@ exclude=mydpackage/brokenpackage
 The 'exclude' setting is useful in concert with versioning, described in a later
 section.
 
-= SOURCE LIBRARIES =
+<h3> SOURCE LIBRARIES </h3>
 
 Source libraries are libraries which are not compiled until they are used in a
 binary. They are installed in their source form. Otherwise, they act identically
@@ -117,7 +118,7 @@ setting to 'sourcelibrary':
 [mydpackage]
 type=sourcelibrary
 
-= SPECIAL SECTIONS =
+<h3> SPECIAL SECTIONS </h3>
 
 It is also possible to create sections which are not associated with compiling
 a binary or library. These sections are given names starting with a '+', such
@@ -127,7 +128,7 @@ as:
 The utility of these sections will be seen below, in the section on hooks.
 
 
-== INSTALLATION ==
+<h2> INSTALLATION </h2>
 
 DSSS is capable of installing binaries and libraries to a predetermined
 directory, usually the prefix in which it is installed. When libraries are
@@ -135,7 +136,7 @@ installed in this way, they will be usable by DSSS without being explicitly
 specified.
 
 
-== HOOKS ==
+<h2> HOOKS </h2>
 
 DSSS can run arbitrary commands while building software. There are a number of
 points at which commands can be run: before and after building, before and after
@@ -170,7 +171,7 @@ EXE_EXT: The extension for executable files. Empty on POSIX, ".exe" on Windows.
 
 There are also a number of special, builtin commands available.
 
-= install =
+<h3> install </h3>
 
 The 'install' command installs a file to the specified directory. If the
 directory does not exist, it is created. For example:
@@ -179,18 +180,18 @@ postinstall = install docs/README $DOC_PREFIX
 Files installed in this way are recorded, so that they may be uninstalled
 easily.
 
-= cd =
+<h3> cd </h3>
 
 The 'cd' command changes the current directory. It works exactly as on POSIX
 and Windows shells:
 prebuild = cd c_source ; make
 
-= .d files =
+<h3> .d files </h3>
 
 Any .d file may be used as a command. It will be compiled and run on-the-fly:
 prebuild = generateBindings.d
 
-= set =
+<h3> set </h3>
 
 The 'set' command sets a setting in the dsss.conf file on-the-fly. The
 parameters are:
@@ -209,7 +210,7 @@ set example.d:postbuild echo Hello
 'set' is most useful in concert with the 'eval' command (described below), but
 can also be used alone.
 
-= add =
+<h3> add </h3>
 
 The 'add' command is identical to the 'set' command, except that it appends to
 the current value instead of replacing it.
@@ -217,7 +218,7 @@ the current value instead of replacing it.
 For example,
 add example.d:postbuild World
 
-= eval =
+<h3> eval </h3>
 
 The 'eval' command runs a specified command, captures its output, and then runs
 its output as a command. This allows for very general processes to be
@@ -232,7 +233,7 @@ This program could be run and used with the hook command:
 prebuild=eval analyze.d
 
 
-== VERSIONING ==
+<h2> VERSIONING </h2>
 
 dsss.conf files support version statements with a similar syntax to D's own
 version statements:
@@ -259,7 +260,7 @@ version (Windows) {
 type = library
 
 
-== GLOBAL SETTINGS ==
+<h2> GLOBAL SETTINGS </h2>
 
 There are several settings that DSSS supports which are global. That is, they
 are specified for the software package as a whole, rather than any section.
@@ -272,7 +273,7 @@ adding an empty section header:
 name=exampleSoft
 
 
-== DEFAULT SETTINGS ==
+<h2> DEFAULT SETTINGS </h2>
 
 It is possible to create default settings with a special "*" section. This is
 most useful for settings such as 'buildflags':
@@ -282,8 +283,8 @@ buildflags=-O
 
 
 To-be-written:
-== SUBDIRECTORIES ==
-== INTERNAL OPERATION ==
+<h2> SUBDIRECTORIES </h2>
+<h2> INTERNAL OPERATION </h2>
 
 
 -put this somewhere-
@@ -294,7 +295,7 @@ allows DSSS to include it when necessary without the user specifying it.
 
 
 
-== OLD CONTENT (please ignore) ==
+<h2> OLD CONTENT (please ignore) </h2>
 
 DSSS is a tool to:
 

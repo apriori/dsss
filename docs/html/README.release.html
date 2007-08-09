@@ -1,0 +1,27 @@
+<HTML><head><title>README.release</title></head><body><pre>
+This document is intended as a reference for Gregor or, if Gregor should fail
+to continue maintaining DSSS, whoever the current maintainer is. It contains
+instructions on how to make a release of the current version of DSSS.
+
+1) sss/main.d, docs/ChangeLog, docs/NEWS, rebuild/mars.c, rebuild/rebuild.exe
+   and rebuild/rebuild_choosedc.exe all need to be updated.
+
+2) svn export to dsss-<version>
+
+3) In dsss.conf, set version = <version>
+
+4) Make sure the winbins/ directory is out of the way (it shouldn't be in the
+   source packages)
+
+5) tar jcf dsss-<version>.tar.bz2 dsss-<version>/ && zip -r dsss-<version>.zip
+   dsss-<version>/
+
+6) Make binaries for supported platforms.
+
+7) Add it to the downloads/ branch in SVN.
+
+8) Update the wiki at dsource.org
+
+9) Update the source info at http://dsss.codu.org
+
+10) (Optionally) post an announcement to the NG.
