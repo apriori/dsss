@@ -269,8 +269,8 @@ prebuild = generateBindings.d
 
 = set =
 
-The 'set' command sets a dsss.conf file setting while building. The parameters
-are:
+The 'set' command sets a dsss.conf file setting while DSSS is actually running.
+The parameters are:
 set <section>:<setting> <value>
 
 It is also possible to omit the section from the command to set in the current
