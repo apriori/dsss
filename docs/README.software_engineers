@@ -1,6 +1,6 @@
 = DSSS Documentation for Software Engineers =
 
-DSSS is a tool to:
+DSSS, the D Shared Software System, is a tool to:
 
 * Build D software.
 * Install D software.
@@ -41,9 +41,16 @@ dsss.conf files are divided into a number of sections. Most sections describes a
 single binary or library to be built.
 
 A section is started with the file name of the source module or package in
-brackets. In general, sections which are named for modules produce binaries, and
-sections which are named for packages produce libraries. Each section may have
-any number of settings, which customize how that section is built.
+brackets. File names should always be specified with '/' for the path
+separator. '\' will work on Windows, but is not portable. '/' works on all
+platforms.
+
+In general, sections which are named for modules produce binaries, and sections
+which are named for packages produce libraries. Each section may have any
+number of settings, which customize how that section is built.
+
+When running `dsss build`, sections are built in the order that they appear in
+the dsss.conf file, with the exception that binaries are always built last.
 
 = SETTINGS =
 
@@ -64,11 +71,40 @@ a+=World
 The setting 'a' is now 'Hello World'. This is most useful with versioning,
 described later.
 
+Settings may include references to environment variables:
+a=$PREFIX
+
+DSSS provides several environment variables for this purpose:
+PREFIX: The prefix to which the software is being installed.
+BIN_PREFIX: The prefix for binaries.
+LIB_PREFIX: The prefix for libraries.
+INCLUDE_PREFIX: The base prefix for .di files.
+DOC_PREFIX: The prefix for documentation.
+ETC_PREFIX: The prefix for configuration files.
+EXE_EXT: The extension for executable files. Empty on POSIX, ".exe" on Windows.
+DSSS: The full path to the DSSS binary itself.
+DSSS_BUILD: The full path to the build tool being used by DSSS (usually
+            rebuild).
+
 = FLAGS =
 
 Any section may have a 'buildflags' setting, which specifies the flags to be
 used while building that section. For example,
 buildflags=-O
+
+= SECTION TYPES =
+
+Although section types are usually determined automatically from the section
+name, they may also be overridden with the 'type' setting:
+[oneFileLib.d]
+type=library
+
+The valid values for 'type' (all described in later sections) are:
+binary
+library
+sourcelibrary
+special
+subdir
 
 = BINARIES =
 
@@ -135,6 +171,53 @@ installed in this way, they will be usable by DSSS without being explicitly
 specified.
 
 
+== DEPENDENCIES ==
+
+The primary reason that DSSS exists is to make handling dependencies easier. To
+this end, is is never necessary to explicitly specify a dependency upon a
+library which is itself set up to use DSSS. Because DSSS traces D imports and
+keeps an Internet-accessible repository of package information, installing the
+dependencies which are supported by DSSS is as easy as typing:
+$ dsss net deps
+
+However, dependencies on non-DSSS D libraries or C libraries can be more
+complicated.
+
+= INCLUDE PATHS =
+
+It is possible to specify include paths in the 'buildflags' settings. Import
+paths are specified with the -I flag:
+buildflags=-I../prerequisite/import
+
+= PREREQUISITE LIBRARIES =
+
+Library search paths are specified with the -S flag:
+buildflags=-S../prerequisite/lib
+
+Libraries can be explicitly linked in with the -ll flag. -ll works similarly to
+-l in most compilers. On POSIX and similar platforms, a flag such as
+-ll<library>
+will link in a library named
+lib<library>.a (or lib<library>.so)
+
+On Windows (except GDC), the same flag will link a library named
+<library>.lib
+
+Libraries linked in with the -ll flag are searched for in the search paths
+specified by the -S flag.
+
+The -ll flag is only useful for explicitly linking libraries into binaries. If
+your library depends on a non-DSSS library, you must list that dependency in a
+.d file which is part of your library. This is done with the 'link' pragma,
+which must always be specified within version(build):
+version (build) {
+    pragma(link, "example");
+}
+
+The above example will cause any binary linked against your library to link
+against the library named libexample.a (or example.lib on Windows).
+
+
 == HOOKS ==
 
 DSSS can run arbitrary commands while building software. There are a number of
@@ -155,17 +238,6 @@ prebuild = echo \
     Hello ; \
     echo World
 
-Hook commands may include references to environment variables:
-prebuild = echo $PREFIX
-
-DSSS provides several environment variables for this purpose:
-PREFIX: The prefix to which the software is being installed.
-BIN_PREFIX: The prefix for binaries.
-LIB_PREFIX: The prefix for libraries.
-INCLUDE_PREFIX: The base prefix for .di files.
-DOC_PREFIX: The prefix for documentation.
-ETC_PREFIX: The prefix for configuration files.
-EXE_EXT: The extension for executable files. Empty on POSIX, ".exe" on Windows.
 
 
 There are also a number of special, builtin commands available.
@@ -185,6 +257,9 @@ The 'cd' command changes the current directory. It works exactly as on POSIX
 and Windows shells:
 prebuild = cd c_source ; make
 
+You do not need to return to the original directory after 'cd'ing. The
+directory will be restored after the hook commands have finished.
+
 = .d files =
 
 Any .d file may be used as a command. It will be compiled and run on-the-fly:
@@ -192,8 +267,8 @@ prebuild = generateBindings.d
 
 = set =
 
-The 'set' command sets a setting in the dsss.conf file on-the-fly. The
-parameters are:
+The 'set' command sets a dsss.conf file setting while building. The parameters
+are:
 set <section>:<setting> <value>
 
 It is also possible to omit the section from the command to set in the current
@@ -206,8 +281,10 @@ set *:<setting> <value>
 For example,
 set example.d:postbuild echo Hello
 
-'set' is most useful in concert with the 'eval' command (described below), but
-can also be used alone.
+'set' is most useful in concert with the 'eval' command (described below), as
+it can then be used to set dsss.conf file settings programatically. It is
+also usable independently of 'eval', but is no better than merely specifying
+the setting.
 
 = add =
 
@@ -281,9 +358,24 @@ most useful for settings such as 'buildflags':
 buildflags=-O
 
 
+== ADVANCED FEATURES ==
+
+There are several advanced features of DSSS which do not need any modification
+to the dsss.conf file to use.
+
+The flag '--test', when passed to `dsss build`:
+$ dsss build --test
+will cause all of the unit tests to be run.
+
+The flag '--doc', when passed to `dsss build`:
+$ dsss build --doc
+will cause API documentation for every library to be generated with CandyDoc,
+which beautifies and organizes the documentation.
+
+
 To-be-written:
 == SUBDIRECTORIES ==
-== INTERNAL OPERATION ==
+== NET INSTALLATION ==
 
 
 -put this somewhere-
