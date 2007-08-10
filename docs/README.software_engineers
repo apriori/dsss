@@ -207,15 +207,17 @@ Libraries linked in with the -ll flag are searched for in the search paths
 specified by the -S flag.
 
 The -ll flag is only useful for explicitly linking libraries into binaries. If
-your library depends on a non-DSSS library, you must list that dependency in a
-.d file which is part of your library. This is done with the 'link' pragma,
-which must always be specified within version(build):
+the DSSS-implemented library depends on a non-DSSS library, the dependency must
+be specified in a .d file which is part of the DSSS-implemented library. This
+is done with the 'link' pragma, which must always be specified within
+version(build):
 version (build) {
     pragma(link, "example");
 }
 
-The above example will cause any binary linked against your library to link
-against the library named libexample.a (or example.lib on Windows).
+The above example will cause any binary linked against the DSSS-implemented
+library to link against the library named libexample.a (or example.lib on
+Windows).
 
 
 == HOOKS ==
@@ -257,7 +259,7 @@ The 'cd' command changes the current directory. It works exactly as on POSIX
 and Windows shells:
 prebuild = cd c_source ; make
 
-You do not need to return to the original directory after 'cd'ing. The
+It is unnecessary to return to the original directory after 'cd'ing. The
 directory will be restored after the hook commands have finished.
 
 = .d files =
@@ -431,9 +433,9 @@ sensible)
 
 
 Sections creating libraries from directories will normally include all the .d
-files in that directory or any subdirectory of it. You may also specify
-subdirectories explicitly in dsss.conf, which will cause some .d files to be
-reassigned. For example, if you have these files:
+files in that directory or any subdirectory of it. It is also possible to
+specify subdirectories explicitly in dsss.conf, which will cause some .d files
+to be reassigned. For example, if you have these files:
 dzip/algorithm.d, foo/compression/zip.d
 and a section:
 [dzip]
