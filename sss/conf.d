@@ -912,7 +912,7 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
                 char[][] dirFiles = listdir(ndir);
                 foreach (file; dirFiles) {
                     // either recurse,
-                    if (isdir(file)) {
+                    if (isdir(ndir ~ std.path.sep ~ file)) {
                         instDir(ndir ~ std.path.sep ~ file, ipostfix ~ std.path.sep ~ file);
 
                     } else {
