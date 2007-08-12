@@ -76,6 +76,10 @@ int install(char[][] buildElems, char[] pname = null, char[][]* subManifest = nu
         // basic info
         char[] type = settings["type"];
         char[] target = settings["target"];
+
+        // maybe we shouldn't install it
+        if ("noinstall" in settings)
+            continue;
         
         // say what we're doing
         writefln("Installing %s", target);

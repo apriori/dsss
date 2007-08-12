@@ -1,7 +1,7 @@
 <HTML><head><title>README.software_engineers</title></head><body><pre>
 <h3> DSSS Documentation for Software Engineers </h3>
 
-DSSS is a tool to:
+DSSS, the D Shared Software System, is a tool to:
 
 * Build D software.
 * Install D software.
@@ -42,9 +42,16 @@ dsss.conf files are divided into a number of sections. Most sections describes a
 single binary or library to be built.
 
 A section is started with the file name of the source module or package in
-brackets. In general, sections which are named for modules produce binaries, and
-sections which are named for packages produce libraries. Each section may have
-any number of settings, which customize how that section is built.
+brackets. File names should always be specified with '/' for the path
+separator. '\' will work on Windows, but is not portable. '/' works on all
+platforms.
+
+In general, sections which are named for modules produce binaries, and sections
+which are named for packages produce libraries. Each section may have any
+number of settings, which customize how that section is built.
+
+When running `dsss build`, sections are built in the order that they appear in
+the dsss.conf file, with the exception that binaries are always built last.
 
 <h3> SETTINGS </h3>
 
@@ -65,11 +72,44 @@ a+=World
 The setting 'a' is now 'Hello World'. This is most useful with versioning,
 described later.
 
+Some settings do not require values. In this case, the setting name alone is
+sufficient, such as:
+shared
+
+Settings may include references to environment variables:
+a=$PREFIX
+
+DSSS provides several environment variables for this purpose:
+PREFIX: The prefix to which the software is being installed.
+BIN_PREFIX: The prefix for binaries.
+LIB_PREFIX: The prefix for libraries.
+INCLUDE_PREFIX: The base prefix for .di files.
+DOC_PREFIX: The prefix for documentation.
+ETC_PREFIX: The prefix for configuration files.
+EXE_EXT: The extension for executable files. Empty on POSIX, ".exe" on Windows.
+DSSS: The full path to the DSSS binary itself.
+DSSS_BUILD: The full path to the build tool being used by DSSS (usually
+            rebuild).
+
 <h3> FLAGS </h3>
 
 Any section may have a 'buildflags' setting, which specifies the flags to be
 used while building that section. For example,
 buildflags=-O
+
+<h3> SECTION TYPES </h3>
+
+Although section types are usually determined automatically from the section
+name, they may also be overridden with the 'type' setting:
+[oneFileLib.d]
+type=library
+
+The valid values for 'type' (all described in later sections) are:
+binary
+library
+sourcelibrary
+special
+subdir
 
 <h3> BINARIES </h3>
 
@@ -109,6 +149,18 @@ exclude=mydpackage/brokenpackage
 The 'exclude' setting is useful in concert with versioning, described in a later
 section.
 
+When using GDC on GNU/Linux, it is also possible to build shared libraries (.so
+files). To specify that a shared library should be built, set the 'shared'
+option in the library's section:
+[mydpackage]
+shared
+
+You can set the .so file's version extension (the 1.2.3 in .so.1.2.3) with the
+soversion setting:
+[mydpackage]
+shared
+soversion=3.2.1
+
 <h3> SOURCE LIBRARIES </h3>
 
 Source libraries are libraries which are not compiled until they are used in a
@@ -135,6 +187,59 @@ directory, usually the prefix in which it is installed. When libraries are
 installed in this way, they will be usable by DSSS without being explicitly
 specified.
 
+If a section should be built but not installed, set the 'noinstall' setting:
+[test.d]
+noinstall
+
+
+<h2> DEPENDENCIES </h2>
+
+The primary reason that DSSS exists is to make handling dependencies easier. To
+this end, is is never necessary to explicitly specify a dependency upon a
+library which is itself set up to use DSSS. Because DSSS traces D imports and
+keeps an Internet-accessible repository of package information, installing the
+dependencies which are supported by DSSS is as easy as typing:
+$ dsss net deps
+
+However, dependencies on non-DSSS D libraries or C libraries can be more
+complicated.
+
+<h3> INCLUDE PATHS </h3>
+
+It is possible to specify include paths in the 'buildflags' settings. Import
+paths are specified with the -I flag:
+buildflags=-I../prerequisite/import
+
+<h3> PREREQUISITE LIBRARIES </h3>
+
+Library search paths are specified with the -S flag:
+buildflags=-S../prerequisite/lib
+
+Libraries can be explicitly linked in with the -ll flag. -ll works similarly to
+-l in most compilers. On POSIX and similar platforms, a flag such as
+-ll<library>
+will link in a library named
+lib<library>.a (or lib<library>.so)
+
+On Windows (except GDC), the same flag will link a library named
+<library>.lib
+
+Libraries linked in with the -ll flag are searched for in the search paths
+specified by the -S flag.
+
+The -ll flag is only useful for explicitly linking libraries into binaries. If
+the DSSS-implemented library depends on a non-DSSS library, the dependency must
+be specified in a .d file which is part of the DSSS-implemented library. This
+is done with the 'link' pragma, which must always be specified within
+version(build):
+version (build) {
+    pragma(link, "example");
+}
+
+The above example will cause any binary linked against the DSSS-implemented
+library to link against the library named libexample.a (or example.lib on
+Windows).
+
 
 <h2> HOOKS </h2>
 
@@ -156,20 +261,26 @@ prebuild = echo \
     Hello ; \
     echo World
 
-Hook commands may include references to environment variables:
-prebuild = echo $PREFIX
-
-DSSS provides several environment variables for this purpose:
-PREFIX: The prefix to which the software is being installed.
-BIN_PREFIX: The prefix for binaries.
-LIB_PREFIX: The prefix for libraries.
-INCLUDE_PREFIX: The base prefix for .di files.
-DOC_PREFIX: The prefix for documentation.
-ETC_PREFIX: The prefix for configuration files.
-EXE_EXT: The extension for executable files. Empty on POSIX, ".exe" on Windows.
 
 
 There are also a number of special, builtin commands available.
+
+<h3> warn and error </h3>
+
+A warning or error condition can be specified by the hook commands 'warn' and
+'error'.
+
+An example of 'error':
+version (!Posix) {
+    prebuild=error Only POSIX is supported.
+}
+
+An example of 'warn':
+version (Posix) {
+    prebuild=warn POSIX support is untested.
+}
+
+When an error hook command is run, building of course halts.
 
 <h3> install </h3>
 
@@ -186,6 +297,9 @@ The 'cd' command changes the current directory. It works exactly as on POSIX
 and Windows shells:
 prebuild = cd c_source ; make
 
+It is unnecessary to return to the original directory after 'cd'ing. The
+directory will be restored after the hook commands have finished.
+
 <h3> .d files </h3>
 
 Any .d file may be used as a command. It will be compiled and run on-the-fly:
@@ -193,8 +307,8 @@ prebuild = generateBindings.d
 
 <h3> set </h3>
 
-The 'set' command sets a setting in the dsss.conf file on-the-fly. The
-parameters are:
+The 'set' command sets a dsss.conf file setting while DSSS is actually running.
+The parameters are:
 set <section>:<setting> <value>
 
 It is also possible to omit the section from the command to set in the current
@@ -207,8 +321,10 @@ set *:<setting> <value>
 For example,
 set example.d:postbuild echo Hello
 
-'set' is most useful in concert with the 'eval' command (described below), but
-can also be used alone.
+'set' is most useful in concert with the 'eval' command (described below), as
+it can then be used to set dsss.conf file settings programatically. It is
+also usable independently of 'eval', but is no better than merely specifying
+the setting.
 
 <h3> add </h3>
 
@@ -267,6 +383,11 @@ are specified for the software package as a whole, rather than any section.
 These are included at the top of the dsss.conf file. Common settings are 'name'
 (the name of the software package) and 'version'.
 
+There is also a global setting available to specify which sections should be
+built normally, 'defaulttargets'. Without it, all sections will be built by
+default. The section list is simply separated by spaces:
+defaulttargets=xlib xbin
+
 It is also possible to specify global settings later in the dsss.conf file by
 adding an empty section header:
 []
@@ -282,231 +403,21 @@ most useful for settings such as 'buildflags':
 buildflags=-O
 
 
+<h2> ADVANCED FEATURES </h2>
+
+There are several advanced features of DSSS which do not need any modification
+to the dsss.conf file to use.
+
+The flag '--test', when passed to `dsss build`:
+$ dsss build --test
+will cause all of the unit tests to be run.
+
+The flag '--doc', when passed to `dsss build`:
+$ dsss build --doc
+will cause API documentation for every library to be generated with CandyDoc,
+which beautifies and organizes the documentation.
+
+
 To-be-written:
 <h2> SUBDIRECTORIES </h2>
-<h2> INTERNAL OPERATION </h2>
-
-
--put this somewhere-
-When a library is installed via DSSS, the .d files are translated into .di (D
-import) files, which are then installed to /include/d with the appropriate
-names. These D import files contain references to the library itself, which
-allows DSSS to include it when necessary without the user specifying it.
-
-
-
-<h2> OLD CONTENT (please ignore) </h2>
-
-DSSS is a tool to:
-
-* Build D software.
-* Install D software.
-* Configure D software dependencies and libraries.
-* Maintain a repository of DSSS-compatible D sources to be easily installable
-  via the Internet.
-
-To the average software engineer, the most important part is dsss.conf, the
-file added to your source code to configure how DSSS will compile it.
-
-dsss.conf is a plain-text file, with a similar syntax to Windows INI files. It
-can have any number of sections, each of which is headed with a name in
-brackets, like so:
-[foo/bar.d]
-
-
-Most sections are named by a source file or directory. In general, sections
-named for source files will generate binaries, and sections named for
-directories will generate libraries. However, you can manually specify a
-binary, library or sourcelibrary (like a library, but not compiled until it's
-used in a binary) with the type setting:
-[wholedirbinary]
-type=binary
-
-[onefilelibrary.d]
-type=library
-
-[onefilesrclib.d]
-type=sourcelibrary
-
-
-In each section, there can be any number of settings. Each setting is a
-keyword, possibly followed by = or += and a value. For example, the "target"
-setting sets the name of the output binary or library in a given section:
-[main.d]
-target=dzip
-
-(In general, the target setting will be automatically set to something
-sensible)
-
-
-Sections creating libraries from directories will normally include all the .d
-files in that directory or any subdirectory of it. You may also specify
-subdirectories explicitly in dsss.conf, which will cause some .d files to be
-reassigned. For example, if you have these files:
-dzip/algorithm.d, foo/compression/zip.d
-and a section:
-[dzip]
-then the produced library will include algorithm.d and zip.d.
-If you have two sections:
-[dzip]
-[dzip/compression]
-then two libraries will be produced: The library from 'dzip' will contain
-algorithm.d, and the library from [dzip/compression] will contain zip.d.
-
-
-Furthermore, content in dsss.conf can be set up as version-specific, with a
-version keyword similar to the version keyword in D. For example, to make sure
-that a certain binary is only produced on Windows:
-version (Windows) {
- [dzip/windows.d]
- target=dzip_for_windows
-}
-
-The version keyword in dsss.conf also supports negation:
-version (!Windows) {
- [dzip/nonwindows.d]
- target=dzip_for_nonwindows
-}
-
-The version statement also supports an 'else' clause:
-version (Windows) {
- [foo/windows.d]
- target=foo_for_windows
-} else {
- [foo/notwindows.d]
- target=foo_for_notwindows
-}
-
-The version statement in dsss.conf has a fairly strict syntax: the { must be on
-the same line as the statement, and the version being tested must be in
-parenthesis.
-
-
-There are quite a few other settings supported:
-
-* exclude
-  * Exclude a list of .d files from being included in a library:
-    exclude=foo.d bar.d
-
-* buildflags
-  * Flags that will be added to the command line for rebuild when building this
-    section.
-
-* prebuild, preinstall, preclean, predigen, postbuild, postinstall, postclean,
-  postdigen
-  * Commands to be run before or after (pre or post) building (build),
-    installing (install), cleaning (clean) or generating .di files (digen) for
-    the current section. Can be any number of ;-separated commands, and
-    supports some special command types:
-    * .d files. If a .d file is specified as a command, it will be compiled and
-      run.
-      * Notably, D files can always use DSSS' headers. That is, the package
-        'sss'.
-
-    * install: DSSS has an internal 'install' command, which takes the
-      following syntax:
-      install <file> <target directory>
-
-    * eval: Run a command (.d file or otherwise), and execute its result
-      * For example, the command could print "install chosen/file/to/install
-        $INCLUDE_PREFIX"
-
-    * set: Set a setting in DSSS' environment. The syntax is as follows:
-      * set <section>.<setting> <value>
-      * You may use * to apply a setting to all sections, or simply exclude the
-        section (but still include the .) to set a global setting.
-      * This is most useful when used via eval, as in:
-        eval detectsettings.d
-
-    * add: Like set, but adds to a setting.
-
-  * In any command, you can use environment variables with a '$', such as
-    $PREFIX. The following environment variables are provided by DSSS:
-    * $DSSS : The dsss binary, if you need to call DSSS recursively. Better
-      than counting on it being on the PATH.
-
-    * $PREFIX : The prefix to which the software is being installed.
-
-    * $BIN_PREFIX : The prefix to which binaries are being installed.
-
-    * $LIB_PREFIX : The prefix to which libraries are being installed.
-
-    * $INCLUDE_PREFIX : The prefix to which generated .di interface files are
-      being installed.
-      * This is the /base/ prefix, so for example the module foo.bar will be
-        installed to $INCLUDE_PREFIX/foo/bar.di
-      * This directory can also be used for .d files.
-
-    * $DOC_PREFIX : The prefix to which documentation is installed.
-
-    * $ETC_PREFIX : The prefix to which configuration files are being
-      installed.
-
-
-Furthermore, there is a global section for settings which are not specific to
-any binary or library. You can add settings to this section simply by adding
-them before any section declarations, or by making an empty section declaration
-like so:
-[]
-global_setting=0
-
-The important global settings are 'name' (which will otherwise be gleaned from
-the directory name) and 'version' (which will otherwise be set to 'latest').
-With these settings, a dsss.conf file would conventionally look something like
-this:
-name = dzip
-version = 1.0
-[dzip.d]
-target = dzip
-
-
-There is also a global setting, "requires", which may be used to explicitly
-list dependencies:
-requires = bintod
-In general, it is NOT necessary to use this setting, as DSSS will detect
-dependencies based on what is imported from the D source.
-
-
-It is possible to add a setting to all sections with the special [*] section:
-name = dzip
-version = 1.0
-[*]
-buildflags=-g
-[main.d]
-target = dzipper
-[dzip]
-
-
-You can make 'special' build steps, which do not correspond to D source files
-and so do not call the build tool, by naming them prefixed with a +. For
-example:
-[+genSource]
-prebuild = gensource.d
-
-
-It is possible to have source files spread out through several directories, and
-to support this in dsss.conf there is the special type "subdir":
-[subtool]
-type = subdir
-
-Each subdirectory must have its own dsss.conf . Note that setting type=subdir
-will cause DSSS to recurse into that directory, but will not cause that
-directory to be visible at compile time. If you want that feature, you will
-need to add -I flags to buildflags:
-name = dzip
-version = 1.0
-[*]
-buildflags=-g -Isubtool
-[subtool]
-type = subdir
-[main.d]
-target = dzipper
-[dzip]
-
-
-At build time, sections will be handled in the order that they appear in the
-dsss.conf file, with the exception that binaries are always built last. By
-default, every section will be built. This can be overridden with the global
-option 'defaulttargets', which allows you to specify a list of targets to build
-by default. All targets will be built if 'all' is explicitly specified on the
-command line.
+<h2> NET INSTALLATION </h2>

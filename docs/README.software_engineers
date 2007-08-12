@@ -186,6 +186,10 @@ directory, usually the prefix in which it is installed. When libraries are
 installed in this way, they will be usable by DSSS without being explicitly
 specified.
 
+If a section should be built but not installed, set the 'noinstall' setting:
+[test.d]
+noinstall
+
 
 == DEPENDENCIES ==
 
