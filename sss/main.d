@@ -55,6 +55,7 @@ private {
             CLEAN,
             DISTCLEAN,
             INSTALL,
+            BINSTALL,
             UNINSTALL,
             INSTALLED,
             NET,
@@ -124,6 +125,10 @@ int main(char[][] args)
             } else if (arg == "install") {
                 commandSet = true;
                 command = cmd_t.INSTALL;
+
+            } else if (arg == "binstall") {
+                commandSet = true;
+                command = cmd_t.BINSTALL;
                 
             } else if (arg == "uninstall") {
                 commandSet = true;
@@ -271,6 +276,14 @@ int main(char[][] args)
         case cmd_t.INSTALL:
             return sss.install.install(buildElems);
             break;
+
+        case cmd_t.BINSTALL:
+        {
+            int bret = sss.build.build(buildElems);
+            if (bret) return bret;
+            return sss.install.install(buildElems);
+            break;
+        }
             
         case cmd_t.UNINSTALL:
             return sss.uninstall.uninstall(buildElems);
@@ -347,7 +360,12 @@ Usage: dsss [dsss options] <command> [options]
 `Usage: dsss [dsss options] install [install options] [sources, binaries or packages]`
             );
         
-    } else if (command == cmd_t.UNINSTALL) {
+   } else if (command == cmd_t.BINSTALL) {
+        writefln(
+`Usage: dsss [dsss options] binstall [binstall options] [sources, binaries or packages]`
+            );
+
+   } else if (command == cmd_t.UNINSTALL) {
         writefln(
 `Usage: dsss [dsss options] uninstall [uninstall options] <tools or libraries>`
             );
