@@ -1,4 +1,5 @@
 SVN from 0.70:
+        - Much-improved README.software_engineers.
         - Fixed 'set' and 'add' commands (see ticket #102).
         - Added 'error' and 'warn' hook commands (see ticket #103).
         - Added 'binstall' subcommand (see ticket #105).
