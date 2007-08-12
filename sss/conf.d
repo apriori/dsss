@@ -624,17 +624,6 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
             // FIXME: guarantee that sections aren't repeated
                 
         } else if (tokens.length == 3 &&
-                   tokens[1] == ":") {
-            // a command
-            if (tokens[0] == "warn") {
-                // a warning
-                writefln("WARNING: %s", tokens[2]);
-            } else if (tokens[0] == "error") {
-                // an error
-                writefln("ERROR: %s", tokens[2]);
-            }
-            
-        } else if (tokens.length == 3 &&
                    tokens[1] == "=") {
             // a setting
             conf.settings[section][std.string.tolower(tokens[0])] = expandEnvVars(tokens[2]);
@@ -862,6 +851,15 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
         if (find(cmd, ' ') == -1 && ext == "d") {
             // if it's a .d file, -exec it
             saySystemDie(dsss_build ~ "-full -exec " ~ cmd);
+
+        } else if (cmd.length > 5 &&
+                   cmd[0..5] == "warn ") {
+            writefln("WARNING: %s", cmd[5..$]);
+
+        } else if (cmd.length > 6 &&
+                   cmd[0..6] == "error ") {
+            writefln("ERROR: %s", cmd[6..$]);
+            exit(1);
             
         } else if (cmd.length > 8 &&
                    cmd[0..8] == "install ") {

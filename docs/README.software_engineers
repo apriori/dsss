@@ -244,6 +244,23 @@ prebuild = echo \
 
 There are also a number of special, builtin commands available.
 
+= warn and error =
+
+A warning or error condition can be specified by the hook commands 'warn' and
+'error'.
+
+An example of 'error':
+version (!Posix) {
+    prebuild=error Only POSIX is supported.
+}
+
+An example of 'warn':
+version (Posix) {
+    prebuild=warn POSIX support is untested.
+}
+
+When an error hook command is run, building of course halts.
+
 = install =
 
 The 'install' command installs a file to the specified directory. If the
@@ -344,6 +361,11 @@ There are several settings that DSSS supports which are global. That is, they
 are specified for the software package as a whole, rather than any section.
 These are included at the top of the dsss.conf file. Common settings are 'name'
 (the name of the software package) and 'version'.
+
+There is also a global setting available to specify which sections should be
+built normally, 'defaulttargets'. Without it, all sections will be built by
+default. The section list is simply separated by spaces:
+defaulttargets=xlib xbin
 
 It is also possible to specify global settings later in the dsss.conf file by
 adding an empty section header:
