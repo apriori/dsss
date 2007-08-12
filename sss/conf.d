@@ -941,7 +941,7 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
             // set <section>.<setting> <value>
             cmd = cmd[4..$];
             
-            // 1) get the <section>.<setting>
+            // 1) get the <section>:<setting>
             char[] sset = cmd.dup;
             for (i = 0; i < cmd.length; i++) {
                 if (cmd[i] == ' ') {
@@ -954,9 +954,9 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
             
             if (i == cmd.length) cmd = "";
             
-            // 2) divide <section>.<setting>
+            // 2) divide <section>:<setting>
             char[] section, setting;
-            int dotloc = find(sset, '.');
+            int dotloc = find(sset, ':');
             if (dotloc == -1) {
                 section = "";
                 setting = sset;

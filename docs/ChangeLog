@@ -1,3 +1,6 @@
+SVN from 0.70:
+        - Fixed 'set' and 'add' commands (see ticket #102).
+
 0.70 from 0.69:
         - Rebuild: Merged DMD 1.020.
         - Should now trim whitespace in "name" (and other) settings (see
