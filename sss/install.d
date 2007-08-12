@@ -142,13 +142,21 @@ int install(char[][] buildElems, char[] pname = null, char[][]* subManifest = nu
                 assert(0);
             }
             
-            // 2) generate .di files
-            char[][] srcFiles = targetToFiles(build, conf);
+            // 2) install generated .di files
+            char[][] srcFiles = targetToFiles(build, conf, true);
             foreach (file; srcFiles) {
-                // install the .di file
-                copyAndManifest(getBaseName(file ~ "i"),
-                                includePrefix ~ std.path.sep ~ getDirName(file),
-                                "dsss_imports" ~ std.path.sep ~ getDirName(file) ~ std.path.sep);
+                // if it's already a .di file, this is simpler
+                if (std.string.tolower(getExt(file)) == "di") {
+                    copyAndManifest(getBaseName(file),
+                                    includePrefix ~ std.path.sep ~ getDirName(file),
+                                    getDirName(file) ~ std.path.sep);
+
+                } else {
+                    // install the generated .di file
+                    copyAndManifest(getBaseName(file ~ "i"),
+                                    includePrefix ~ std.path.sep ~ getDirName(file),
+                                    "dsss_imports" ~ std.path.sep ~ getDirName(file) ~ std.path.sep);
+                }
             }
             
         } else if (type == "binary") {
@@ -164,7 +172,7 @@ int install(char[][] buildElems, char[] pname = null, char[][]* subManifest = nu
         } else if (type == "sourcelibrary" ||
                    (type == "library" && !libsSafe())) {
             // also fairly easy
-            char[][] srcFiles = targetToFiles(build, conf);
+            char[][] srcFiles = targetToFiles(build, conf, true);
             foreach (file; srcFiles) {
                 char[] fdir = getDirName(file);
                 char[] pdir = fdir.dup;

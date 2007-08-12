@@ -4,6 +4,7 @@ SVN from 0.70:
         - Added 'error' and 'warn' hook commands (see ticket #103).
         - Added 'binstall' subcommand (see ticket #105).
         - Added 'noinstall' setting (see ticket #106).
+        - `dsss install` now installs .di files in libraries (see ticket #92).
 
 0.70 from 0.69:
         - Rebuild: Merged DMD 1.020.

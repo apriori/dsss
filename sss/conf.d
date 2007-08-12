@@ -756,7 +756,7 @@ bool targetGNUOrPosix()
 }
 
 /** Get a list of files from a target */
-char[][] targetToFiles(char[] target, DSSSConf conf)
+char[][] targetToFiles(char[] target, DSSSConf conf, bool includeDi = false)
 in {
     assert(target in conf.settings);
 }
@@ -805,13 +805,23 @@ body {
             
             // make this the full path
             file = ndir ~ std.path.sep ~ file;
+
+            // get the extension
+            char[] ext = std.string.tolower(getExt(file)).dup;
             
             if (isdir(file)) {
                 // perhaps recurse
                 addDir(file);
-            } else if (std.string.tolower(getExt(file)) == "d") {
+
+            } else if (ext == "d") {
                 // or just add it
                 if (!excluded(file)) {
+                    files ~= file;
+                }
+
+            } else if (ext == "di") {
+                // only add .di files if we should
+                if (includeDi) {
                     files ~= file;
                 }
             }
