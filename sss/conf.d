@@ -900,6 +900,33 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
                 copyInFile(comps[1], comps[2]);
                 manifest ~= (manifestPath ~ comps[1]);
             }
+
+        } else if (cmd.length > 11 &&
+                   cmd[0..11] == "installdir ") {
+            // crawl for files, installing each
+            char[][] comps = std.string.split(cmd);
+            if (comps.length != 3) continue; // FIXME: not valid
+
+            /// install the files in this directory
+            void instDir(char[] ndir, char[] ipostfix = "") {
+                char[][] dirFiles = listdir(ndir);
+                foreach (file; dirFiles) {
+                    // either recurse,
+                    if (isdir(file)) {
+                        instDir(ndir ~ std.path.sep ~ file, ipostfix ~ std.path.sep ~ file);
+
+                    } else {
+                        // or install this file
+                        dsssScriptedStep(conf, "install " ~
+                                         ndir ~ std.path.sep ~ file ~ " " ~
+                                         comps[2] ~ ipostfix);
+
+                    }
+                }
+            }
+
+            // start with the base
+            instDir(comps[1]);
             
         } else if (cmd.length > 3 &&
                    cmd[0..3] == "cd ") {

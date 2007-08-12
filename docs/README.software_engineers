@@ -290,6 +290,12 @@ postinstall = install docs/README $DOC_PREFIX
 Files installed in this way are recorded, so that they may be uninstalled
 easily.
 
+= installdir =
+
+'installdir' is similar to 'install', with the exception that it can install
+entire directories (and all of their subdirectories). The /content/ of the
+first directory will be installed into the second directory.
+
 = cd =
 
 The 'cd' command changes the current directory. It works exactly as on POSIX
