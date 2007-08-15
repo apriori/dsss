@@ -407,6 +407,17 @@ most useful for settings such as 'buildflags':
 [*]
 buildflags=-O
 
+Note that any settings in a named section will override those in "*" sections.
+For example, in this situation:
+
+[*]
+buildflags=-O
+
+[mydlib]
+buildflags+=-release
+
+mydlib's buildflags are only "-release".
+
 
 == ADVANCED FEATURES ==
 
