@@ -96,6 +96,10 @@ Any section may have a 'buildflags' setting, which specifies the flags to be
 used while building that section. For example,
 buildflags=-O
 
+Flags for use with release and debug builds (when using --debug) can be
+specified separately in 'releaseflags' and 'debugflags', respectively.
+'debugflags' defaults to '-debug -gc'.
+
 = SECTION TYPES =
 
 Although section types are usually determined automatically from the section
