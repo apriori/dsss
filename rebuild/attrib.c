@@ -879,15 +879,6 @@ void PragmaDeclaration::semantic(Scope *sc)
         
     }
 
-    if (decl)
-    {
-	for (unsigned i = 0; i < decl->dim; i++)
-	{
-	    Dsymbol *s = (Dsymbol *)decl->data[i];
-
-	    s->semantic(sc);
-	}
-    }
     return;
 
 Lnodecl:
