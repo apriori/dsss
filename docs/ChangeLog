@@ -6,6 +6,8 @@ SVN from 0.70:
         - Added 'noinstall' setting (see ticket #106).
         - `dsss install` now installs .di files in libraries (see ticket #92).
         - Added 'installdir' hook command (see ticket #84).
+        - Rebuild: Should now handle non-DMD compilers derived from DMD more
+          easily (see ticket #115).
 
 0.70 from 0.69:
         - Rebuild: Merged DMD 1.020.

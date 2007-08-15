@@ -396,35 +396,7 @@ int main(int argc, char *argv[])
         masterConfig[""].find("compiler") != masterConfig[""].end()) {
         std::string compiler = masterConfig[""]["compiler"];
         
-        if (compiler == "dmd") {
-            // we have this built in
-            char *inif;
-            
-            if (masterConfig[""].find("inifile") != masterConfig[""].end())
-                inif = mem.strdup(masterConfig[""]["inifile"].c_str());
-            else
-                inif = mem.strdup("sc.ini");
-            
-            // trick whereami into giving us a path
-            char *dir, *fil, *full;
-            if (!whereAmI("dmd", &dir, &fil)) {
-                error("dmd is not in $PATH");
-                exit(1);
-            }
-            full = (char *) mem.malloc(strlen(dir) + 5);
-            sprintf(full, "%s%cdmd", dir,
-#if __WIN32
-                    '\\'
-#else
-                    '/'
-#endif
-                   );
-            inifile(full, inif);
-            mem.free(full);
-            
-            mem.free(inif);
-            
-        } else if (compiler.substr(compiler.length() - 3) == "gdc") {
+        if (compiler.substr(compiler.length() - 3) == "gdc") {
             // a bit more complicated
 #define READBUFSIZ 1024
             char readBuf[READBUFSIZ + 1];
@@ -465,6 +437,26 @@ int main(int argc, char *argv[])
                 (std::string(gdcdir) + "/../" + cmachine + "/include/d/" + cversion + "/").c_str()));
             global.params.imppath->push(strdup(
                 (std::string(gdcdir) + "/../" + cmachine + "/include/d/" + cversion + "/" + cmachine + "/").c_str()));
+        }
+        // assume dmd based compiler if inifile is set
+        else if (masterConfig[""].find("inifile") != masterConfig[""].end()) {
+            std::string inif = masterConfig[""]["inifile"];
+
+            // trick whereami into giving us a path
+            char *dir, *fil;
+            if (!whereAmI(compiler.c_str(), &dir, &fil)) {
+                error("%s is not in $PATH", compiler.c_str());
+                exit(1);
+            }
+            std::string full = dir;
+#if __WIN32
+            full.append("\\");
+#else
+            full.append("/");
+#endif
+            full.append(compiler);
+
+            inifile((char*)full.c_str(), (char*)inif.c_str());
         }
     }
     
