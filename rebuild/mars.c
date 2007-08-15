@@ -1016,7 +1016,7 @@ int main(int argc, char *argv[])
             // include it
             if (!global.params.imppath)
                 global.params.imppath = new Array();
-            global.params.imppath->push(p + 2);
+            global.params.imppath->push((void*)mem.strdup(include.c_str()));
         }
     }
 
