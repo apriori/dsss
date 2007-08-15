@@ -38,10 +38,11 @@ import hcf.process;
 import sss.conf;
 
 /** Entry into the "install" command */
-int install(char[][] buildElems, char[] pname = null, char[][]* subManifest = null)
+int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char[][]* subManifest = null)
 {
     // get the configuration
-    DSSSConf conf = readConfig(buildElems);
+    if (conf is null)
+        conf = readConfig(buildElems);
     
     // get the corresponding sources
     char[][] buildSources = sourcesByElems(buildElems, conf);
@@ -188,7 +189,7 @@ int install(char[][] buildElems, char[] pname = null, char[][]* subManifest = nu
             // recurse
             char[] origcwd = getcwd();
             chdir(build);
-            int installret = install(null, pname, &manifest);
+            int installret = install(null, null, pname, &manifest);
             if (installret) return installret;
             chdir(origcwd);
         }

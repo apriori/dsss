@@ -11,6 +11,8 @@ SVN from 0.70:
         - Rebuild: Fixed configuration's "include" option (see ticket #116).
         - Rebuild: Fixed a crash bug with the highly-uncommon pragmas
           containing declarations (see ticket #117).
+        - Added --config file for testing alternative dsss.conf's (see ticket
+          #109).
 
 0.70 from 0.69:
         - Rebuild: Merged DMD 1.020.

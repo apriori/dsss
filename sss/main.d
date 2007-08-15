@@ -72,6 +72,11 @@ int main(char[][] args)
     
     /** Elements to build/install/something */
     char[][] buildElems;
+
+    /** Overridden dsss.conf to use */
+    char[] useDSSSConf = null;
+
+    char[] val;
     
     for (int i = 1; i < args.length; i++) {
         char[] arg = args[i];
@@ -109,6 +114,9 @@ int main(char[][] args)
             if (argIsHelp()) {
                 usage();
                 return 0;
+
+            } else if (parseArg(arg, "config", true, &val)) {
+                useDSSSConf = val.dup;
                 
             } else if (arg == "build") {
                 commandSet = true;
@@ -158,7 +166,6 @@ int main(char[][] args)
             
         } else {
             /* generic options */
-            char[] val;
             if (argIsHelp()) {
                 usage();
                 return 0;
@@ -259,29 +266,37 @@ int main(char[][] args)
             "d -S" ~ dir ~ std.path.sep ~
             "lib ";
     }
+
+    // if a specific dsss.conf file was requested, use it
+    DSSSConf conf = null;
+    if (useDSSSConf != "") {
+        writefln("WARNING: The --config option is only recommended for testing, and should NOT be");
+        writefln("         a part of your general build routine.");
+        conf = readConfig(buildElems, false, useDSSSConf);
+    }
     
     switch (command) {
         case cmd_t.BUILD:
-            return sss.build.build(buildElems);
+            return sss.build.build(buildElems, conf);
             break;
             
         case cmd_t.CLEAN:
-            return sss.clean.clean();
+            return sss.clean.clean(conf);
             break;
             
         case cmd_t.DISTCLEAN:
-            return sss.clean.distclean();
+            return sss.clean.distclean(conf);
             break;
             
         case cmd_t.INSTALL:
-            return sss.install.install(buildElems);
+            return sss.install.install(buildElems, conf);
             break;
 
         case cmd_t.BINSTALL:
         {
-            int bret = sss.build.build(buildElems);
+            int bret = sss.build.build(buildElems, conf);
             if (bret) return bret;
-            return sss.install.install(buildElems);
+            return sss.install.install(buildElems, conf);
             break;
         }
             
@@ -324,6 +339,7 @@ void usage()
 Usage: dsss [dsss options] <command> [options]
   DSSS Options:
     --help|-h: Display this help.
+    --config=<alternative dsss.conf file>: Should be used for testing only.
   Commands:
     build:     build all or some binaries or libraries
     clean:     clean up object files from all or some builds
@@ -400,7 +416,7 @@ Usage: dsss [dsss options] <command> [options]
     }
     
     writefln(
-`  Generic options (must proceed the command):
+`  Generic options (must come after the command):
     --help: display specific options and information
     --prefix=<prefix>: set the install prefix
     --doc: Generate/install documentation for libraries
