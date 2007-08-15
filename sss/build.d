@@ -106,13 +106,22 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
                     
                     // usname = name_with_underscores
                     char[] usname = replace(build, std.path.sep, "_");
+
+                    // if we aren't building a debug library, the debug conditional will fall through
+                    char[] debugPrefix = null;
+                    if (buildDebug)
+                        debugPrefix = "debug-";
                     
                     if (shLibSupport() &&
                         ("shared" in settings)) {
                         std.file.write(ifile, std.file.read(file) ~ `
 version (build) {
     version (DSSS_Static_` ~ usname ~ `) {
-        pragma(link, "S` ~ target ~ `");
+        debug {
+            pragma(link, "S` ~ debugPrefix ~ target ~ `");
+        } else {
+            pragma(link, "S` ~ target ~ `");
+        }
     } else {
         pragma(link, "` ~ target ~ `");
     }
@@ -121,7 +130,11 @@ version (build) {
                     } else {
                         std.file.write(ifile, std.file.read(file) ~ `
 version (build) {
-    pragma(link, "S` ~ target ~ `");
+    debug {
+        pragma(link, "S` ~ debugPrefix ~ target ~ `");
+    } else {
+        pragma(link, "S` ~ target ~ `");
+    }
 }
 `);
                     }
@@ -154,7 +167,7 @@ version (build) {
                 char[] shlibname = getShLibName(settings);
                 char[][] shortshlibnames = getShortShLibNames(settings);
                 char[] shlibflag = getShLibFlag(settings);
-                
+
                 if (exists(shlibname)) continue;
                 
                 writefln("Building stub shared library for %s", target);
@@ -217,11 +230,17 @@ version (build) {
             char[][] files = targetToFiles(build, conf);
             
             // and other necessary data
-            char[] shlibname = getShLibName(settings);
-            char[] shlibflag = getShLibFlag(settings);
-            char[] bflags;
+            char[] bflags, debugflags, releaseflags;
             if ("buildflags" in settings) {
                 bflags = settings["buildflags"] ~ " ";
+            }
+            if ("debugflags" in settings) {
+                debugflags = settings["debugflags"] ~ " ";
+            } else {
+                debugflags = "-debug -gc ";
+            }
+            if ("releaseflags" in settings) {
+                releaseflags = settings["releaseflags"] ~ " ";
             }
             
             // output what we're building
@@ -243,49 +262,9 @@ version (build) {
                 doDocs /* need to build the library to get docs */ ||
                 testLibs /* need to build the ilbrary to test it */) {
                 
-                if (targetGNUOrPosix()) {
-                    // first do a static library
-                    if (exists("libS" ~ target ~ ".a")) std.file.remove("libS" ~ target ~ ".a");
-                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -oflibS" ~ target ~ ".a";
-                    saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
-
-                    // perhaps test the static library
-                    if (testLibs) {
-                        writefln("Testing %s", target);
-                        char[] tbl = bl ~ bflags ~ " -unittest -full " ~ fileList ~ " " ~ dsssLibTestDPrefix ~ " -oftest_" ~ target;
-                        saySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
-                        saySystemDie("./test_" ~ target);
-                    }
-                    
-                    if (shLibSupport() &&
-                        ("shared" in settings)) {
-                        // then make the shared library
-                        if (exists(shlibname)) std.file.remove(shlibname);
-                        char[] shbl = bl ~ bflags ~ " -fPIC -explicit -shlib -full " ~ fileList ~ " -of" ~ shlibname ~
-                        " " ~ shlibflag;
-                        
-                        // finally, the shared compile
-                        saySystemRDie(shbl, "-rf", target ~ "_shared.rf", deleteRFiles);
-                    }
-                    
-                } else if (targetVersion("Windows")) {
-                    // for the moment, only do a static library
-                    if (exists("S" ~ target ~ ".lib")) std.file.remove("S" ~ target ~ ".lib");
-                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -ofS" ~ target ~ ".lib";
-                    saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
-
-                    // perhaps test the static library
-                    if (testLibs) {
-                        writefln("Testing %s", target);
-                        char[] tbl = bl ~ bflags ~ " -unittest -full " ~ fileList ~ " " ~ dsssLibTestDPrefix ~ " -oftest_" ~ target ~ ".exe";
-                        saySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
-                        saySystemDie("test_" ~ target ~ ".exe");
-                    }
-
-                } else {
-                    assert(0);
-                }
-                
+                if (buildDebug)
+                    buildLibrary("debug-" ~ target, bl, bflags ~ debugflags, docbl, fileList, settings);
+                buildLibrary(target, bl, bflags ~ releaseflags, docbl, fileList, settings);
             }
         
             // do the postbuild
@@ -341,6 +320,17 @@ version (build) {
             if ("buildflags" in settings) {
                 bflags = settings["buildflags"];
             }
+            if (buildDebug) {
+                if ("debugflags" in settings) {
+                    bflags ~= " " ~ settings["debugflags"];
+                } else {
+                    bflags ~= " -debug -gc";
+                }
+            } else {
+                if ("releaseflags" in settings) {
+                    bflags ~= " " ~ settings["releaseflags"];
+                }
+            }
             
             char[] bbl = bl ~ bflags ~ " ";
             
@@ -382,4 +372,66 @@ version (build) {
     }
     
     return 0;
+}
+
+/**
+ * Helper function to build libraries
+ *
+ * Params:
+ *  target   = target file name (minus platform-specific parts)
+ *  bl       = the base build line
+ *  bflags   = build flags
+ *  docbl    = build flags for documentation ("" for no docs)
+ *  fileList = list of files to be compiled into the library
+ *  settings = settings for this section from DSSSConf
+ */
+void buildLibrary(char[] target, char[] bl, char[] bflags, char[] docbl,
+                 char[] fileList, char[][char[]] settings)
+{
+                char[] shlibname = getShLibName(settings);
+                char[][] shortshlibnames = getShortShLibNames(settings);
+                char[] shlibflag = getShLibFlag(settings);
+
+                if (targetGNUOrPosix()) {
+                    // first do a static library
+                    if (exists("libS" ~ target ~ ".a")) std.file.remove("libS" ~ target ~ ".a");
+                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -oflibS" ~ target ~ ".a";
+                    saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
+
+                    // perhaps test the static library
+                    if (testLibs) {
+                        writefln("Testing %s", target);
+                        char[] tbl = bl ~ bflags ~ " -unittest -full " ~ fileList ~ " " ~ dsssLibTestDPrefix ~ " -oftest_" ~ target;
+                        saySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
+                        saySystemDie("./test_" ~ target);
+                    }
+                    
+                    if (shLibSupport() &&
+                        ("shared" in settings)) {
+                        // then make the shared library
+                        if (exists(shlibname)) std.file.remove(shlibname);
+                        char[] shbl = bl ~ bflags ~ " -fPIC -explicit -shlib -full " ~ fileList ~ " -of" ~ shlibname ~
+                        " " ~ shlibflag;
+                        
+                        // finally, the shared compile
+                        saySystemRDie(shbl, "-rf", target ~ "_shared.rf", deleteRFiles);
+                    }
+                    
+                } else if (targetVersion("Windows")) {
+                    // for the moment, only do a static library
+                    if (exists("S" ~ target ~ ".lib")) std.file.remove("S" ~ target ~ ".lib");
+                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -ofS" ~ target ~ ".lib";
+                    saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
+
+                    // perhaps test the static library
+                    if (testLibs) {
+                        writefln("Testing %s", target);
+                        char[] tbl = bl ~ bflags ~ " -unittest -full " ~ fileList ~ " " ~ dsssLibTestDPrefix ~ " -oftest_" ~ target ~ ".exe";
+                        saySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
+                        saySystemDie("test_" ~ target ~ ".exe");
+                    }
+
+                } else {
+                    assert(0);
+                }
 }

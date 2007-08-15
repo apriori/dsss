@@ -123,6 +123,9 @@ bool deleteRFiles = true;
 /** Should we generate test binaries? */
 bool testLibs = false;
 
+/** Should we build debug versions? */
+bool buildDebug = false;
+
 /** The prefix for scratch work */
 char[] scratchPrefix;
 

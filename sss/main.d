@@ -181,6 +181,9 @@ int main(char[][] args)
                 doDocs = true;
                 doDocBinaries = true;
 
+            } else if (parseArg(arg, "debug", false)) {
+                buildDebug = true;
+
             } else if (parseArg(arg, "prefix", true, &val)) {
                 // force a prefix
                 forcePrefix = makeAbsolute(val);
