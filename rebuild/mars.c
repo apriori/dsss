@@ -65,7 +65,7 @@ Global::Global()
 
     copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards,";
     written = "written by Walter Bright and Gregor Richards";
-    version = "version 0.70 (based on DMD 1.020)";
+    version = "version 0.71 (based on DMD 1.020)";
     global.structalign = 8;
     cmodules = NULL;
 
