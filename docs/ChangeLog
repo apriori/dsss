@@ -14,6 +14,7 @@ SVN from 0.70:
         - Added --config file for testing alternative dsss.conf's (see ticket
           #109).
         - Added --debug option (see ticket #108).
+        - Added .dsssrc support (see ticket #120).
 
 0.70 from 0.69:
         - Rebuild: Merged DMD 1.020.

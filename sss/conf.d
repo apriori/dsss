@@ -1245,3 +1245,36 @@ char[] expandEnvVars(char[] from)
     
     return ret;
 }
+
+/** Read .dsssrc file */
+char[][] readDSSSRC()
+{
+    char[] dsssrc;
+
+    version (Windows) {
+        // on Windows, just look in bindir
+        char[] bindir, binname;
+        if (whereAmI("dsss", bindir, binname)) {
+            if (exists(bindir ~ "\\dsss.rc")) {
+                dsssrc = cast(char[]) std.file.read(bindir ~ "\\dsss.rc");
+            }
+        }
+
+    } else {
+        char[] home = getEnvVar("HOME");
+        if (exists(home ~ "/.dsssrc")) {
+            dsssrc = cast(char[]) std.file.read(home ~ "/.dsssrc");
+        }
+
+    }
+
+    // now split it up
+    char[][] rcsplit = split(dsssrc);
+    char[][] ret;
+    foreach (se; rcsplit) {
+        if (se != "") {
+            ret ~= se;
+        }
+    }
+    return ret;
+}

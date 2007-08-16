@@ -77,6 +77,9 @@ int main(char[][] args)
     char[] useDSSSConf = null;
 
     char[] val;
+
+    // Now load in dsssrc
+    args ~= readDSSSRC();
     
     for (int i = 1; i < args.length; i++) {
         char[] arg = args[i];
