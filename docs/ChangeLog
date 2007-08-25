@@ -1,3 +1,6 @@
+SVN from 0.71:
+        - More DMD fixes - now always compiles one file at a time.
+
 0.71 from 0.70:
         - Much-improved README.software_engineers.
         - Fixed 'set' and 'add' commands (see ticket #102).

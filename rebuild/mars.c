@@ -520,29 +520,14 @@ int main(int argc, char *argv[])
             }
             else if (strcmp(p + 1, "lib") == 0)
             {
-                if (masterConfig.find("liblink") != masterConfig.end() &&
-                    masterConfig["liblink"].find("oneatatime") != masterConfig["liblink"].end() &&
-                    masterConfig["liblink"]["oneatatime"] != "no") {
-                    global.params.oneatatime = 1;
-                }
                 global.params.lib = 1;
             }
             else if (strcmp(p + 1, "shlib") == 0)
             {
-                if (masterConfig.find("shliblink") != masterConfig.end() &&
-                    masterConfig["shliblink"].find("oneatatime") != masterConfig["shliblink"].end() &&
-                    masterConfig["shliblink"]["oneatatime"] != "no") {
-                    global.params.oneatatime = 1;
-                }
                 global.params.shlib = 1;
             }
             else if (strcmp(p + 1, "dylib") == 0)
             {
-                if (masterConfig.find("dyliblink") != masterConfig.end() &&
-                    masterConfig["dyliblink"].find("oneatatime") != masterConfig["dyliblink"].end() &&
-                    masterConfig["dyliblink"]["oneatatime"] != "no") {
-                    global.params.oneatatime = 1;
-                }
                 global.params.dylib = 1;
             }
             else if (strcmp(p + 1, "link") == 0) /* compat with build */
@@ -995,6 +980,23 @@ int main(int argc, char *argv[])
         global.listout = stdout;
     }
     
+    // figure out if we need to link one-at-time
+    char *sect;
+    if (global.params.lib) {
+        sect = "liblink";
+    } else if (global.params.shlib) {
+        sect = "shliblink";
+    } else if (global.params.dylib) {
+        sect = "dyliblink";
+    } else {
+        sect = "link";
+    }
+    if (masterConfig.find(sect) != masterConfig.end() &&
+        masterConfig[sect].find("oneatatime") != masterConfig[sect].end() &&
+        masterConfig[sect]["oneatatime"] != "no") {
+        global.params.oneatatime = 1;
+    }
+
     // add include= paths
     if (masterConfig.find("") != masterConfig.end() &&
         masterConfig[""].find("include") != masterConfig[""].end()) {

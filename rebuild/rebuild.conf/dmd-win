@@ -39,6 +39,7 @@ version=-version=$i
 
 
 [link]
+oneatatime=yes
 cmd=dmd $i -of$o
 response=@
 
