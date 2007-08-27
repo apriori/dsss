@@ -1191,7 +1191,7 @@ void CompileDeclaration::semantic(Scope *sc)
     exp = resolveProperties(sc, exp);
     exp = exp->optimize(WANTvalue | WANTinterpret);
     if (exp->op != TOKstring)
-    {	error("argument to mixin must be a string, not (%s)", exp->toChars());
+    {	//error("argument to mixin must be a string, not (%s)", exp->toChars());
 	return;
     }
     StringExp *se = (StringExp *)exp;
@@ -1202,7 +1202,7 @@ void CompileDeclaration::semantic(Scope *sc)
     decl = p.parseDeclDefs(0);
     if (p.token.value != TOKeof)
     {
-	error("incomplete mixin declaration (%s)", se->toChars());
+	//error("incomplete mixin declaration (%s)", se->toChars());
     }
 
     AttribDeclaration::addMember(sc, sd, 0);

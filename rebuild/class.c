@@ -146,6 +146,18 @@ ClassDeclaration::ClassDeclaration(Loc loc, Identifier *id, BaseClasses *basecla
 		    Type::typeinfotypelist->error("%s", msg);
 		Type::typeinfotypelist = this;
 	    }
+
+	    if (id == Id::TypeInfo_Const)
+	    {	if (Type::typeinfoconst)
+		    Type::typeinfoconst->error("%s", msg);
+		Type::typeinfoconst = this;
+	    }
+
+	    if (id == Id::TypeInfo_Invariant)
+	    {	if (Type::typeinfoinvariant)
+		    Type::typeinfoinvariant->error("%s", msg);
+		Type::typeinfoinvariant = this;
+	    }
 	}
 
 	if (id == Id::Object)
@@ -394,8 +406,8 @@ void ClassDeclaration::semantic(Scope *sc)
 
     if (baseClass)
     {
-	if (baseClass->storage_class & STCfinal)
-	    error("cannot inherit from final class %s", baseClass->toChars());
+	/* if (baseClass->storage_class & STCfinal)
+	    error("cannot inherit from final class %s", baseClass->toChars()); */
 
 	interfaces_dim--;
 	interfaces++;
@@ -567,7 +579,7 @@ void ClassDeclaration::semantic(Scope *sc)
 	ctor->fbody = new CompoundStatement(0, new Statements());
 	members->push(ctor);
 	ctor->addMember(sc, this, 1);
-	*sc = scsave;
+	*sc = scsave;	// why? What about sc->nofree?
 	sc->offset = structsize;
 	ctor->semantic(sc);
 	defaultCtor = ctor;

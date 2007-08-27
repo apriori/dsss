@@ -260,6 +260,15 @@ void Dsymbol::inlineScan()
     // Most Dsymbols have no further semantic analysis needed
 }
 
+/*********************************************
+ * Search for ident as member of s.
+ * Input:
+ *	flags:	1	don't find private members
+ *		2	don't give error messages
+ * Returns:
+ *	NULL if not found
+ */
+
 Dsymbol *Dsymbol::search(Loc loc, Identifier *ident, int flags)
 {
     //printf("Dsymbol::search(this=%p,%s, ident='%s')\n", this, toChars(), ident->toChars());
@@ -293,15 +302,15 @@ Dsymbol *Dsymbol::searchX(Loc loc, Scope *sc, Identifier *id)
 	    id = ti->name;
 	    sm = s->search(loc, id, 0);
 	    if (!sm)
-	    {   error("template identifier %s is not a member of %s %s",
-		    id->toChars(), s->kind(), s->toChars());
+	    {   /* error("template identifier %s is not a member of %s %s",
+		    id->toChars(), s->kind(), s->toChars()); */
 		return NULL;
 	    }
 	    sm = sm->toAlias();
 	    TemplateDeclaration *td = sm->isTemplateDeclaration();
 	    if (!td)
 	    {
-		error("%s is not a template, it is a %s", id->toChars(), sm->kind());
+		// error("%s is not a template, it is a %s", id->toChars(), sm->kind());
 		return NULL;
 	    }
 	    ti->tempdecl = td;
@@ -654,7 +663,8 @@ Dsymbol *ScopeDsymbol::search(Loc loc, Identifier *ident, int flags)
 			 )
 		       )
 		    {
-			ss->multiplyDefined(loc, s, s2);
+			if (!(flags & 2))
+			    ss->multiplyDefined(loc, s, s2);
 			break;
 		    }
 		}
@@ -663,7 +673,8 @@ Dsymbol *ScopeDsymbol::search(Loc loc, Identifier *ident, int flags)
 	if (s)
 	{
 	    Declaration *d = s->isDeclaration();
-	    /*if (d && d->protection == PROTprivate && !d->parent->isTemplateMixin())
+	    /* if (d && d->protection == PROTprivate && !d->parent->isTemplateMixin() &&
+		!(flags & 2))
 		error("%s is private", d->toPrettyChars()); */
 	}
     }

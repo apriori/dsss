@@ -821,8 +821,8 @@ Expression *SwitchStatement::interpret(InterState *istate)
 	}
     }
     if (!s)
-    {	if (hasNoDefault)
-	    error("no default or case for %s in switch statement", econdition->toChars());
+    {	/* if (hasNoDefault)
+	    error("no default or case for %s in switch statement", econdition->toChars()); */
 	s = sdefault;
     }
 
@@ -962,8 +962,8 @@ Expression *getVarExp(Loc loc, InterState *istate, Declaration *d)
 	}
 	else
 	{   e = v->value;
-	    if (!e)
-		error(loc, "variable %s is used before initialization", v->toChars());
+	    if (!e) {}
+		// error(loc, "variable %s is used before initialization", v->toChars());
 	    else if (e != EXP_CANT_INTERPRET)
 		e = e->interpret(istate);
 	}
@@ -1414,7 +1414,7 @@ Expression *BinExp::interpretAssignCommon(InterState *istate, fp_t fp, int post)
 
 	    Expression *ev = v->value;
 	    if (fp && !ev)
-	    {	error("variable %s is used before initialization", v->toChars());
+	    {	// error("variable %s is used before initialization", v->toChars());
 		return e;
 	    }
 	    if (fp)
@@ -1450,7 +1450,7 @@ Expression *BinExp::interpretAssignCommon(InterState *istate, fp_t fp, int post)
 	if (v->isDataseg())
 	    return EXP_CANT_INTERPRET;
 	if (fp && !v->value)
-	{   error("variable %s is used before initialization", v->toChars());
+	{   // error("variable %s is used before initialization", v->toChars());
 	    return e;
 	}
 	if (v->value->op != TOKstructliteral)
@@ -1509,7 +1509,7 @@ Expression *BinExp::interpretAssignCommon(InterState *istate, fp_t fp, int post)
 	if (!v->value)
 	{
 	    if (fp)
-	    {   error("variable %s is used before initialization", v->toChars());
+	    {   // error("variable %s is used before initialization", v->toChars());
 		return e;
 	    }
 
@@ -1792,8 +1792,8 @@ Expression *CallExp::interpret(InterState *istate)
 		    e = eresult;
 		else if (fd->type->toBasetype()->nextOf()->ty == Tvoid)
 		    e = EXP_VOID_INTERPRET;
-		else
-		    error("cannot evaluate %s at compile time", toChars());
+		/* else
+		    error("cannot evaluate %s at compile time", toChars()); */
 	    }
 	}
     }
@@ -1992,10 +1992,10 @@ Expression *AssertExp::interpret(InterState *istate)
 	    e = msg->interpret(istate);
 	    if (e == EXP_CANT_INTERPRET)
 		goto Lcant;
-	    error("%s", e->toChars());
+	    // error("%s", e->toChars());
 	}
-	else
-	    error("%s failed", toChars());
+	else {}
+	    // error("%s failed", toChars());
 	goto Lcant;
     }
     else

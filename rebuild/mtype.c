@@ -86,18 +86,23 @@ ClassDeclaration *Type::typeinfoenum;
 ClassDeclaration *Type::typeinfofunction;
 ClassDeclaration *Type::typeinfodelegate;
 ClassDeclaration *Type::typeinfotypelist;
+ClassDeclaration *Type::typeinfoconst;
+ClassDeclaration *Type::typeinfoinvariant;
 
 Type *Type::tvoidptr;
 Type *Type::basic[TMAX];
 unsigned char Type::mangleChar[TMAX];
+unsigned char Type::sizeTy[TMAX];
 StringTable Type::stringtable;
 
 
-Type::Type(TY ty, Type *next)
+Type::Type(TY ty)
 {
     this->ty = ty;
-    this->next = next;
+    this->mod = 0;
     this->deco = NULL;
+    this->cto = NULL;
+    this->ito = NULL;
     this->pto = NULL;
     this->rto = NULL;
     this->arrayof = NULL;
@@ -139,6 +144,25 @@ void Type::init()
     int j;
 
     Lexer::initKeywords();
+
+    for (i = 0; i < TMAX; i++)
+	sizeTy[i] = sizeof(TypeBasic);
+    sizeTy[Tsarray] = sizeof(TypeSArray);
+    sizeTy[Tarray] = sizeof(TypeDArray);
+    sizeTy[Taarray] = sizeof(TypeAArray);
+    sizeTy[Tpointer] = sizeof(TypePointer);
+    sizeTy[Treference] = sizeof(TypeReference);
+    sizeTy[Tfunction] = sizeof(TypeFunction);
+    sizeTy[Tdelegate] = sizeof(TypeDelegate);
+    sizeTy[Tident] = sizeof(TypeIdentifier);
+    sizeTy[Tinstance] = sizeof(TypeInstance);
+    sizeTy[Ttypeof] = sizeof(TypeTypeof);
+    sizeTy[Tenum] = sizeof(TypeEnum);
+    sizeTy[Ttypedef] = sizeof(TypeTypedef);
+    sizeTy[Tstruct] = sizeof(TypeStruct);
+    sizeTy[Tclass] = sizeof(TypeClass);
+    sizeTy[Ttuple] = sizeof(TypeTuple);
+    sizeTy[Tslice] = sizeof(TypeSlice);
 
     mangleChar[Tarray] = 'A';
     mangleChar[Tsarray] = 'G';
@@ -198,11 +222,14 @@ void Type::init()
 	  Tfloat32, Tfloat64, Tfloat80,
 	  Timaginary32, Timaginary64, Timaginary80,
 	  Tcomplex32, Tcomplex64, Tcomplex80,
-	  Tbit, Tbool,
+	  Tbool,
 	  Tascii, Twchar, Tdchar };
 
     for (i = 0; i < sizeof(basetab) / sizeof(basetab[0]); i++)
-	basic[basetab[i]] = new TypeBasic(basetab[i]);
+    {	Type *t = new TypeBasic(basetab[i]);
+	t = t->merge();
+	basic[basetab[i]] = t;
+    }
     basic[Terror] = basic[Tint32];
 
     tvoidptr = tvoid->pointerTo();
@@ -245,9 +272,161 @@ unsigned Type::alignsize()
 
 Type *Type::semantic(Loc loc, Scope *sc)
 {
-    if (next)
-	next = next->semantic(loc,sc);
     return merge();
+}
+
+/*******************************
+ * Determine if converting 'this' to 'to' is an identity operation,
+ * a conversion to const operation, or the types aren't the same.
+ * Returns:
+ *	MATCHequal	'this' == 'to'
+ *	MATCHconst	'to' is const
+ *	MATCHnomatch	conversion to mutable or invariant
+ */
+
+MATCH Type::constConv(Type *to)
+{
+    if (equals(to))
+	return MATCHexact;
+    if (ty == to->ty && to->mod == MODconst)
+	return MATCHconst;
+    return MATCHnomatch;
+}
+
+Type *Type::constOf()
+{
+    //printf("Type::constOf() %p %s\n", this, toChars());
+    if (isConst())
+	return this;
+    if (cto)
+	return cto;
+    Type *t = makeConst();
+    t = t->merge();
+    cto = t;
+    if (ito)
+	ito->cto = t;
+    //if (t->nextOf()) assert(t->nextOf()->isConst());
+    //printf("-Type::constOf() %p %s\n", t, toChars());
+    return t;
+}
+
+Type *Type::invariantOf()
+{
+    //printf("Type::invariantOf() %p %s\n", this, toChars());
+    if (isInvariant())
+    {
+	return this;
+    }
+    if (ito)
+    {
+	//if (!ito->isInvariant()) printf("\tito is %p %s\n", ito, ito->toChars());
+	assert(ito->isInvariant());
+	return ito;
+    }
+    Type *t = makeInvariant();
+    t = t->merge();
+    ito = t;
+    if (cto)
+	cto->ito = t;
+#if 0 // fails for function types
+    if (t->nextOf() && !t->nextOf()->isInvariant())
+    {
+	assert(0);
+    }
+#endif
+    //printf("\t%p\n", t);
+    return t;
+}
+
+Type *Type::mutableOf()
+{
+    //printf("Type::mutableOf() %p, %s\n", this, toChars());
+    Type *t = this;
+    if (isConst())
+    {	t = cto;
+	assert(!t || t->isMutable());
+    }
+    else if (isInvariant())
+    {	t = ito;
+	assert(!t || t->isMutable());
+    }
+    if (!t)
+    {
+	unsigned sz = sizeTy[ty];
+	t = (Type *)mem.malloc(sz);
+	memcpy(t, this, sz);
+	t->mod = 0;
+	t->deco = NULL;
+	t->arrayof = NULL;
+	t->pto = NULL;
+	t->rto = NULL;
+	t->cto = NULL;
+	t->ito = NULL;
+	if (ty == Tsarray)
+	{   TypeSArray *ta = (TypeSArray *)t;
+	    ta->next = ta->next->mutableOf();
+	}
+	t = t->merge();
+	if (isConst())
+	{   cto = t;
+	    t->cto = this;
+	    if (ito)
+		ito->cto = this;
+	}
+	else if (isInvariant())
+	{   ito = t;
+	    t->ito = this;
+	    if (cto)
+		cto->ito = this;
+	}
+    }
+    return t;
+}
+
+Type *Type::makeConst()
+{
+    //printf("Type::makeConst() %p, %s\n", this, toChars());
+    if (cto)
+	return cto;
+    unsigned sz = sizeTy[ty];
+    Type *t = (Type *)mem.malloc(sz);
+    memcpy(t, this, sz);
+    t->mod = MODconst;
+    t->deco = NULL;
+    t->arrayof = NULL;
+    t->pto = NULL;
+    t->rto = NULL;
+    t->cto = NULL;
+    t->ito = NULL;
+    //printf("-Type::makeConst() %p, %s\n", t, toChars());
+    return t;
+}
+
+Type *Type::makeInvariant()
+{
+    if (ito)
+	return ito;
+    unsigned sz = sizeTy[ty];
+    Type *t = (Type *)mem.malloc(sz);
+    memcpy(t, this, sz);
+    t->mod = MODinvariant;
+    t->deco = NULL;
+    t->arrayof = NULL;
+    t->pto = NULL;
+    t->rto = NULL;
+    t->cto = NULL;
+    t->ito = NULL;
+    return t;
+}
+
+/**************************
+ * Return type with the top level of it being non-const.
+ */
+Type *Type::toCanonConst()
+{
+    if (!mod)
+	return this;
+    return mutableOf();
 }
 
 Type *Type::pointerTo()
@@ -300,26 +479,22 @@ Type *Type::toBasetype()
 
 /********************************
  * Name mangling.
+ * Input:
+ *	flag	0x100	do not do const/invariant
  */
 
-void Type::toDecoBuffer(OutBuffer *buf)
+void Type::toDecoBuffer(OutBuffer *buf, int flag)
 {
-    buf->writeByte(mangleChar[ty]);
-    if (next)
+    if (flag != mod && flag != 0x100)
     {
-	assert(next != this);
-	//printf("this = %p, ty = %d, next = %p, ty = %d\n", this, this->ty, next, next->ty);
-	next->toDecoBuffer(buf);
+	switch (mod)
+	{
+	    case 0:		break;
+	    case MODconst:	buf->writeByte('x');	break;
+	    case MODinvariant:	buf->writeByte('y');	break;
+	    default:		assert(0);
+	}
     }
-}
-
-/********************************
- * Name mangling.
- */
-
-void Type::toTypeInfoBuffer(OutBuffer *buf)
-{
-    assert(0);
     buf->writeByte(mangleChar[ty]);
 }
 
@@ -332,24 +507,57 @@ char *Type::toChars()
     HdrGenState hgs;
 
     buf = new OutBuffer();
-    toCBuffer2(buf, NULL, &hgs);
+    toCBuffer(buf, NULL, &hgs);
     return buf->toChars();
 }
 
 void Type::toCBuffer(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
 {
-    OutBuffer tbuf;
-
-    toCBuffer2(&tbuf, ident, hgs);
-    buf->write(&tbuf);
-}
-
-void Type::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
-{
-    buf->prependstring(toChars());
+    switch (mod)
+    {
+	case 0:			break;
+	case MODconst:		buf->writestring("const ");	break;
+	case MODinvariant:	buf->writestring("invariant ");	break;
+	default:		assert(0);
+    }
+    toCBuffer2(buf, hgs, mod);
     if (ident)
     {	buf->writeByte(' ');
 	buf->writestring(ident->toChars());
+    }
+}
+
+void Type::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
+{
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
+    }
+    buf->writestring(toChars());
+}
+
+void Type::toCBuffer3(OutBuffer *buf, HdrGenState *hgs, int mod)
+{
+    if (mod != this->mod)
+    {	char *p;
+
+	switch (this->mod)
+	{
+	    case 0:
+		toCBuffer2(buf, hgs, this->mod);
+		break;
+	    case MODconst:
+		p = "const(";
+		goto L1;
+	    case MODinvariant:
+		p = "invariant(";
+	    L1:	buf->writestring(p);
+		toCBuffer2(buf, hgs, this->mod);
+		buf->writeByte(')');
+		break;
+	    default:
+		assert(0);
+	}
     }
 }
 
@@ -367,8 +575,8 @@ Type *Type::merge()
 	OutBuffer buf;
 	StringValue *sv;
 
-	if (next)
-	    next = next->merge();
+	//if (next)
+	    //next = next->merge();
 	toDecoBuffer(&buf);
 	sv = stringtable.update((char *)buf.data, buf.offset);
 	if (sv->ptrvalue)
@@ -384,11 +592,6 @@ Type *Type::merge()
 	}
     }
     return t;
-}
-
-int Type::isbit()
-{
-    return FALSE;
 }
 
 int Type::isintegral()
@@ -452,15 +655,10 @@ int Type::checkBoolean()
 
 void Type::checkDeprecated(Loc loc, Scope *sc)
 {
-    Type *t;
-    Dsymbol *s;
+    Dsymbol *s = toDsymbol(sc);
 
-    for (t = this; t; t = t->next)
-    {
-	s = t->toDsymbol(sc);
-	if (s)
-	    s->checkDeprecated(loc, sc);
-    }
+    if (s)
+	s->checkDeprecated(loc, sc);
 }
 
 
@@ -494,11 +692,8 @@ int Type::isBaseOf(Type *t, int *poffset)
 MATCH Type::implicitConvTo(Type *to)
 {
     //printf("Type::implicitConvTo(this=%p, to=%p)\n", this, to);
-    //printf("\tthis->next=%p, to->next=%p\n", this->next, to->next);
     if (this == to)
 	return MATCHexact;
-//    if (to->ty == Tvoid)
-//	return 1;
     return MATCHnomatch;
 }
 
@@ -658,11 +853,10 @@ Identifier *Type::getTypeInfoIdent(int internal)
     char *name;
     int len;
 
-    //toTypeInfoBuffer(&buf);
     if (internal)
     {	buf.writeByte(mangleChar[ty]);
 	if (ty == Tarray)
-	    buf.writeByte(mangleChar[next->ty]);
+	    buf.writeByte(mangleChar[((TypeArray *)this)->next->ty]);
     }
     else
 	toDecoBuffer(&buf);
@@ -700,10 +894,7 @@ void Type::resolve(Loc loc, Scope *sc, Expression **pe, Type **pt, Dsymbol **ps)
 
 Type *Type::reliesOnTident()
 {
-    if (!next)
-	return NULL;
-    else
-	return next->reliesOnTident();
+    return NULL;
 }
 
 /********************************
@@ -727,12 +918,88 @@ int Type::hasPointers()
     return FALSE;
 }
 
+/*************************************
+ * If this is a type of something, return that something.
+ */
+
+Type *Type::nextOf()
+{
+    return NULL;
+}
+
+/* ============================= TypeNext =========================== */
+
+TypeNext::TypeNext(TY ty, Type *next)
+	: Type(ty)
+{
+    this->next = next;
+}
+
+void TypeNext::toDecoBuffer(OutBuffer *buf, int flag)
+{
+    Type::toDecoBuffer(buf, flag);
+    assert(next != this);
+    //printf("this = %p, ty = %d, next = %p, ty = %d\n", this, this->ty, next, next->ty);
+    next->toDecoBuffer(buf, (flag & 0x100) ? 0 : mod);
+}
+
+void TypeNext::checkDeprecated(Loc loc, Scope *sc)
+{
+    Type::checkDeprecated(loc, sc);
+    next->checkDeprecated(loc, sc);
+}
+
+
+Type *TypeNext::reliesOnTident()
+{
+    return next->reliesOnTident();
+}
+
+Type *TypeNext::nextOf()
+{
+    return next;
+}
+
+Type *TypeNext::makeConst()
+{
+    //printf("TypeNext::makeConst() %s\n", toChars());
+    if (cto)
+	return cto;
+    TypeNext *t = (TypeNext *)Type::makeConst();
+    if (ty != Tfunction && ty != Tdelegate && next->deco)
+	t->next = next->constOf();
+    return t;
+}
+
+Type *TypeNext::makeInvariant()
+{
+    //printf("TypeNext::makeInvariant() %s\n", toChars());
+    if (ito)
+    {	assert(ito->isInvariant());
+	return ito;
+    }
+    TypeNext *t = (TypeNext *)Type::makeInvariant();
+    if (ty != Tfunction && ty != Tdelegate && next->deco)
+    {	t->next = next->invariantOf();
+    }
+    return t;
+}
+
+MATCH TypeNext::constConv(Type *to)
+{   MATCH m = Type::constConv(to);
+
+    if (m == MATCHconst &&
+        next->constConv(((TypeNext *)to)->next) == MATCHnomatch)
+	m = MATCHnomatch;
+    return m;
+}
+
+
 /* ============================= TypeBasic =========================== */
 
 TypeBasic::TypeBasic(TY ty)
-	: Type(ty, NULL)
-{   char *c;
-    char *d;
+	: Type(ty)
+{   char *d;
     unsigned flags;
 
 #define TFLAGSintegral	1
@@ -746,124 +1013,95 @@ TypeBasic::TypeBasic(TY ty)
     switch (ty)
     {
 	case Tvoid:	d = Token::toChars(TOKvoid);
-			c = "void";
 			break;
 
 	case Tint8:	d = Token::toChars(TOKint8);
-			c = "byte";
 			flags |= TFLAGSintegral;
 			break;
 
 	case Tuns8:	d = Token::toChars(TOKuns8);
-			c = "ubyte";
 			flags |= TFLAGSintegral | TFLAGSunsigned;
 			break;
 
 	case Tint16:	d = Token::toChars(TOKint16);
-			c = "short";
 			flags |= TFLAGSintegral;
 			break;
 
 	case Tuns16:	d = Token::toChars(TOKuns16);
-			c = "ushort";
 			flags |= TFLAGSintegral | TFLAGSunsigned;
 			break;
 
 	case Tint32:	d = Token::toChars(TOKint32);
-			c = "int";
 			flags |= TFLAGSintegral;
 			break;
 
 	case Tuns32:	d = Token::toChars(TOKuns32);
-			c = "uint";
 			flags |= TFLAGSintegral | TFLAGSunsigned;
 			break;
 
 	case Tfloat32:	d = Token::toChars(TOKfloat32);
-			c = "float";
 			flags |= TFLAGSfloating | TFLAGSreal;
 			break;
 
 	case Tint64:	d = Token::toChars(TOKint64);
-			c = "long";
 			flags |= TFLAGSintegral;
 			break;
 
 	case Tuns64:	d = Token::toChars(TOKuns64);
-			c = "ulong";
 			flags |= TFLAGSintegral | TFLAGSunsigned;
 			break;
 
 	case Tfloat64:	d = Token::toChars(TOKfloat64);
-			c = "double";
 			flags |= TFLAGSfloating | TFLAGSreal;
 			break;
 
 	case Tfloat80:	d = Token::toChars(TOKfloat80);
-			c = "real";
 			flags |= TFLAGSfloating | TFLAGSreal;
 			break;
 
 	case Timaginary32: d = Token::toChars(TOKimaginary32);
-			c = "ifloat";
 			flags |= TFLAGSfloating | TFLAGSimaginary;
 			break;
 
 	case Timaginary64: d = Token::toChars(TOKimaginary64);
-			c = "idouble";
 			flags |= TFLAGSfloating | TFLAGSimaginary;
 			break;
 
 	case Timaginary80: d = Token::toChars(TOKimaginary80);
-			c = "ireal";
 			flags |= TFLAGSfloating | TFLAGSimaginary;
 			break;
 
 	case Tcomplex32: d = Token::toChars(TOKcomplex32);
-			c = "cfloat";
 			flags |= TFLAGSfloating | TFLAGScomplex;
 			break;
 
 	case Tcomplex64: d = Token::toChars(TOKcomplex64);
-			c = "cdouble";
 			flags |= TFLAGSfloating | TFLAGScomplex;
 			break;
 
 	case Tcomplex80: d = Token::toChars(TOKcomplex80);
-			c = "creal";
 			flags |= TFLAGSfloating | TFLAGScomplex;
 			break;
 
-
-	case Tbit:	d = Token::toChars(TOKbit);
-			c = "bit";
-			flags |= TFLAGSintegral | TFLAGSunsigned;
-			break;
-
 	case Tbool:	d = "bool";
-			c = d;
 			flags |= TFLAGSintegral | TFLAGSunsigned;
 			break;
 
 	case Tascii:	d = Token::toChars(TOKchar);
-			c = "char";
 			flags |= TFLAGSintegral | TFLAGSunsigned;
 			break;
 
 	case Twchar:	d = Token::toChars(TOKwchar);
-			c = "wchar";
 			flags |= TFLAGSintegral | TFLAGSunsigned;
 			break;
 
 	case Tdchar:	d = Token::toChars(TOKdchar);
-			c = "dchar";
 			flags |= TFLAGSintegral | TFLAGSunsigned;
 			break;
 
 	default:	assert(0);
     }
     this->dstring = d;
-    this->cstring = c;
     this->flags = flags;
     merge();
 }
@@ -877,16 +1115,17 @@ Type *TypeBasic::syntaxCopy()
 
 char *TypeBasic::toChars()
 {
-    return dstring;
+    return Type::toChars();
 }
 
-void TypeBasic::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
+void TypeBasic::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
-    buf->prependstring(cstring);
-    if (ident)
-    {	buf->writeByte(' ');
-	buf->writestring(ident->toChars());
+    //printf("TypeBasic::toCBuffer2(mod = %d, this->mod = %d)\n", mod, this->mod);
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
     }
+    buf->writestring(dstring);
 }
 
 d_uns64 TypeBasic::size(Loc loc)
@@ -924,7 +1163,6 @@ d_uns64 TypeBasic::size(Loc loc)
 	    size = 1;
 	    break;
 
-	case Tbit:	size = 1;		break;
 	case Tbool:	size = 1;		break;
 	case Tascii:	size = 1;		break;
 	case Twchar:	size = 2;		break;
@@ -980,7 +1218,6 @@ Expression *TypeBasic::getProperty(Loc loc, Identifier *ident)
 	    case Tuns32:	ivalue = 0xFFFFFFFFUL;	goto Livalue;
 	    case Tint64:	ivalue = 0x7FFFFFFFFFFFFFFFLL;	goto Livalue;
 	    case Tuns64:	ivalue = 0xFFFFFFFFFFFFFFFFULL;	goto Livalue;
-	    case Tbit:		ivalue = 1;		goto Livalue;
 	    case Tbool:		ivalue = 1;		goto Livalue;
 	    case Tchar:		ivalue = 0xFF;		goto Livalue;
 	    case Twchar:	ivalue = 0xFFFFUL;	goto Livalue;
@@ -1009,7 +1246,6 @@ Expression *TypeBasic::getProperty(Loc loc, Identifier *ident)
 	    case Tuns32:	ivalue = 0;			goto Livalue;
 	    case Tint64:	ivalue = (-9223372036854775807LL-1LL);	goto Livalue;
 	    case Tuns64:	ivalue = 0;		goto Livalue;
-	    case Tbit:		ivalue = 0;		goto Livalue;
 	    case Tbool:		ivalue = 0;		goto Livalue;
 	    case Tchar:		ivalue = 0;		goto Livalue;
 	    case Twchar:	ivalue = 0;		goto Livalue;
@@ -1350,11 +1586,6 @@ int TypeBasic::isZeroInit()
     return 1;			// yes
 }
 
-int TypeBasic::isbit()
-{
-    return (ty == Tbit);
-}
-
 int TypeBasic::isintegral()
 {
     //printf("TypeBasic::isintegral('%s') x%x\n", toChars(), flags);
@@ -1394,7 +1625,7 @@ int TypeBasic::isscalar()
 MATCH TypeBasic::implicitConvTo(Type *to)
 {
     //printf("TypeBasic::implicitConvTo(%s) from %s\n", to->toChars(), toChars());
-    if (this == to)
+    if (this == to || ty == to->ty)
 	return MATCHexact;
 
     if (ty == Tvoid || to->ty == Tvoid)
@@ -1466,7 +1697,7 @@ TypeBasic *TypeBasic::isTypeBasic()
 /***************************** TypeArray *****************************/
 
 TypeArray::TypeArray(TY ty, Type *next)
-    : Type(ty, next)
+    : TypeNext(ty, next)
 {
 }
 
@@ -1511,7 +1742,7 @@ Expression *TypeArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	e = new CallExp(e->loc, ec, arguments);
 	e->type = next->arrayOf();
     }
-    else if (ident == Id::reverse || ident == Id::dup)
+    else if (ident == Id::reverse || ident == Id::dup || ident == Id::idup)
     {
 	Expression *ec;
 	FuncDeclaration *fd;
@@ -1520,7 +1751,7 @@ Expression *TypeArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	int dup;
 
 	assert(size);
-	dup = (ident == Id::dup);
+	dup = (ident == Id::dup || ident == Id::idup);
 	fd = FuncDeclaration::genCfunc(Type::tindex, dup ? Id::adDup : Id::adReverse);
 	ec = new VarExp(0, fd);
 	e = e->castTo(sc, n->arrayOf());	// convert to dynamic array
@@ -1531,7 +1762,10 @@ Expression *TypeArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	if (!dup)
 	    arguments->push(new IntegerExp(0, size, Type::tint32));
 	e = new CallExp(e->loc, ec, arguments);
-	e->type = next->arrayOf();
+	if (ident == Id::idup)
+	    e->type = next->invariantOf()->arrayOf();
+	else
+	    e->type = next->mutableOf()->arrayOf();
     }
     else if (ident == Id::sort)
     {
@@ -1539,16 +1773,14 @@ Expression *TypeArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	FuncDeclaration *fd;
 	Expressions *arguments;
 
-	fd = FuncDeclaration::genCfunc(tint32->arrayOf(),
-		(char*)(n->ty == Tbit ? "_adSortBit" : "_adSort"));
+	fd = FuncDeclaration::genCfunc(tint32->arrayOf(), "_adSort");
 	ec = new VarExp(0, fd);
 	e = e->castTo(sc, n->arrayOf());	// convert to dynamic array
 	arguments = new Expressions();
 	arguments->push(e);
-	if (next->ty != Tbit)
-	    arguments->push(n->ty == Tsarray
-			? n->getTypeInfo(sc)	// don't convert to dynamic array
-			: n->getInternalTypeInfo(sc));
+	arguments->push(n->ty == Tsarray
+		    ? n->getTypeInfo(sc)	// don't convert to dynamic array
+		    : n->getInternalTypeInfo(sc));
 	e = new CallExp(e->loc, ec, arguments);
 	e->type = next->arrayOf();
     }
@@ -1559,57 +1791,6 @@ Expression *TypeArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
     return e;
 }
 
-void TypeArray::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
-{
-#if 1
-    OutBuffer buf2;
-    toPrettyBracket(&buf2, hgs);
-    buf->prependstring(buf2.toChars());
-    if (ident)
-    {
-	buf->writeByte(' ');
-	buf->writestring(ident->toChars());
-    }
-    next->toCBuffer2(buf, NULL, hgs);
-#elif 1
-    // The D way
-    Type *t;
-    OutBuffer buf2;
-    for (t = this; 1; t = t->next)
-    {	TypeArray *ta;
-
-	ta = dynamic_cast<TypeArray *>(t);
-	if (!ta)
-	    break;
-	ta->toPrettyBracket(&buf2, hgs);
-    }
-    buf->prependstring(buf2.toChars());
-    if (ident)
-    {
-	buf2.writestring(ident->toChars());
-    }
-    t->toCBuffer2(buf, NULL, hgs);
-#else
-    // The C way
-    if (buf->offset)
-    {	buf->bracket('(', ')');
-	assert(!ident);
-    }
-    else if (ident)
-	buf->writestring(ident->toChars());
-    Type *t = this;
-    do
-    {	Expression *dim;
-	buf->writeByte('[');
-	dim = ((TypeSArray *)t)->dim;
-	if (dim)
-	    buf->printf("%lld", dim->toInteger());
-	buf->writeByte(']');
-	t = t->next;
-    } while (t->ty == Tsarray);
-    t->toCBuffer2(buf, NULL, hgs);
-#endif
-}
 
 
 /***************************** TypeSArray *****************************/
@@ -1626,6 +1807,7 @@ Type *TypeSArray::syntaxCopy()
     Type *t = next->syntaxCopy();
     Expression *e = dim->syntaxCopy();
     t = new TypeSArray(t, e);
+    t->mod = mod;
     return t;
 }
 
@@ -1635,13 +1817,7 @@ d_uns64 TypeSArray::size(Loc loc)
     if (!dim)
 	return Type::size(loc);
     sz = dim->toInteger();
-    if (next->toBasetype()->ty == Tbit)		// if array of bits
-    {
-	if (sz + 31 < sz)
-	    goto Loverflow;
-	sz = ((sz + 31) & ~31) / 8;	// size in bytes, rounded up to 32 bit dwords
-    }
-    else
+
     {	integer_t n, n2;
 
 	n = next->size();
@@ -1775,12 +1951,12 @@ Type *TypeSArray::semantic(Loc loc, Scope *sc)
 	uinteger_t d = dim->toUInteger();
 
 	if (d >= sd->objects->dim)
-	{   error(loc, "tuple index %ju exceeds %u", d, sd->objects->dim);
+	{   // error(loc, "tuple index %ju exceeds %u", d, sd->objects->dim);
 	    return Type::terror;
 	}
 	Object *o = (Object *)sd->objects->data[(size_t)d];
 	if (o->dyncast() != DYNCAST_TYPE)
-	{   error(loc, "%s is not a type", toChars());
+	{   // error(loc, "%s is not a type", toChars());
 	    return Type::terror;
 	}
 	t = (Type *)o;
@@ -1788,6 +1964,11 @@ Type *TypeSArray::semantic(Loc loc, Scope *sc)
     }
 
     next = next->semantic(loc,sc);
+    if (mod == MODconst)
+	next = next->constOf();
+    else if (mod == MODinvariant)
+	next = next->invariantOf();
+
     Type *tbn = next->toBasetype();
 
     if (dim)
@@ -1855,24 +2036,27 @@ Type *TypeSArray::semantic(Loc loc, Scope *sc)
     return merge();
 }
 
-void TypeSArray::toDecoBuffer(OutBuffer *buf)
+void TypeSArray::toDecoBuffer(OutBuffer *buf, int flag)
 {
-    buf->writeByte(mangleChar[ty]);
+    Type::toDecoBuffer(buf, flag);
     if (dim)
 	buf->printf("%ju", dim->toInteger());
     if (next)
-	next->toDecoBuffer(buf);
+	/* Note that static arrays are value types, so
+	 * for a parameter, propagate the 0x100 to the next
+	 * level, since for T[4][3], any const should apply to the T,
+	 * not the [4].
+	 */
+	next->toDecoBuffer(buf,  (flag & 0x100) ? flag : mod);
 }
 
-void TypeSArray::toTypeInfoBuffer(OutBuffer *buf)
+void TypeSArray::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
-    buf->writeByte(mangleChar[Tarray]);
-    if (next)
-	next->toTypeInfoBuffer(buf);
-}
-
-void TypeSArray::toPrettyBracket(OutBuffer *buf, HdrGenState *hgs)
-{
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
+    }
+    next->toCBuffer2(buf, hgs, this->mod);
     buf->printf("[%s]", dim->toChars());
 }
 
@@ -1907,37 +2091,71 @@ unsigned TypeSArray::memalign(unsigned salign)
     return next->memalign(salign);
 }
 
-MATCH TypeSArray::implicitConvTo(Type *to)
+MATCH TypeSArray::constConv(Type *to)
 {
-    //printf("TypeSArray::implicitConvTo()\n");
-
-    // Allow implicit conversion of static array to pointer or dynamic array
-    if ((IMPLICIT_ARRAY_TO_PTR && to->ty == Tpointer) &&
-	(to->next->ty == Tvoid || next->equals(to->next)
-	 /*|| to->next->isBaseOf(next)*/))
-    {
-	return MATCHconvert;
-    }
-    if (to->ty == Tarray)
-    {	int offset = 0;
-
-	if (next->equals(to->next) ||
-	    (to->next->isBaseOf(next, &offset) && offset == 0) ||
-	    to->next->ty == Tvoid)
-	    return MATCHconvert;
-    }
-#if 0
     if (to->ty == Tsarray)
     {
 	TypeSArray *tsa = (TypeSArray *)to;
+	if (!dim->equals(tsa->dim))
+	    return MATCHnomatch;
+    }
+    return TypeNext::constConv(to);
+}
 
-	if (next->equals(tsa->next) && dim->equals(tsa->dim))
+MATCH TypeSArray::implicitConvTo(Type *to)
+{
+    //printf("TypeSArray::implicitConvTo(to = %s) this = %s\n", to->toChars(), toChars());
+
+    // Allow implicit conversion of static array to pointer or dynamic array
+    if (IMPLICIT_ARRAY_TO_PTR && to->ty == Tpointer)
+    {
+	TypePointer *tp = (TypePointer *)to;
+
+	if (next->mod != tp->next->mod && tp->next->mod != MODconst)
+	    return MATCHnomatch;
+
+	if (tp->next->ty == Tvoid || next->constConv(tp->next) != MATCHnomatch)
 	{
 	    return MATCHconvert;
 	}
+	return MATCHnomatch;
     }
-#endif
-    return Type::implicitConvTo(to);
+    if (to->ty == Tarray)
+    {	int offset = 0;
+	TypeDArray *ta = (TypeDArray *)to;
+
+	if (next->mod != ta->next->mod && ta->next->mod != MODconst)
+	    return MATCHnomatch;
+
+	if (next->equals(ta->next) ||
+	    next->implicitConvTo(ta->next) >= MATCHconst ||
+	    (ta->next->isBaseOf(next, &offset) && offset == 0) ||
+	    ta->next->ty == Tvoid)
+	    return MATCHconvert;
+	return MATCHnomatch;
+    }
+    if (to->ty == Tsarray)
+    {
+	if (this == to)
+	    return MATCHexact;
+
+	TypeSArray *tsa = (TypeSArray *)to;
+
+	if (dim->equals(tsa->dim))
+	{
+	    /* Since static arrays are value types, allow
+	     * conversions from const elements to non-const
+	     * ones, just like we allow conversion from const int
+	     * to int.
+	     */
+	    MATCH m = next->implicitConvTo(tsa->next);
+	    if (m >= MATCHconst)
+	    {
+		return m;
+	    }
+	}
+    }
+    return MATCHnomatch;
 }
 
 Expression *TypeSArray::defaultInit()
@@ -1984,7 +2202,9 @@ Type *TypeDArray::syntaxCopy()
     if (t == next)
 	t = this;
     else
-	t = new TypeDArray(t);
+    {	t = new TypeDArray(t);
+	t->mod = mod;
+    }
     return t;
 }
 
@@ -2017,28 +2237,30 @@ Type *TypeDArray::semantic(Loc loc, Scope *sc)
     }
     /*if (tn->isauto())
 	error(loc, "cannot have array of auto %s", tn->toChars()); */
-    if (next != tn)
-	//deco = NULL;			// redo
-	return tn->arrayOf();
+
+    if (mod == MODconst)
+	tn = tn->constOf();
+    else if (mod == MODinvariant)
+	tn = tn->invariantOf();
+
+    next = tn;
     return merge();
 }
 
-void TypeDArray::toDecoBuffer(OutBuffer *buf)
+void TypeDArray::toDecoBuffer(OutBuffer *buf, int flag)
 {
-    buf->writeByte(mangleChar[ty]);
+    Type::toDecoBuffer(buf, flag);
     if (next)
-	next->toDecoBuffer(buf);
+	next->toDecoBuffer(buf, (flag & 0x100) ? 0 : mod);
 }
 
-void TypeDArray::toTypeInfoBuffer(OutBuffer *buf)
+void TypeDArray::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
-    buf->writeByte(mangleChar[ty]);
-    if (next)
-	next->toTypeInfoBuffer(buf);
-}
-
-void TypeDArray::toPrettyBracket(OutBuffer *buf, HdrGenState *hgs)
-{
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
+    }
+    next->toCBuffer2(buf, hgs, this->mod);
     buf->writestring("[]");
 }
 
@@ -2079,20 +2301,46 @@ int TypeDArray::isString()
 MATCH TypeDArray::implicitConvTo(Type *to)
 {
     //printf("TypeDArray::implicitConvTo()\n");
+    if (equals(to))
+	return MATCHexact;
 
     // Allow implicit conversion of array to pointer
-    if (IMPLICIT_ARRAY_TO_PTR &&
-	to->ty == Tpointer &&
-	(to->next->ty == Tvoid || next->equals(to->next) /*|| to->next->isBaseOf(next)*/))
+    if (IMPLICIT_ARRAY_TO_PTR && to->ty == Tpointer)
     {
-	return MATCHconvert;
+	TypePointer *tp = (TypePointer *)to;
+
+	/* Allow conversion to void*
+	 */
+	if (tp->next->ty == Tvoid &&
+	    (next->mod == tp->next->mod || tp->next->mod == MODconst))
+	{
+	    return MATCHconvert;
+	}
+
+	return next->constConv(to);
     }
 
     if (to->ty == Tarray)
     {	int offset = 0;
+	TypeDArray *ta = (TypeDArray *)to;
 
-	if ((to->next->isBaseOf(next, &offset) && offset == 0) ||
-	    to->next->ty == Tvoid)
+	if (!(next->mod == ta->next->mod || ta->next->mod == MODconst))
+	    return MATCHnomatch;	// not const-compatible
+
+	/* Alloc conversion to void[]
+	 */
+	if (next->ty != Tvoid && ta->next->ty == Tvoid)
+	{
+	    return MATCHconvert;
+	}
+
+	MATCH m = next->constConv(ta->next);
+	if (m != MATCHnomatch)
+	    return m;
+
+	/* Conversion of array of derived to array of base
+	 */
+	if (ta->next->isBaseOf(next, &offset) && offset == 0)
 	    return MATCHconvert;
     }
     return Type::implicitConvTo(to);
@@ -2130,7 +2378,6 @@ TypeAArray::TypeAArray(Type *t, Type *index)
     : TypeArray(Taarray, t)
 {
     this->index = index;
-    this->key = NULL;
 }
 
 Type *TypeAArray::syntaxCopy()
@@ -2140,7 +2387,9 @@ Type *TypeAArray::syntaxCopy()
     if (t == next && ti == index)
 	t = this;
     else
-	t = new TypeAArray(t, ti);
+    {	t = new TypeAArray(t, ti);
+	t->mod = mod;
+    }
     return t;
 }
 
@@ -2179,36 +2428,22 @@ Type *TypeAArray::semantic(Loc loc, Scope *sc)
     else
 	index = index->semantic(loc,sc);
 
-    // Compute key type; the purpose of the key type is to
-    // minimize the permutations of runtime library
-    // routines as much as possible.
-    key = index->toBasetype();
-    switch (key->ty)
-    {
-#if 0
-	case Tint8:
-	case Tuns8:
-	case Tint16:
-	case Tuns16:
-	    key = tint32;
-	    break;
-#endif
+    index = index->constOf()->mutableOf();
 
-	case Tsarray:
-#if 0
-	    // Convert to Tarray
-	    key = key->next->arrayOf();
-#endif
-	    break;
-	case Tbit:
+    switch (index->toBasetype()->ty)
+    {
 	case Tbool:
 	case Tfunction:
 	case Tvoid:
 	case Tnone:
-	    //error(loc, "can't have associative array key of %s", key->toChars());
+	    //error(loc, "can't have associative array key of %s", index->toBasetype()->toChars());
 	    break;
     }
     next = next->semantic(loc,sc);
+    if (mod == MODconst)
+	next = next->constOf();
+    else if (mod == MODinvariant)
+	next = next->invariantOf();
     switch (next->toBasetype()->ty)
     {
 	case Tfunction:
@@ -2238,14 +2473,14 @@ Expression *TypeAArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	arguments = new Expressions();
 	arguments->push(e);
 	e = new CallExp(e->loc, ec, arguments);
-	e->type = fd->type->next;
+	e->type = ((TypeFunction *)fd->type)->next;
     }
     else if (ident == Id::keys)
     {
 	Expression *ec;
 	FuncDeclaration *fd;
 	Expressions *arguments;
-	int size = key->size(e->loc);
+	int size = index->size(e->loc);
 
 	assert(size);
 	fd = FuncDeclaration::genCfunc(Type::tindex, Id::aaKeys);
@@ -2266,7 +2501,7 @@ Expression *TypeAArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	ec = new VarExp(0, fd);
 	arguments = new Expressions();
 	arguments->push(e);
-	size_t keysize = key->size(e->loc);
+	size_t keysize = index->size(e->loc);
 	keysize = (keysize + 3) & ~3;	// BUG: 64 bit pointers?
 	arguments->push(new IntegerExp(0, keysize, Type::tsize_t));
 	arguments->push(new IntegerExp(0, next->size(e->loc), Type::tsize_t));
@@ -2283,7 +2518,7 @@ Expression *TypeAArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	ec = new VarExp(0, fd);
 	arguments = new Expressions();
 	arguments->push(e->addressOf(sc));
-	arguments->push(key->getInternalTypeInfo(sc));
+	arguments->push(index->getInternalTypeInfo(sc));
 	e = new CallExp(e->loc, ec, arguments);
 	e->type = this;
     }
@@ -2294,21 +2529,22 @@ Expression *TypeAArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
     return e;
 }
 
-void TypeAArray::toDecoBuffer(OutBuffer *buf)
+void TypeAArray::toDecoBuffer(OutBuffer *buf, int flag)
 {
-    buf->writeByte(mangleChar[ty]);
+    Type::toDecoBuffer(buf, flag);
     index->toDecoBuffer(buf);
-    next->toDecoBuffer(buf);
+    next->toDecoBuffer(buf, (flag & 0x100) ? 0 : mod);
 }
 
-void TypeAArray::toPrettyBracket(OutBuffer *buf, HdrGenState *hgs)
+void TypeAArray::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
-    buf->writeByte('[');
-    {	OutBuffer ibuf;
-
-	index->toCBuffer2(&ibuf, NULL, hgs);
-	buf->write(&ibuf);
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
     }
+    next->toCBuffer2(buf, hgs, this->mod);
+    buf->writeByte('[');
+    index->toCBuffer2(buf, hgs, 0);
     buf->writeByte(']');
 }
 
@@ -2336,7 +2572,7 @@ int TypeAArray::hasPointers()
 /***************************** TypePointer *****************************/
 
 TypePointer::TypePointer(Type *t)
-    : Type(Tpointer, t)
+    : TypeNext(Tpointer, t)
 {
 }
 
@@ -2346,7 +2582,9 @@ Type *TypePointer::syntaxCopy()
     if (t == next)
 	t = this;
     else
-	t = new TypePointer(t);
+    {	t = new TypePointer(t);
+	t->mod = mod;
+    }
     return t;
 }
 
@@ -2357,13 +2595,17 @@ Type *TypePointer::semantic(Loc loc, Scope *sc)
     switch (n->toBasetype()->ty)
     {
 	case Ttuple:
-	    error(loc, "can't have pointer to %s", n->toChars());
+	    // error(loc, "can't have pointer to %s", n->toChars());
 	    n = tint32;
 	    break;
     }
     if (n != next)
 	deco = NULL;
     next = n;
+    if (mod == MODconst)
+	next = next->constOf();
+    else if (mod == MODinvariant)
+	next = next->invariantOf();
     return merge();
 }
 
@@ -2373,45 +2615,47 @@ d_uns64 TypePointer::size(Loc loc)
     return PTRSIZE;
 }
 
-void TypePointer::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
+void TypePointer::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
     //printf("TypePointer::toCBuffer2() next = %d\n", next->ty);
-    buf->prependstring("*");
-    if (ident)
-    {
-	buf->writeByte(' ');
-	buf->writestring(ident->toChars());
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
     }
-    next->toCBuffer2(buf, NULL, hgs);
+    next->toCBuffer2(buf, hgs, this->mod);
+    buf->writeByte('*');
 }
 
 MATCH TypePointer::implicitConvTo(Type *to)
 {
-    //printf("TypePointer::implicitConvTo()\n");
+    //printf("TypePointer::implicitConvTo(to = %s) %s\n", to->toChars(), toChars());
 
-    if (this == to)
+    if (equals(to))
 	return MATCHexact;
-    if (to->ty == Tpointer && to->next)
-    {
-	if (to->next->ty == Tvoid)
-	    return MATCHconvert;
+    if (to->ty == Tpointer)
+    {	TypePointer *tp = (TypePointer *)to;
+	assert(tp->next);
 
-#if 0
-	if (to->next->isBaseOf(next))
-	    return MATCHconvert;
-#endif
+        if (!(next->mod == tp->next->mod || tp->next->mod == MODconst))
+            return MATCHnomatch;        // not const-compatible
 
-	if (next->ty == Tfunction && to->next->ty == Tfunction)
-	{   TypeFunction *tf;
-	    TypeFunction *tfto;
+        /* Alloc conversion to void[]
+         */
+        if (next->ty != Tvoid && tp->next->ty == Tvoid)
+        {
+            return MATCHconvert;
+        }
 
-	    tf   = (TypeFunction *)(next);
-	    tfto = (TypeFunction *)(to->next);
-	    return tfto->equals(tf) ? MATCHexact : MATCHnomatch;
-	}
+        MATCH m = next->constConv(tp->next);
+        if (m != MATCHnomatch)
+            return m;
+
+        /* Conversion of ptr to derived to ptr to base
+         */
+	int offset = 0;
+        if (tp->next->isBaseOf(next, &offset) && offset == 0)
+            return MATCHconvert;
     }
-//    if (to->ty == Tvoid)
-//	return MATCHconvert;
     return MATCHnomatch;
 }
 
@@ -2445,10 +2689,8 @@ int TypePointer::hasPointers()
 /***************************** TypeReference *****************************/
 
 TypeReference::TypeReference(Type *t)
-    : Type(Treference, t)
+    : TypeNext(Treference, t)
 {
-    /*if (t->ty == Tbit)
-	error(0,"cannot make reference to a bit"); */
     // BUG: what about references to static arrays?
 }
 
@@ -2458,23 +2700,40 @@ Type *TypeReference::syntaxCopy()
     if (t == next)
 	t = this;
     else
-	t = new TypeReference(t);
+    {	t = new TypeReference(t);
+	t->mod = mod;
+    }
     return t;
 }
+
+Type *TypeReference::semantic(Loc loc, Scope *sc)
+{
+    //printf("TypeReference::semantic()\n");
+    Type *n = next->semantic(loc, sc);
+    if (n != next)
+	deco = NULL;
+    next = n;
+    if (mod == MODconst)
+	next = next->constOf();
+    else if (mod == MODinvariant)
+	next = next->invariantOf();
+    return merge();
+}
+
 
 d_uns64 TypeReference::size(Loc loc)
 {
     return PTRSIZE;
 }
 
-void TypeReference::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
+void TypeReference::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
-    buf->prependstring("&");
-    if (ident)
-    {
-	buf->writestring(ident->toChars());
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
     }
-    next->toCBuffer2(buf, NULL, hgs);
+    next->toCBuffer2(buf, hgs, this->mod);
+    buf->writeByte('&');
 }
 
 Expression *TypeReference::dotExp(Scope *sc, Expression *e, Identifier *ident)
@@ -2507,7 +2766,7 @@ int TypeReference::isZeroInit()
 /***************************** TypeFunction *****************************/
 
 TypeFunction::TypeFunction(Arguments *parameters, Type *treturn, int varargs, enum LINK linkage)
-    : Type(Tfunction, treturn)
+    : TypeNext(Tfunction, treturn)
 {
 //if (!treturn) *(char*)0=0;
 //    assert(treturn);
@@ -2522,6 +2781,7 @@ Type *TypeFunction::syntaxCopy()
     Type *treturn = next ? next->syntaxCopy() : NULL;
     Arguments *params = Argument::arraySyntaxCopy(parameters);
     Type *t = new TypeFunction(params, treturn, varargs, linkage);
+    t->mod = mod;
     return t;
 }
 
@@ -2539,7 +2799,7 @@ int Type::covariant(Type *t)
 #if 0
     printf("Type::covariant(t = %s) %s\n", t->toChars(), toChars());
     printf("deco = %p, %p\n", deco, t->deco);
-    printf("ty = %d\n", next->ty);
+    //printf("ty = %d\n", next->ty);
 #endif
 
     int inoutmismatch = 0;
@@ -2581,21 +2841,29 @@ int Type::covariant(Type *t)
     if (t1->linkage != t2->linkage)
 	goto Lnotcovariant;
 
+    // Return types
     Type *t1n = t1->next;
     Type *t2n = t2->next;
 
     if (t1n->equals(t2n))
 	goto Lcovariant;
-    if (t1n->ty != Tclass || t2n->ty != Tclass)
-	goto Lnotcovariant;
-
-    // If t1n is forward referenced:
-    ClassDeclaration *cd = ((TypeClass *)t1n)->sym;
-    if (!cd->baseClass && cd->baseclasses.dim && !cd->isInterfaceDeclaration())
+    if (t1n->ty == Tclass && t2n->ty == Tclass)
     {
-	return 3;
-    }
+	/* If same class type, but t2n is const, then it's
+	 * covariant. Do this test first because it can work on
+	 * forward references.
+	 */
+	if (((TypeClass *)t1n)->sym == ((TypeClass *)t2n)->sym &&
+	    t2n->mod == MODconst)
+	    goto Lcovariant;
 
+	// If t1n is forward referenced:
+	ClassDeclaration *cd = ((TypeClass *)t1n)->sym;
+	if (!cd->baseClass && cd->baseclasses.dim && !cd->isInterfaceDeclaration())
+	{
+	    return 3;
+	}
+    }
     if (t1n->implicitConvTo(t2n))
 	goto Lcovariant;
     goto Lnotcovariant;
@@ -2614,7 +2882,7 @@ Lnotcovariant:
     return 2;
 }
 
-void TypeFunction::toDecoBuffer(OutBuffer *buf)
+void TypeFunction::toDecoBuffer(OutBuffer *buf, int flag)
 {   unsigned char mc;
 
     //printf("TypeFunction::toDecoBuffer() this = %p %s\n", this, toChars());
@@ -2624,6 +2892,12 @@ void TypeFunction::toDecoBuffer(OutBuffer *buf)
 	return;
     }
     inuse++;
+#if 0
+    if (mod == MODconst)
+	buf->writeByte('x');
+    else if (mod == MODinvariant)
+	buf->writeByte('y');
+#endif
     switch (linkage)
     {
 	case LINKd:		mc = 'F';	break;
@@ -2643,7 +2917,7 @@ void TypeFunction::toDecoBuffer(OutBuffer *buf)
     inuse--;
 }
 
-void TypeFunction::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
+void TypeFunction::toCBuffer(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
 {
     char *p = NULL;
 
@@ -2652,6 +2926,8 @@ void TypeFunction::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hg
 	return;
     }
     inuse++;
+    if (next && (!ident || ident->toHChars2() == ident->toChars()))
+	next->toCBuffer2(buf, hgs, 0);
     if (hgs->ddoc != 1)
     {
 	switch (linkage)
@@ -2666,25 +2942,45 @@ void TypeFunction::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hg
 	}
     }
 
-    if (buf->offset)
-    {
-	if (!hgs->hdrgen && p)
-	    buf->prependstring(p);
-	buf->bracket('(', ')');
-	assert(!ident);
-    }
-    else
-    {
-	if (!hgs->hdrgen && p)
-	    buf->writestring(p);
-	if (ident)
-	{   buf->writeByte(' ');
-	    buf->writestring(ident->toHChars2());
-	}
+    if (!hgs->hdrgen && p)
+	buf->writestring(p);
+    if (ident)
+    {   buf->writeByte(' ');
+	buf->writestring(ident->toHChars2());
     }
     Argument::argsToCBuffer(buf, hgs, parameters, varargs);
-    if (next && (!ident || ident->toHChars2() == ident->toChars()))
-	next->toCBuffer2(buf, NULL, hgs);
+    inuse--;
+}
+
+void TypeFunction::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
+{
+    char *p = NULL;
+
+    if (inuse)
+    {	inuse = 2;		// flag error to caller
+	return;
+    }
+    inuse++;
+    if (next)
+	next->toCBuffer2(buf, hgs, 0);
+    if (hgs->ddoc != 1)
+    {
+	switch (linkage)
+	{
+	    case LINKd:		p = NULL;	break;
+	    case LINKc:		p = "C ";	break;
+	    case LINKwindows:	p = "Windows ";	break;
+	    case LINKpascal:	p = "Pascal ";	break;
+	    case LINKcpp:	p = "C++ ";	break;
+	    default:
+		assert(0);
+	}
+    }
+
+    if (!hgs->hdrgen && p)
+	buf->writestring(p);
+    buf->writestring(" function");
+    Argument::argsToCBuffer(buf, hgs, parameters, varargs);
     inuse--;
 }
 
@@ -2726,15 +3022,35 @@ Type *TypeFunction::semantic(Loc loc, Scope *sc)
 	{   Argument *arg = Argument::getNth(parameters, i);
 	    Type *t;
 
+	    /* 'const/invariant' implies 'final'
+	     */
+	    if (arg->storageClass & (STCconst | STCinvariant))
+		arg->storageClass |= STCfinal;
+
+	    /* 'in' implies 'final const scope'
+	     */
+	    if (arg->storageClass & STCin)
+	    {
+		arg->storageClass |= STCfinal | STCconst | STCscope;
+	    }
+
 	    inuse++;
 	    arg->type = arg->type->semantic(loc,sc);
 	    if (inuse == 1) inuse--;
+
+	    if (arg->storageClass & STCconst)
+		arg->type = arg->type->constOf();
+	    else if (arg->storageClass & STCinvariant)
+		arg->type = arg->type->invariantOf();
+
 	    t = arg->type->toBasetype();
 
 	    if (arg->storageClass & (STCout | STCref | STClazy))
 	    {
 		/* if (t->ty == Tsarray)
 		    error(loc, "cannot have out or ref parameter of type %s", t->toChars()); */
+		/* if (arg->storageClass & STCout && arg->type->mod)
+		    error(loc, "cannot have const/invariant out parameter of type %s", t->toChars()); */
 	    }
 	    /* if (!(arg->storageClass & STClazy) && t->ty == Tvoid)
 		error(loc, "cannot have parameter of type %s", arg->type->toChars()); */
@@ -2782,8 +3098,8 @@ Type *TypeFunction::semantic(Loc loc, Scope *sc)
 
 int TypeFunction::callMatch(Expressions *args)
 {
-    //printf("TypeFunction::callMatch()\n");
-    int match = MATCHexact;		// assume exact match
+    //printf("TypeFunction::callMatch() %s\n", toChars());
+    MATCH match = MATCHexact;		// assume exact match
 
     size_t nparams = Argument::dim(parameters);
     size_t nargs = args ? args->dim : 0;
@@ -2797,7 +3113,7 @@ int TypeFunction::callMatch(Expressions *args)
     }
 
     for (size_t u = 0; u < nparams; u++)
-    {	int m;
+    {	MATCH m;
 	Expression *arg;
 
 	// BUG: what about out and ref?
@@ -2835,6 +3151,7 @@ int TypeFunction::callMatch(Expressions *args)
 			if (sz != nargs - u)
 			    goto Nomatch;
 		    case Tarray:
+		    {	TypeArray *ta = (TypeArray *)tb;
 			for (; u < nargs; u++)
 			{
 			    arg = (Expression *)args->data[u];
@@ -2846,7 +3163,7 @@ int TypeFunction::callMatch(Expressions *args)
 			    Type *tret = p->isLazyArray();
 			    if (tret)
 			    {
-				if (tb->next->equals(arg->type))
+				if (ta->next->equals(arg->type))
 				{   m = MATCHexact;
 				}
 				else
@@ -2860,17 +3177,17 @@ int TypeFunction::callMatch(Expressions *args)
 				}
 			    }
 			    else
-				m = arg->implicitConvTo(tb->next);
+				m = arg->implicitConvTo(ta->next);
 #else
-			    m = arg->implicitConvTo(tb->next);
+			    m = arg->implicitConvTo(ta->next);
 #endif
-			    if (m == 0)
+			    if (m == MATCHnomatch)
 				goto Nomatch;
 			    if (m < match)
 				match = m;
 			}
 			goto Ldone;
-
+		    }
 		    case Tclass:
 			// Should see if there's a constructor match?
 			// Or just leave it ambiguous?
@@ -2912,7 +3229,7 @@ Type *TypeFunction::reliesOnTident()
 /***************************** TypeDelegate *****************************/
 
 TypeDelegate::TypeDelegate(Type *t)
-    : Type(Tfunction, t)
+    : TypeNext(Tfunction, t)
 {
     ty = Tdelegate;
 }
@@ -2923,7 +3240,9 @@ Type *TypeDelegate::syntaxCopy()
     if (t == next)
 	t = this;
     else
-	t = new TypeDelegate(t);
+    {	t = new TypeDelegate(t);
+	t->mod = mod;
+    }
     return t;
 }
 
@@ -2943,28 +3262,17 @@ d_uns64 TypeDelegate::size(Loc loc)
     return PTRSIZE * 2;
 }
 
-void TypeDelegate::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
+void TypeDelegate::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
-#if 1
-    OutBuffer args;
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
+    }
     TypeFunction *tf = (TypeFunction *)next;
 
-    Argument::argsToCBuffer(&args, hgs, tf->parameters, tf->varargs);
-    buf->prependstring(args.toChars());
-    buf->prependstring(" delegate");
-    if (ident)
-    {
-	buf->writeByte(' ');
-	buf->writestring(ident->toChars());
-    }
-    next->next->toCBuffer2(buf, NULL, hgs);
-#else
-    next->toCBuffer2(buf, Id::delegate, hgs);
-    if (ident)
-    {
-	buf->writestring(ident->toChars());
-    }
-#endif
+    tf->next->toCBuffer2(buf, hgs, 0);
+    buf->writestring(" delegate");
+    Argument::argsToCBuffer(buf, hgs, tf->parameters, tf->varargs);
 }
 
 Expression *TypeDelegate::defaultInit()
@@ -3025,7 +3333,7 @@ int TypeDelegate::hasPointers()
 /***************************** TypeQualified *****************************/
 
 TypeQualified::TypeQualified(TY ty, Loc loc)
-    : Type(ty, NULL)
+    : Type(ty)
 {
     this->loc = loc;
 }
@@ -3054,7 +3362,7 @@ void TypeQualified::addIdent(Identifier *ident)
     idents.push(ident);
 }
 
-void TypeQualified::toCBuffer2Helper(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
+void TypeQualified::toCBuffer2Helper(OutBuffer *buf, HdrGenState *hgs)
 {
     int i;
 
@@ -3272,30 +3580,28 @@ Type *TypeIdentifier::syntaxCopy()
 
     t = new TypeIdentifier(loc, ident);
     t->syntaxCopyHelper(this);
+    t->mod = mod;
     return t;
 }
 
-void TypeIdentifier::toDecoBuffer(OutBuffer *buf)
+void TypeIdentifier::toDecoBuffer(OutBuffer *buf, int flag)
 {   unsigned len;
     char *name;
 
+    Type::toDecoBuffer(buf, flag);
     name = ident->toChars();
     len = strlen(name);
-    buf->printf("%c%d%s", mangleChar[ty], len, name);
-    //buf->printf("%c%s", mangleChar[ty], name);
+    buf->printf("%d%s", len, name);
 }
 
-void TypeIdentifier::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
+void TypeIdentifier::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
-    OutBuffer tmp;
-
-    tmp.writestring(this->ident->toChars());
-    toCBuffer2Helper(&tmp, NULL, hgs);
-    buf->prependstring(tmp.toChars());
-    if (ident)
-    {	buf->writeByte(' ');
-	buf->writestring(ident->toChars());
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
     }
+    buf->writestring(this->ident->toChars());
+    toCBuffer2Helper(buf, hgs);
 }
 
 /*************************************
@@ -3362,6 +3668,10 @@ Type *TypeIdentifier::semantic(Loc loc, Scope *sc)
 	    /*if (tt->sym->sem == 1)
 		error(loc, "circular reference of typedef %s", tt->toChars()); */
 	}
+	if (isConst())
+	    t = t->constOf();
+	else if (isInvariant())
+	    t = t->invariantOf();
     }
     else
     {
@@ -3413,21 +3723,19 @@ Type *TypeInstance::syntaxCopy()
 
     t = new TypeInstance(loc, (TemplateInstance *)tempinst->syntaxCopy(NULL));
     t->syntaxCopyHelper(this);
+    t->mod = mod;
     return t;
 }
 
 
-void TypeInstance::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
+void TypeInstance::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
-    OutBuffer tmp;
-
-    tempinst->toCBuffer(&tmp, hgs);
-    toCBuffer2Helper(&tmp, NULL, hgs);
-    buf->prependstring(tmp.toChars());
-    if (ident)
-    {	buf->writeByte(' ');
-	buf->writestring(ident->toChars());
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
     }
+    tempinst->toCBuffer(buf, hgs);
+    toCBuffer2Helper(buf, hgs);
 }
 
 void TypeInstance::resolve(Loc loc, Scope *sc, Expression **pe, Type **pt, Dsymbol **ps)
@@ -3507,6 +3815,7 @@ Type *TypeTypeof::syntaxCopy()
 
     t = new TypeTypeof(loc, exp->syntaxCopy());
     t->syntaxCopyHelper(this);
+    t->mod = mod;
     return t;
 }
 
@@ -3520,19 +3829,16 @@ Dsymbol *TypeTypeof::toDsymbol(Scope *sc)
     return t->toDsymbol(sc);
 }
 
-void TypeTypeof::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
+void TypeTypeof::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
-    OutBuffer tmp;
-
-    tmp.writestring("typeof(");
-    exp->toCBuffer(&tmp, hgs);
-    tmp.writeByte(')');
-    toCBuffer2Helper(&tmp, NULL, hgs);
-    buf->prependstring(tmp.toChars());
-    if (ident)
-    {	buf->writeByte(' ');
-	buf->writestring(ident->toChars());
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
     }
+    buf->writestring("typeof(");
+    exp->toCBuffer(buf, hgs);
+    buf->writeByte(')');
+    toCBuffer2Helper(buf, hgs);
 }
 
 Type *TypeTypeof::semantic(Loc loc, Scope *sc)
@@ -3599,6 +3905,9 @@ Type *TypeTypeof::semantic(Loc loc, Scope *sc)
 	    //error(loc, "expression (%s) has no type", exp->toChars());
 	    goto Lerr;
 	}
+	/* if (t->ty == Ttypeof)
+	    error(loc, "forward reference to %s", toChars()); */
+	t = t->toCanonConst();
     }
 
     if (idents.dim)
@@ -3643,13 +3952,15 @@ d_uns64 TypeTypeof::size(Loc loc)
 /***************************** TypeEnum *****************************/
 
 TypeEnum::TypeEnum(EnumDeclaration *sym)
-	: Type(Tenum, NULL)
+	: Type(Tenum)
 {
     this->sym = sym;
 }
 
 char *TypeEnum::toChars()
 {
+    if (mod)
+	return Type::toChars();
     return sym->toChars();
 }
 
@@ -3700,27 +4011,23 @@ Type *TypeEnum::toBasetype()
     return sym->memtype->toBasetype();
 }
 
-void TypeEnum::toDecoBuffer(OutBuffer *buf)
+void TypeEnum::toDecoBuffer(OutBuffer *buf, int flag)
 {   char *name;
 
     name = sym->mangle();
 //    if (name[0] == '_' && name[1] == 'D')
 //	name += 2;
-    buf->printf("%c%s", mangleChar[ty], name);
+    Type::toDecoBuffer(buf, flag);
+    buf->printf("%s", name);
 }
 
-void TypeEnum::toTypeInfoBuffer(OutBuffer *buf)
+void TypeEnum::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
-    toBasetype()->toTypeInfoBuffer(buf);
-}
-
-void TypeEnum::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
-{
-    buf->prependstring(sym->toChars());
-    if (ident)
-    {	buf->writeByte(' ');
-	buf->writestring(ident->toChars());
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
     }
+    buf->writestring(sym->toChars());
 }
 
 Expression *TypeEnum::dotExp(Scope *sc, Expression *e, Identifier *ident)
@@ -3732,6 +4039,8 @@ Expression *TypeEnum::dotExp(Scope *sc, Expression *e, Identifier *ident)
 #if LOGDOTEXP
     printf("TypeEnum::dotExp(e = '%s', ident = '%s') '%s'\n", e->toChars(), ident->toChars(), toChars());
 #endif
+    if (!sym->symtab)
+	goto Lfwd;
     s = sym->symtab->lookup(ident);
     if (!s)
     {
@@ -3741,6 +4050,10 @@ Expression *TypeEnum::dotExp(Scope *sc, Expression *e, Identifier *ident)
     em = m->value->copy();
     em->loc = e->loc;
     return em;
+
+Lfwd:
+    // error(e->loc, "forward reference of %s.%s", toChars(), ident->toChars());
+    return new IntegerExp(0, 0, this);
 }
 
 Expression *TypeEnum::getProperty(Loc loc, Identifier *ident)
@@ -3802,7 +4115,7 @@ MATCH TypeEnum::implicitConvTo(Type *to)
 {   MATCH m;
 
     //printf("TypeEnum::implicitConvTo()\n");
-    if (this->equals(to))
+    if (ty == to->ty && sym == ((TypeEnum *)to)->sym)
 	m = MATCHexact;		// exact match
     else if (sym->memtype->implicitConvTo(to))
 	m = MATCHconvert;	// match with conversions
@@ -3810,6 +4123,17 @@ MATCH TypeEnum::implicitConvTo(Type *to)
 	m = MATCHnomatch;	// no match
     return m;
 }
+
+MATCH TypeEnum::constConv(Type *to)
+{
+    if (equals(to))
+	return MATCHexact;
+    if (ty == to->ty && sym == ((TypeEnum *)to)->sym &&
+	to->mod == MODconst)
+	return MATCHconst;
+    return MATCHnomatch;
+}
+
 
 Expression *TypeEnum::defaultInit()
 {
@@ -3835,7 +4159,7 @@ int TypeEnum::hasPointers()
 /***************************** TypeTypedef *****************************/
 
 TypeTypedef::TypeTypedef(TypedefDeclaration *sym)
-	: Type(Ttypedef, NULL)
+	: Type(Ttypedef)
 {
     this->sym = sym;
 }
@@ -3847,7 +4171,7 @@ Type *TypeTypedef::syntaxCopy()
 
 char *TypeTypedef::toChars()
 {
-    return sym->toChars();
+    return Type::toChars();
 }
 
 Type *TypeTypedef::semantic(Loc loc, Scope *sc)
@@ -3872,31 +4196,36 @@ Dsymbol *TypeTypedef::toDsymbol(Scope *sc)
     return sym;
 }
 
-void TypeTypedef::toDecoBuffer(OutBuffer *buf)
-{   unsigned len;
+Type *TypeTypedef::toCanonConst()
+{
+    if (!mod)
+	return this;
+
+    Type *tb = toBasetype();
+    Type *t = tb->toCanonConst();
+    if (t->equals(tb))
+	return this;
+    else
+	return mutableOf();
+}
+
+void TypeTypedef::toDecoBuffer(OutBuffer *buf, int flag)
+{
     char *name;
 
+    Type::toDecoBuffer(buf, flag);
     name = sym->mangle();
-//    if (name[0] == '_' && name[1] == 'D')
-//	name += 2;
-    //len = strlen(name);
-    //buf->printf("%c%d%s", mangleChar[ty], len, name);
-    buf->printf("%c%s", mangleChar[ty], name);
+    buf->printf("%s", name);
 }
 
-void TypeTypedef::toTypeInfoBuffer(OutBuffer *buf)
-{
-    sym->basetype->toTypeInfoBuffer(buf);
-}
-
-void TypeTypedef::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
+void TypeTypedef::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
     //printf("TypeTypedef::toCBuffer2() '%s'\n", sym->toChars());
-    buf->prependstring(sym->toChars());
-    if (ident)
-    {	buf->writeByte(' ');
-	buf->writestring(ident->toChars());
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
     }
+    buf->writestring(sym->toChars());
 }
 
 Expression *TypeTypedef::dotExp(Scope *sc, Expression *e, Identifier *ident)
@@ -3909,11 +4238,6 @@ Expression *TypeTypedef::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	return Type::dotExp(sc, e, ident);
     }
     return sym->basetype->dotExp(sc, e, ident);
-}
-
-int TypeTypedef::isbit()
-{
-    return sym->basetype->isbit();
 }
 
 int TypeTypedef::isintegral()
@@ -3970,21 +4294,40 @@ Type *TypeTypedef::toBasetype()
     sym->inuse = 1;
     Type *t = sym->basetype->toBasetype();
     sym->inuse = 0;
+    if (mod == MODconst)
+	t = t->constOf();
+    else if (mod == MODinvariant)
+	t = t->invariantOf();
     return t;
 }
 
 MATCH TypeTypedef::implicitConvTo(Type *to)
 {   MATCH m;
 
-    //printf("TypeTypedef::implicitConvTo()\n");
-    if (this->equals(to))
+    //printf("TypeTypedef::implicitConvTo(to = %s) %s\n", to->toChars(), toChars());
+    if (equals(to))
 	m = MATCHexact;		// exact match
     else if (sym->basetype->implicitConvTo(to))
 	m = MATCHconvert;	// match with conversions
+    else if (ty == to->ty && sym == ((TypeTypedef *)to)->sym)
+    {
+	m = constConv(to);
+    }
     else
 	m = MATCHnomatch;	// no match
     return m;
 }
+
+MATCH TypeTypedef::constConv(Type *to)
+{
+    if (equals(to))
+	return MATCHexact;
+    if (ty == to->ty && sym == ((TypeTypedef *)to)->sym &&
+	to->mod == MODconst)
+	return MATCHconst;
+    return MATCHnomatch;
+}
+
 
 Expression *TypeTypedef::defaultInit()
 {   Expression *e;
@@ -4002,9 +4345,9 @@ Expression *TypeTypedef::defaultInit()
     e = bt->defaultInit();
     e->type = this;
     while (bt->ty == Tsarray)
-    {
-	e->type = bt->next;
-	bt = bt->next->toBasetype();
+    {	TypeSArray *tsa = (TypeSArray *)bt;
+	e->type = tsa->next;
+	bt = tsa->next->toBasetype();
     }
     return e;
 }
@@ -4039,7 +4382,7 @@ int TypeTypedef::hasPointers()
 /***************************** TypeStruct *****************************/
 
 TypeStruct::TypeStruct(StructDeclaration *sym)
-	: Type(Tstruct, NULL)
+	: Type(Tstruct)
 {
     this->sym = sym;
 }
@@ -4050,6 +4393,8 @@ char *TypeStruct::toChars()
     TemplateInstance *ti = sym->parent->isTemplateInstance();
     if (ti && ti->toAlias() == sym)
 	return ti->toChars();
+    if (mod)
+	return Type::toChars();
     return sym->toChars();
 }
 
@@ -4090,31 +4435,23 @@ Dsymbol *TypeStruct::toDsymbol(Scope *sc)
     return sym;
 }
 
-void TypeStruct::toDecoBuffer(OutBuffer *buf)
-{   unsigned len;
+void TypeStruct::toDecoBuffer(OutBuffer *buf, int flag)
+{
     char *name;
 
     name = sym->mangle();
     //printf("TypeStruct::toDecoBuffer('%s') = '%s'\n", toChars(), name);
-//    if (name[0] == '_' && name[1] == 'D')
-//	name += 2;
-    //len = strlen(name);
-    //buf->printf("%c%d%s", mangleChar[ty], len, name);
-    buf->printf("%c%s", mangleChar[ty], name);
+    Type::toDecoBuffer(buf, flag);
+    buf->printf("%s", name);
 }
 
-void TypeStruct::toTypeInfoBuffer(OutBuffer *buf)
+void TypeStruct::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
-    toDecoBuffer(buf);
-}
-
-
-void TypeStruct::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
-{
-    buf->prependbyte(' ');
-    buf->prependstring(toChars());
-    if (ident)
-	buf->writestring(ident->toChars());
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
+    }
+    buf->writestring(sym->toChars());
 }
 
 Expression *TypeStruct::dotExp(Scope *sc, Expression *e, Identifier *ident)
@@ -4236,7 +4573,7 @@ L1:
 	    e = e->semantic(sc);
 	    return e;
 	}
-	return new VarExp(e->loc, d);
+	return new VarExp(e->loc, d, 1);
     }
 
     if (d->isDataseg())
@@ -4262,9 +4599,13 @@ L1:
 	b->type = e->type->pointerTo();
 	b = new AddExp(e->loc, b, new IntegerExp(e->loc, v->offset, Type::tint32));
 	b->type = v->type->pointerTo();
-	e = new PtrExp(e->loc, b);
-	e->type = v->type;
-	return e;
+	b = new PtrExp(e->loc, b);
+	b->type = v->type;
+	if (e->type->isConst())
+	    b->type = b->type->constOf();
+	else if (e->type->isInvariant())
+	    b->type = b->type->invariantOf();
+	return b;
     }
 
     de = new DotVarExp(e->loc, e, d);
@@ -4321,17 +4662,45 @@ int TypeStruct::hasPointers()
     return FALSE;
 }
 
+MATCH TypeStruct::implicitConvTo(Type *to)
+{   MATCH m;
+
+    //printf("TypeStruct::implicitConvTo()\n");
+    if (ty == to->ty && sym == ((TypeStruct *)to)->sym)
+	m = MATCHexact;		// exact match
+    else
+	m = MATCHnomatch;	// no match
+    return m;
+}
+
+Type *TypeStruct::toCanonConst()
+{
+    return this;
+}
+
+MATCH TypeStruct::constConv(Type *to)
+{
+    if (equals(to))
+	return MATCHexact;
+    if (ty == to->ty && sym == ((TypeStruct *)to)->sym &&
+	to->mod == MODconst)
+	return MATCHconst;
+    return MATCHnomatch;
+}
+
 
 /***************************** TypeClass *****************************/
 
 TypeClass::TypeClass(ClassDeclaration *sym)
-	: Type(Tclass, NULL)
+	: Type(Tclass)
 {
     this->sym = sym;
 }
 
 char *TypeClass::toChars()
 {
+    if (mod)
+	return Type::toChars();
     return sym->toPrettyChars();
 }
 
@@ -4358,26 +4727,23 @@ Dsymbol *TypeClass::toDsymbol(Scope *sc)
     return sym;
 }
 
-void TypeClass::toDecoBuffer(OutBuffer *buf)
-{   unsigned len;
+void TypeClass::toDecoBuffer(OutBuffer *buf, int flag)
+{
     char *name;
 
     name = sym->mangle();
-//    if (name[0] == '_' && name[1] == 'D')
-//	name += 2;
-    //printf("TypeClass::toDecoBuffer('%s') = '%s'\n", toChars(), name);
-    //len = strlen(name);
-    //buf->printf("%c%d%s", mangleChar[ty], len, name);
-    buf->printf("%c%s", mangleChar[ty], name);
+    //printf("TypeClass::toDecoBuffer('%s' flag=%d mod=%x) = '%s'\n", toChars(), flag, mod, name);
+    Type::toDecoBuffer(buf, flag);
+    buf->printf("%s", name);
 }
 
-void TypeClass::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
+void TypeClass::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
-    buf->prependstring(sym->toChars());
-    if (ident)
-    {	buf->writeByte(' ');
-	buf->writestring(ident->toChars());
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
     }
+    buf->writestring(sym->toChars());
 }
 
 Expression *TypeClass::dotExp(Scope *sc, Expression *e, Identifier *ident)
@@ -4574,7 +4940,9 @@ L1:
 	    return e;
 	}
 	else
-	    ve = new VarExp(e->loc, d);
+	{
+	    ve = new VarExp(e->loc, d, 1);
+	}
 	return ve;
     }
 
@@ -4593,9 +4961,8 @@ L1:
     if (d->parent && d->toParent()->isModule())
     {
 	// (e, d)
-	VarExp *ve;
 
-	ve = new VarExp(e->loc, d);
+	VarExp *ve = new VarExp(e->loc, d, 1);
 	e = new CommaExp(e->loc, e, ve);
 	e->type = d->type;
 	return e;
@@ -4629,24 +4996,30 @@ int TypeClass::isBaseOf(Type *t, int *poffset)
 
 MATCH TypeClass::implicitConvTo(Type *to)
 {
-    //printf("TypeClass::implicitConvTo('%s')\n", to->toChars());
-    if (this == to)
-	return MATCHexact;
+    //printf("TypeClass::implicitConvTo(to = '%s') %s\n", to->toChars(), toChars());
+    MATCH m = constConv(to);
+    if (m != MATCHnomatch)
+	return m;
 
     ClassDeclaration *cdto = to->isClassHandle();
     if (cdto && cdto->isBaseOf(sym, NULL))
-    {	//printf("is base\n");
+    {	//printf("'to' is base\n");
 	return MATCHconvert;
     }
 
     if (global.params.Dversion == 1)
     {
 	// Allow conversion to (void *)
-	if (to->ty == Tpointer && to->next->ty == Tvoid)
+	if (to->ty == Tpointer && ((TypePointer *)to)->next->ty == Tvoid)
 	    return MATCHconvert;
     }
 
     return MATCHnomatch;
+}
+
+Type *TypeClass::toCanonConst()
+{
+    return this;
 }
 
 Expression *TypeClass::defaultInit()
@@ -4678,10 +5051,11 @@ int TypeClass::hasPointers()
 /***************************** TypeTuple *****************************/
 
 TypeTuple::TypeTuple(Arguments *arguments)
-    : Type(Ttuple, NULL)
+    : Type(Ttuple)
 {
     //printf("TypeTuple(this = %p)\n", this);
     this->arguments = arguments;
+    //printf("TypeTuple() %s\n", toChars());
 #ifdef DEBUG
     if (arguments)
     {
@@ -4700,7 +5074,7 @@ TypeTuple::TypeTuple(Arguments *arguments)
  */
 
 TypeTuple::TypeTuple(Expressions *exps)
-    : Type(Ttuple, NULL)
+    : Type(Ttuple)
 {
     Arguments *arguments = new Arguments;
     if (exps)
@@ -4721,12 +5095,14 @@ Type *TypeTuple::syntaxCopy()
 {
     Arguments *args = Argument::arraySyntaxCopy(arguments);
     Type *t = new TypeTuple(args);
+    t->mod = mod;
     return t;
 }
 
 Type *TypeTuple::semantic(Loc loc, Scope *sc)
 {
     //printf("TypeTuple::semantic(this = %p)\n", this);
+    //printf("TypeTuple::semantic() %s\n", toChars());
     if (!deco)
 	deco = merge()->deco;
 
@@ -4778,24 +5154,37 @@ Type *TypeTuple::reliesOnTident()
     return NULL;
 }
 
-void TypeTuple::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
+#if 0
+Type *TypeTuple::makeConst()
 {
-    OutBuffer buf2;
-    Argument::argsToCBuffer(&buf2, hgs, arguments, 0);
-    buf->prependstring(buf2.toChars());
-    if (ident)
-    {	buf->writeByte(' ');
-	buf->writestring(ident->toChars());
+    //printf("TypeTuple::makeConst() %s\n", toChars());
+    if (cto)
+	return cto;
+    TypeTuple *t = (TypeTuple *)Type::makeConst();
+    t->arguments = new Arguments();
+    t->arguments->setDim(arguments->dim);
+    for (size_t i = 0; i < arguments->dim; i++)
+    {   Argument *arg = (Argument *)arguments->data[i];
+	Argument *narg = new Argument(arg->storageClass, arg->type->constOf(), arg->ident, arg->defaultArg);
+	t->arguments->data[i] = (Argument *)narg;
     }
+    return t;
+}
+#endif
+
+void TypeTuple::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
+{
+    Argument::argsToCBuffer(buf, hgs, arguments, 0);
 }
 
-void TypeTuple::toDecoBuffer(OutBuffer *buf)
+void TypeTuple::toDecoBuffer(OutBuffer *buf, int flag)
 {
-    //printf("TypeTuple::toDecoBuffer() this = %p\n", this);
+    //printf("TypeTuple::toDecoBuffer() this = %p, %s\n", this, toChars());
+    Type::toDecoBuffer(buf, flag);
     OutBuffer buf2;
     Argument::argsToDecoBuffer(&buf2, arguments);
     unsigned len = buf2.offset;
-    buf->printf("%c%d%.*s", mangleChar[ty], len, len, (char *)buf2.extractData());
+    buf->printf("%d%.*s", len, len, (char *)buf2.extractData());
 }
 
 Expression *TypeTuple::getProperty(Loc loc, Identifier *ident)
@@ -4821,7 +5210,7 @@ Expression *TypeTuple::getProperty(Loc loc, Identifier *ident)
 /* This is so we can slice a TypeTuple */
 
 TypeSlice::TypeSlice(Type *next, Expression *lwr, Expression *upr)
-    : Type(Tslice, next)
+    : TypeNext(Tslice, next)
 {
     //printf("TypeSlice[%s .. %s]\n", lwr->toChars(), upr->toChars());
     this->lwr = lwr;
@@ -4831,6 +5220,7 @@ TypeSlice::TypeSlice(Type *next, Expression *lwr, Expression *upr)
 Type *TypeSlice::syntaxCopy()
 {
     Type *t = new TypeSlice(next->syntaxCopy(), lwr->syntaxCopy(), upr->syntaxCopy());
+    t->mod = mod;
     return t;
 }
 
@@ -4838,6 +5228,10 @@ Type *TypeSlice::semantic(Loc loc, Scope *sc)
 {
     //printf("TypeSlice::semantic() %s\n", toChars());
     next = next->semantic(loc, sc);
+    if (mod == MODconst)
+	next = next->constOf();
+    else if (mod == MODinvariant)
+	next = next->invariantOf();
     //printf("next: %s\n", next->toChars());
 
     Type *tbn = next->toBasetype();
@@ -4934,20 +5328,16 @@ void TypeSlice::resolve(Loc loc, Scope *sc, Expression **pe, Type **pt, Dsymbol 
     }
 }
 
-void TypeSlice::toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs)
+void TypeSlice::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
 {
-    OutBuffer buf2;
-
-    buf2.printf("[%s .. ", lwr->toChars());
-    buf2.printf("%s]", upr->toChars());
-
-    buf->prependstring(buf2.toChars());
-    if (ident)
-    {
-	buf->writeByte(' ');
-	buf->writestring(ident->toChars());
+    if (mod != this->mod)
+    {	toCBuffer3(buf, hgs, mod);
+	return;
     }
-    next->toCBuffer2(buf, NULL, hgs);
+    next->toCBuffer2(buf, hgs, this->mod);
+
+    buf->printf("[%s .. ", lwr->toChars());
+    buf->printf("%s]", upr->toChars());
 }
 
 /***************************** Argument *****************************/
@@ -5004,7 +5394,7 @@ char *Argument::argsTypesToChars(Arguments *args, int varargs)
 		buf->writeByte(',');
 	    arg = (Argument *)args->data[i];
 	    argbuf.reset();
-	    arg->type->toCBuffer2(&argbuf, NULL, &hgs);
+	    arg->type->toCBuffer2(&argbuf, &hgs, 0);
 	    buf->write(&argbuf);
 	}
 	if (varargs)
@@ -5040,7 +5430,7 @@ void Argument::argsToCBuffer(OutBuffer *buf, HdrGenState *hgs, Arguments *argume
 	    else if (arg->storageClass & STClazy)
 		buf->writestring("lazy ");
 	    argbuf.reset();
-	    arg->type->toCBuffer2(&argbuf, arg->ident, hgs);
+	    arg->type->toCBuffer(&argbuf, arg->ident, hgs);
 	    if (arg->defaultArg)
 	    {
 		argbuf.writestring(" = ");
@@ -5088,7 +5478,7 @@ Type *Argument::isLazyArray()
 	Type *tb = type->toBasetype();
 	if (tb->ty == Tsarray || tb->ty == Tarray)
 	{
-	    Type *tel = tb->next->toBasetype();
+	    Type *tel = ((TypeArray *)tb)->next->toBasetype();
 	    if (tel->ty == Tdelegate)
 	    {
 		TypeDelegate *td = (TypeDelegate *)tel;
@@ -5125,7 +5515,14 @@ void Argument::toDecoBuffer(OutBuffer *buf)
 #endif
 	    assert(0);
     }
-    type->toDecoBuffer(buf);
+#if 0
+    int mod = 0x100;
+    if (type->toBasetype()->ty == Tclass)
+	mod = 0;
+    type->toDecoBuffer(buf, mod);
+#else
+    type->toCanonConst()->toDecoBuffer(buf, 0);
+#endif
 }
 
 /***************************************

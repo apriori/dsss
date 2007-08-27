@@ -91,6 +91,7 @@ struct Declaration : Dsymbol
     void semantic(Scope *sc);
     char *kind();
     unsigned size(Loc loc);
+    void checkModify(Loc loc, Scope *sc);
 
     void emitComment(Scope *sc);
     void toDocBuffer(OutBuffer *buf);
@@ -106,6 +107,7 @@ struct Declaration : Dsymbol
     int isFinal()        { return storage_class & STCfinal; }
     int isAbstract()     { return storage_class & STCabstract; }
     int isConst()        { return storage_class & STCconst; }
+    int isInvariant()    { return storage_class & STCinvariant; }
     int isAuto()         { return storage_class & STCauto; }
     int isScope()        { return storage_class & (STCscope | STCauto); }
     int isSynchronized() { return storage_class & STCsynchronized; }
@@ -350,6 +352,24 @@ struct TypeInfoTupleDeclaration : TypeInfoDeclaration
     TypeInfoTupleDeclaration(Type *tinfo);
 };
 
+#if V2
+struct TypeInfoConstDeclaration : TypeInfoDeclaration
+{
+    TypeInfoConstDeclaration(Type *tinfo);
+
+    void toDt(dt_t **pdt);
+};
+
+struct TypeInfoInvariantDeclaration : TypeInfoDeclaration
+{
+    TypeInfoInvariantDeclaration(Type *tinfo);
+
+    void toDt(dt_t **pdt);
+};
+#endif
+
+/**************************************************************/
+
 struct ThisDeclaration : VarDeclaration
 {
     ThisDeclaration(Type *t);
@@ -442,6 +462,7 @@ struct FuncDeclaration : Declaration
     virtual int isNested();
     int needThis();
     virtual int isVirtual();
+    virtual int isFinal();
     virtual int addPreInvariant();
     virtual int addPostInvariant();
     Expression *interpret(InterState *istate, Expressions *arguments);
@@ -450,6 +471,7 @@ struct FuncDeclaration : Declaration
     Expression *doInline(InlineScanState *iss, Expression *ethis, Array *arguments);
     char *kind();
     void toDocBuffer(OutBuffer *buf);
+    FuncDeclaration *isUnique();
 
     static FuncDeclaration *genCfunc(Type *treturn, char *name);
     static FuncDeclaration *genCfunc(Type *treturn, Identifier *id);

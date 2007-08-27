@@ -65,7 +65,7 @@ Global::Global()
 
     copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards,";
     written = "written by Walter Bright and Gregor Richards";
-    version = "version 0.72 (based on DMD 1.020)";
+    version = "version 0.72 (based on DMD 2.003)";
     global.structalign = 8;
     cmodules = NULL;
 
@@ -120,6 +120,7 @@ void verror(Loc loc, const char *format, va_list ap)
 	vfprintf(stdmsg, format, ap);
 	fprintf(stdmsg, "\n");
 	fflush(stdmsg);
+//halt();
     }
     global.errors++;
 }
@@ -156,7 +157,7 @@ void usage()
     printf("ReBuild %s\n%s %s\n",
 	global.version, global.copyright, global.written);
     printf("\
-Documentation: http://www.digitalmars.com/d/1.0/index.html\n\
+Documentation: http://www.digitalmars.com/d/index.html\n\
 Usage:\n\
   rebuild files.d ... { -switch }\n\
 \n\
@@ -612,6 +613,13 @@ int main(int argc, char *argv[])
                 global.params.listonly = 1;
                 global.params.fullbuild = 1;
             }
+	    else if (strcmp(p + 1, "v1") == 0)
+	    {
+		error("use DMD 1.0 series compilers for -v1 switch");
+		break;
+	    }
+	    else if (strcmp(p + 1, "w") == 0)
+		global.params.warnings = 1;
 	    else if (strcmp(p + 1, "O") == 0)
             {
 		global.params.optimize = 1;

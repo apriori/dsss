@@ -75,6 +75,7 @@ Tuple *isTuple(Object *o)
     return (Tuple *)o;
 }
 
+
 /***********************
  * Try to get arg as a type.
  */
@@ -472,7 +473,7 @@ MATCH TemplateDeclaration::matchWithInstance(TemplateInstance *ti,
 
 	//printf("\targument [%d]\n", i);
 #if 0
-	printf("\targument [%d] is %s\n", i, oarg ? oarg->toChars() : "null");
+	//printf("\targument [%d] is %s\n", i, oarg ? oarg->toChars() : "null");
 	TemplateTypeParameter *ttp = tp->isTemplateTypeParameter();
 	if (ttp)
 	    printf("\tparameter[%d] is %s : %s\n", i, tp->ident->toChars(), ttp->specType ? ttp->specType->toChars() : "");
@@ -789,12 +790,12 @@ L2:
 	    if (!m && fparam->type->toBasetype()->ty == Tdelegate)
 	    {
 		TypeDelegate *td = (TypeDelegate *)fparam->type->toBasetype();
-		TypeFunction *tf = (TypeFunction *)td->nextOf();
+		TypeFunction *tf = (TypeFunction *)td->next;
 
 		if (!tf->varargs && Argument::dim(tf->parameters) == 0)
 		{
-		    m = farg->type->deduceType(scope, tf->nextOf(), parameters, &dedtypes);
-		    if (!m && tf->nextOf()->toBasetype()->ty == Tvoid)
+		    m = farg->type->deduceType(scope, tf->next, parameters, &dedtypes);
+		    if (!m && tf->next->toBasetype()->ty == Tvoid)
 			m = MATCHconvert;
 		}
 		//printf("\tm2 = %d\n", m);
@@ -1215,10 +1216,10 @@ MATCH Type::deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters,
 	    goto Lexact;
 	else if (ty == Tclass && at->ty == Tclass)
 	{
-	    return (MATCH) implicitConvTo(at);
+	    return implicitConvTo(at);
 	}
 	else if (ty == Tsarray && at->ty == Tarray &&
-	    next->equals(at->nextOf()))
+	    nextOf()->implicitConvTo(at->nextOf()) >= MATCHconst)
 	{
 	    goto Lexact;
 	}
@@ -1643,7 +1644,7 @@ MATCH TypeClass::deduceType(Scope *sc, Type *tparam, TemplateParameters *paramet
 	TypeClass *tp = (TypeClass *)tparam;
 
 	//printf("\t%d\n", (MATCH) implicitConvTo(tp));
-	return (MATCH) implicitConvTo(tp);
+	return implicitConvTo(tp);
     }
     return Type::deduceType(sc, tparam, parameters, dedtypes);
 }
@@ -2510,7 +2511,6 @@ TemplateInstance::TemplateInstance(Loc loc, TemplateDeclaration *td, Objects *ti
     assert((size_t)tempdecl->scope > 0x10000);
 }
 
-
 Objects *TemplateInstance::arraySyntaxCopy(Objects *objs)
 {
     Objects *a = NULL;
@@ -2592,7 +2592,7 @@ void TemplateInstance::semantic(Scope *sc)
 	tdtypes.setDim(tempdecl->parameters->dim);
 	if (!tempdecl->matchWithInstance(this, &tdtypes, 0))
 	{
-	    error("incompatible arguments for template instantiation");
+	    // error("incompatible arguments for template instantiation");
 	    inst = this;
 	    return;
 	}
@@ -2854,7 +2854,7 @@ void TemplateInstance::semanticTiargs(Scope *sc)
 void TemplateInstance::semanticTiargs(Loc loc, Scope *sc, Objects *tiargs)
 {
     // Run semantic on each argument, place results in tiargs[]
-    //printf("+TemplateInstance::semanticTiargs() %s\n", toChars());
+    //printf("+TemplateInstance::semanticTiargs()\n");
     if (!tiargs)
 	return;
     for (size_t j = 0; j < tiargs->dim; j++)
@@ -3209,8 +3209,8 @@ int TemplateInstance::isNested(Objects *args)
 		// if module level template
 		if (tempdecl->toParent()->isModule())
 		{
-		    if (isnested && isnested != d->toParent())
-			error("inconsistent nesting levels %s and %s", isnested->toChars(), d->toParent()->toChars());
+		    /* if (isnested && isnested != d->toParent())
+			error("inconsistent nesting levels %s and %s", isnested->toChars(), d->toParent()->toChars()); */
 		    isnested = d->toParent();
 		    nested |= 1;
 		}
@@ -3264,7 +3264,6 @@ Identifier *TemplateInstance::genIdent()
 	else if (ea)
 	{   sinteger_t v;
 	    real_t r;
-	    unsigned char *p;
 
 	    if (ea->op == TOKvar)
 	    {
@@ -3284,7 +3283,9 @@ Identifier *TemplateInstance::genIdent()
 		continue;
 	    }
 #if 1
-	    buf.writestring(ea->type->deco);
+	    /* Use deco that matches what it would be for a function parameter
+	     */
+	    buf.writestring(ea->type->toCanonConst()->deco);
 #else
 	    // Use type of parameter, not type of argument
 	    TemplateParameter *tp = (TemplateParameter *)tempdecl->parameters->data[i];

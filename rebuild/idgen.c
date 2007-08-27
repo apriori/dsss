@@ -226,6 +226,26 @@ Msgtable msgtable[] =
     { "main" },
     { "WinMain" },
     { "DllMain" },
+
+    // Traits
+    { "isAbstractClass" },
+    { "isArithmetic" },
+    { "isAssociativeArray" },
+    { "isFinalClass" },
+    { "isFloating" },
+    { "isIntegral" },
+    { "isScalar" },
+    { "isStaticArray" },
+    { "isUnsigned" },
+    { "isVirtualFunction" },
+    { "isAbstractFunction" },
+    { "isFinalFunction" },
+    { "hasMember" },
+    { "getMember" },
+    { "getVirtualFunctions" },
+    { "classInstanceSize" },
+    { "allMembers" },
+    { "derivedMembers" },
 };
 
 

@@ -734,7 +734,7 @@ void Lexer::scan(Token *t)
 
 				    case 0:
 				    case 0x1A:
-					error("unterminated /* */ comment");
+					// error("unterminated /* */ comment");
 					p = end;
 					t->value = TOKeof;
 					return;
@@ -860,7 +860,7 @@ void Lexer::scan(Token *t)
 
 				case 0:
 				case 0x1A:
-				    error("unterminated /+ +/ comment");
+				    // error("unterminated /+ +/ comment");
 				    p = end;
 				    t->value = TOKeof;
 				    return;
@@ -1155,10 +1155,10 @@ void Lexer::scan(Token *t)
 			continue;
 		    }
 		}
-		if (isprint(c))
+		/* if (isprint(c))
 		    error("unsupported char '%c'", c);
 		else
-		    error("unsupported char 0x%02x", c);
+		    error("unsupported char 0x%02x", c); */
 		p++;
 		continue;
 	    }
@@ -1223,16 +1223,16 @@ unsigned Lexer::escapeSequence()
 			if (++n == ndigits)
 			    break;
 			if (!ishex(c))
-			{   error("escape hex sequence has %d hex digits instead of %d", n, ndigits);
+			{   // error("escape hex sequence has %d hex digits instead of %d", n, ndigits);
 			    break;
 			}
 		    }
-		    if (ndigits != 2 && !utf_isValidDchar(v))
-			error("invalid UTF character \\U%08x", v);
+		    /* if (ndigits != 2 && !utf_isValidDchar(v))
+			error("invalid UTF character \\U%08x", v); */
 		    c = v;
 		}
-		else
-		    error("undefined escape hex sequence \\%c\n",c);
+		/* else
+		    error("undefined escape hex sequence \\%c\n",c); */
 		break;
 
 	case '&':			// named character entity
@@ -1243,7 +1243,7 @@ unsigned Lexer::escapeSequence()
 			case ';':
 			    c = HtmlNamedEntity(idstart, p - idstart);
 			    if (c == ~0)
-			    {   error("unnamed character entity &%.*s;", (int)(p - idstart), idstart);
+			    {   // error("unnamed character entity &%.*s;", (int)(p - idstart), idstart);
 				c = ' ';
 			    }
 			    p++;
@@ -1253,7 +1253,7 @@ unsigned Lexer::escapeSequence()
 			    if (isalpha(*p) ||
 				(p != idstart + 1 && isdigit(*p)))
 				continue;
-			    error("unterminated named entity");
+			    // error("unterminated named entity");
 			    break;
 		    }
 		    break;
@@ -1278,8 +1278,8 @@ unsigned Lexer::escapeSequence()
 		    } while (++n < 3 && isoctal(c));
 		    c = v;
 		}
-		else
-		    error("undefined escape sequence \\%c\n",c);
+		/* else
+		    error("undefined escape sequence \\%c\n",c); */
 		break;
     }
     return c;
@@ -1312,7 +1312,7 @@ TOK Lexer::wysiwygStringConstant(Token *t, int tc)
 
 	    case 0:
 	    case 0x1A:
-		error("unterminated string constant starting at %s", start.toChars());
+		// error("unterminated string constant starting at %s", start.toChars());
 		t->ustring = (unsigned char *)"";
 		t->len = 0;
 		t->postfix = 0;
@@ -1381,7 +1381,7 @@ TOK Lexer::hexStringConstant(Token *t)
 
 	    case 0:
 	    case 0x1A:
-		error("unterminated string constant starting at %s", start.toChars());
+		// error("unterminated string constant starting at %s", start.toChars());
 		t->ustring = (unsigned char *)"";
 		t->len = 0;
 		t->postfix = 0;
@@ -1389,7 +1389,7 @@ TOK Lexer::hexStringConstant(Token *t)
 
 	    case '"':
 		if (n & 1)
-		{   error("odd number (%d) of hex characters in hex string", n);
+		{   // error("odd number (%d) of hex characters in hex string", n);
 		    stringbuffer.writeByte(v);
 		}
 		t->len = stringbuffer.offset;
@@ -1412,11 +1412,11 @@ TOK Lexer::hexStringConstant(Token *t)
 		    p++;
 		    if (u == PS || u == LS)
 			loc.linnum++;
-		    else
-			error("non-hex character \\u%x", u);
+		    /* else
+			error("non-hex character \\u%x", u); */
 		}
-		else
-		    error("non-hex character '%c'", c);
+		/* else
+		    error("non-hex character '%c'", c); */
 		if (n & 1)
 		{   v = (v << 4) | c;
 		    stringbuffer.writeByte(v);
@@ -1481,7 +1481,7 @@ TOK Lexer::escapeStringConstant(Token *t, int wide)
 	    case 0:
 	    case 0x1A:
 		p--;
-		error("unterminated string constant starting at %s", start.toChars());
+		// error("unterminated string constant starting at %s", start.toChars());
 		t->ustring = (unsigned char *)"";
 		t->len = 0;
 		t->postfix = 0;
@@ -1546,7 +1546,7 @@ TOK Lexer::charConstant(Token *t, int wide)
 	case 0:
 	case 0x1A:
 	case '\'':
-	    error("unterminated character constant");
+	    // error("unterminated character constant");
 	    return tk;
 
 	default:
@@ -1567,7 +1567,7 @@ TOK Lexer::charConstant(Token *t, int wide)
     }
 
     if (*p != '\'')
-    {	error("unterminated character constant");
+    {	// error("unterminated character constant");
 	return tk;
     }
     p++;
@@ -1782,8 +1782,8 @@ TOK Lexer::number(Token *t)
 			goto real;
 		    if (c == 'P' || c == 'p' || c == 'i')
 			goto real;
-		    if (state == STATE_hex0)
-			error("Hex digit expected, not '%c'", c);
+		    /* if (state == STATE_hex0)
+			error("Hex digit expected, not '%c'", c); */
 		    goto done;
 		}
 		state = STATE_hex;
@@ -1807,7 +1807,7 @@ TOK Lexer::number(Token *t)
 			if (memchr((char *)stringbuffer.data, 'E', stringbuffer.offset) ||
 			    memchr((char *)stringbuffer.data, 'e', stringbuffer.offset))
 			    goto real;
-			error("Hex digit expected, not '%c'", c);
+			// error("Hex digit expected, not '%c'", c);
 			goto done;
 		    }
 		}
@@ -1856,7 +1856,7 @@ TOK Lexer::number(Token *t)
 			continue;
 		    }
 		    if (state == STATE_binary0)
-		    {	error("binary digit expected");
+		    {	// error("binary digit expected");
 			state = STATE_error;
 			break;
 		    }
@@ -1879,8 +1879,8 @@ TOK Lexer::number(Token *t)
     }
 done:
     stringbuffer.writeByte(0);		// terminate string
-    if (state == STATE_octale)
-	error("Octal digit expected");
+    /* if (state == STATE_octale)
+	error("Octal digit expected"); */
 
     uinteger_t n;			// unsigned >=64 bit integer type
 
@@ -1892,8 +1892,8 @@ done:
 #if __DMC__
 	errno = 0;
 	n = strtoull((char *)stringbuffer.data,NULL,base);
-	if (errno == ERANGE)
-	    error("integer overflow");
+	/* if (errno == ERANGE)
+	    error("integer overflow"); */
 #else
 	// Not everybody implements strtoull()
 	char *p = (char *)stringbuffer.data;
@@ -1924,7 +1924,7 @@ done:
 		break;
 	    if (n * r + d < n)
 	    {
-		error ("integer overflow");
+		// error ("integer overflow");
 		break;
 	    }
 
@@ -1932,9 +1932,9 @@ done:
 	    p++;
 	}
 #endif
-	if (sizeof(n) > 8 &&
+	/* if (sizeof(n) > 8 &&
 	    n > 0xFFFFFFFFFFFFFFFFULL)	// if n needs more than 64 bits
-	    error("integer overflow");
+	    error("integer overflow"); */
     }
 
     // Parse trailing 'u', 'U', 'l' or 'L' in any combination
@@ -1948,14 +1948,14 @@ done:
 		goto L1;
 
 	    case 'l':
-		if (1 || !global.params.useDeprecated)
-		    error("'l' suffix is deprecated, use 'L' instead");
+		/* if (1 || !global.params.useDeprecated)
+		    error("'l' suffix is deprecated, use 'L' instead"); */
 	    case 'L':
 		f = FLAGS_long;
 	    L1:
 		p++;
-		if (flags & f)
-		    error("unrecognized token");
+		/* if (flags & f)
+		    error("unrecognized token"); */
 		flags = (FLAGS) (flags | f);
 		continue;
 	    default:
@@ -1984,7 +1984,7 @@ done:
 	    /* First that fits: int, long, long long
 	     */
 	    if (n & 0x8000000000000000LL)
-	    {	    error("signed integer overflow");
+	    {	    // error("signed integer overflow");
 		    result = TOKuns64v;
 	    }
 	    else if (n & 0xFFFFFFFF80000000LL)
@@ -2005,7 +2005,7 @@ done:
 
 	case FLAGS_decimal | FLAGS_long:
 	    if (n & 0x8000000000000000LL)
-	    {	    error("signed integer overflow");
+	    {	    // error("signed integer overflow");
 		    result = TOKuns64v;
 	    }
 	    else
@@ -2123,8 +2123,8 @@ Lnext:
 			hex = 0;	// exponent is always decimal
 			break;
 		    }
-		    if (hex)
-			error("binary-exponent-part required");
+		    /* if (hex)
+			error("binary-exponent-part required"); */
 		    goto done;
 
 		case 5:			// looking immediately to right of E
@@ -2132,8 +2132,8 @@ Lnext:
 		    if (c == '-' || c == '+')
 			break;
 		case 6:			// 1st exponent digit expected
-		    if (!isdigit(c))
-			error("exponent expected");
+		    /* if (!isdigit(c))
+			error("exponent expected"); */
 		    dblstate++;
 		    break;
 
@@ -2182,8 +2182,8 @@ done:
 	    break;
 
 	case 'l':
-	    if (!global.params.useDeprecated)
-		error("'l' suffix is deprecated, use 'L' instead");
+	    /* if (!global.params.useDeprecated)
+		error("'l' suffix is deprecated, use 'L' instead"); */
 	case 'L':
 	    result = TOKfloat80v;
 	    p++;
@@ -2191,8 +2191,8 @@ done:
     }
     if (*p == 'i' || *p == 'I')
     {
-	if (!global.params.useDeprecated && *p == 'I')
-	    error("'I' suffix is deprecated, use 'i' instead");
+	/* if (!global.params.useDeprecated && *p == 'I')
+	    error("'I' suffix is deprecated, use 'i' instead"); */
 	p++;
 	switch (result)
 	{
@@ -2321,8 +2321,8 @@ void Lexer::pragma()
 	}
     }
 
-Lerr:
-    error(loc, "#line integer [\"filespec\"]\\n expected");
+Lerr: 0;
+    // error(loc, "#line integer [\"filespec\"]\\n expected");
 }
 
 
@@ -2353,7 +2353,7 @@ unsigned Lexer::decodeUTF()
     p += idx - 1;
     if (msg)
     {
-	error("%s", msg);
+	// error("%s", msg);
     }
     return u;
 }
@@ -2639,6 +2639,7 @@ static Keyword keywords[] =
     // Added after 1.0
     {	"ref",		TOKref		},
     {	"macro",	TOKmacro	},
+    {	"__traits",	TOKtraits	},
 };
 
 int Token::isKeyword()

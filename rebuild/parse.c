@@ -44,12 +44,9 @@
 //	(type)(expression)
 #define CCASTSYNTAX	1
 
-// Support C array declarations, such as
+// Support postfix C array declarations, such as
 //	int a[3][4];
 #define CARRAYDECL	1
-
-// Support left-to-right array declarations
-#define LTORARRAYDECL	1
 
 
 Parser::Parser(Module *module, unsigned char *base, unsigned length, int doDocComment)
@@ -74,7 +71,7 @@ Array *Parser::parseModule()
 
 	nextToken();
 	if (token.value != TOKidentifier)
-	{   error("Identifier expected following module");
+	{   // error("Identifier expected following module");
 	    goto Lerr;
 	}
 	else
@@ -90,7 +87,7 @@ Array *Parser::parseModule()
 		a->push(id);
 		nextToken();
 		if (token.value != TOKidentifier)
-		{   error("Identifier expected following package");
+		{   // error("Identifier expected following package");
 		    goto Lerr;
 		}
 		id = token.ident;
@@ -98,8 +95,8 @@ Array *Parser::parseModule()
 
 	    md = new ModuleDeclaration(a, id);
 
-	    if (token.value != TOKsemicolon)
-		error("';' expected following module declaration instead of %s", token.toChars());
+	    /* if (token.value != TOKsemicolon)
+		error("';' expected following module declaration instead of %s", token.toChars()); */
 	    nextToken();
 	    addComment(mod, comment);
 	}
@@ -107,7 +104,7 @@ Array *Parser::parseModule()
 
     decldefs = parseDeclDefs(0);
     if (token.value != TOKeof)
-    {	error("unrecognized declaration");
+    {	// error("unrecognized declaration");
 	goto Lerr;
     }
     return decldefs;
@@ -126,6 +123,7 @@ Array *Parser::parseDeclDefs(int once)
     Array *aelse;
     enum PROT prot;
     unsigned stc;
+    unsigned storageClass;
     Condition *condition;
     unsigned char *comment;
 
@@ -134,6 +132,7 @@ Array *Parser::parseDeclDefs(int once)
     do
     {
 	comment = token.blockComment;
+	storageClass = 0;
 	switch (token.value)
 	{
 	    case TOKenum:
@@ -191,18 +190,24 @@ Array *Parser::parseDeclDefs(int once)
 		break;
 
 	    case TOKinvariant:
-#if 1
-		s = parseInvariant();
-#else
-		if (peek(&token)->value == TOKlcurly)
-		    s = parseInvariant();
+	    {	Token *t;
+		t = peek(&token);
+		if (t->value == TOKlparen)
+		{
+		    if (peek(t)->value == TOKrparen)
+			// invariant() forms start of class invariant
+			s = parseInvariant();
+		    else
+			// invariant(type)
+			goto Ldeclaration;
+		}
 		else
 		{
 		    stc = STCinvariant;
 		    goto Lstc;
 		}
-#endif
 		break;
+	    }
 
 	    case TOKunittest:
 		s = parseUnitTest();
@@ -249,7 +254,12 @@ Array *Parser::parseDeclDefs(int once)
 		}
 		break;
 
-	    case TOKconst:	  stc = STCconst;	 goto Lstc;
+	    case TOKconst:
+		if (peek(&token)->value == TOKlparen)
+		    goto Ldeclaration;
+		stc = STCconst;
+		goto Lstc;
+
 	    case TOKfinal:	  stc = STCfinal;	 goto Lstc;
 	    case TOKauto:	  stc = STCauto;	 goto Lstc;
 	    case TOKscope:	  stc = STCscope;	 goto Lstc;
@@ -259,19 +269,36 @@ Array *Parser::parseDeclDefs(int once)
 	    case TOKdeprecated:   stc = STCdeprecated;	 goto Lstc;
 
 	    Lstc:
+		/* if (storageClass & stc)
+		    error("redundant storage class %s", Token::toChars(token.value)); */
+		{
+		unsigned u = storageClass | stc;
+		u &= STCconst | STCinvariant | STCfinal;
+		/* if (u & (u - 1))
+		    error("conflicting storage class %s", Token::toChars(token.value)); */
+		}
 		nextToken();
 	    Lstc2:
+		storageClass |= stc;
 		switch (token.value)
 		{
-		    case TOKconst:	  stc |= STCconst;	 goto Lstc;
-		    case TOKfinal:	  stc |= STCfinal;	 goto Lstc;
-		    case TOKauto:	  stc |= STCauto;	 goto Lstc;
-		    case TOKscope:	  stc |= STCscope;	 goto Lstc;
-		    case TOKoverride:	  stc |= STCoverride;	 goto Lstc;
-		    case TOKabstract:	  stc |= STCabstract;	 goto Lstc;
-		    case TOKsynchronized: stc |= STCsynchronized; goto Lstc;
-		    case TOKdeprecated:   stc |= STCdeprecated;	 goto Lstc;
-		    //case TOKinvariant:    stc |= STCinvariant;   goto Lstc;
+		    case TOKconst:
+		    case TOKinvariant:
+			// If followed by a (, it is not a storage class
+			if (peek(&token)->value == TOKlparen)
+			    break;
+			if (token.value == TOKconst)
+			    stc = STCconst;
+			else
+			    stc = STCinvariant;
+			goto Lstc;
+		    case TOKfinal:	  stc = STCfinal;	 goto Lstc;
+		    case TOKauto:	  stc = STCauto;	 goto Lstc;
+		    case TOKscope:	  stc = STCscope;	 goto Lstc;
+		    case TOKoverride:	  stc = STCoverride;	 goto Lstc;
+		    case TOKabstract:	  stc = STCabstract;	 goto Lstc;
+		    case TOKsynchronized: stc = STCsynchronized; goto Lstc;
+		    case TOKdeprecated:   stc = STCdeprecated;	 goto Lstc;
 		    default:
 			break;
 		}
@@ -289,7 +316,7 @@ Array *Parser::parseDeclDefs(int once)
 			nextToken();
 			Initializer *init = parseInitializer();
 			VarDeclaration *v = new VarDeclaration(loc, NULL, ident, init);
-			v->storage_class = stc;
+			v->storage_class = storageClass;
 			s = v;
 			if (token.value == TOKsemicolon)
 			{
@@ -305,17 +332,17 @@ Array *Parser::parseDeclDefs(int once)
 				addComment(s, comment);
 				continue;
 			    }
-			    else
-				error("Identifier expected following comma");
+			    /* else
+				error("Identifier expected following comma"); * */
 			}
-			else
-			    error("semicolon expected following auto declaration, not '%s'", token.toChars());
+			/* else
+			    error("semicolon expected following auto declaration, not '%s'", token.toChars()); */
 			break;
 		    }
 		}
 		else
 		{   a = parseBlock();
-		    s = new StorageClassDeclaration(stc, a);
+		    s = new StorageClassDeclaration(storageClass, a);
 		}
 		break;
 
@@ -355,7 +382,7 @@ Array *Parser::parseDeclDefs(int once)
 		    if (token.value == TOKint32v)
 			n = (unsigned)token.uns64value;
 		    else
-		    {	error("integer expected, not %s", token.toChars());
+		    {	//  error("integer expected, not %s", token.toChars());
 			n = 1;
 		    }
 		    nextToken();
@@ -376,7 +403,7 @@ Array *Parser::parseDeclDefs(int once)
 		nextToken();
 		check(TOKlparen);
 		if (token.value != TOKidentifier)
-		{   error("pragma(identifier expected");
+		{   // error("pragma(identifier expected");
 		    goto Lerror;
 		}
 		ident = token.ident;
@@ -404,12 +431,12 @@ Array *Parser::parseDeclDefs(int once)
 		    else if (token.value == TOKint32v)
 			s = new DebugSymbol(loc, (unsigned)token.uns64value);
 		    else
-		    {	error("identifier or integer expected, not %s", token.toChars());
+		    {	// error("identifier or integer expected, not %s", token.toChars());
 			s = NULL;
 		    }
 		    nextToken();
-		    if (token.value != TOKsemicolon)
-			error("semicolon expected");
+		    /* if (token.value != TOKsemicolon)
+			error("semicolon expected"); */
 		    nextToken();
 		    break;
 		}
@@ -427,12 +454,12 @@ Array *Parser::parseDeclDefs(int once)
 		    else if (token.value == TOKint32v)
 			s = new VersionSymbol(loc, (unsigned)token.uns64value);
 		    else
-		    {	error("identifier or integer expected, not %s", token.toChars());
+		    {	// error("identifier or integer expected, not %s", token.toChars());
 			s = NULL;
 		    }
 		    nextToken();
-		    if (token.value != TOKsemicolon)
-			error("semicolon expected");
+		    /* if (token.value != TOKsemicolon)
+			error("semicolon expected"); */
 		    nextToken();
 		    break;
 		}
@@ -454,7 +481,7 @@ Array *Parser::parseDeclDefs(int once)
 		continue;
 
 	    default:
-		error("Declaration expected, not '%s'",token.toChars());
+		//error("Declaration expected, not '%s'",token.toChars());
 	    Lerror:
 		while (token.value != TOKsemicolon && token.value != TOKeof)
 		    nextToken();
@@ -484,7 +511,7 @@ Array *Parser::parseBlock()
     switch (token.value)
     {
 	case TOKsemicolon:
-	    error("declaration expected following attribute, not ';'");
+	    // error("declaration expected following attribute, not ';'");
 	    nextToken();
 	    break;
 
@@ -493,7 +520,7 @@ Array *Parser::parseBlock()
 	    a = parseDeclDefs(0);
 	    if (token.value != TOKrcurly)
 	    {   /* { */
-		error("matching '}' expected, not %s", token.toChars());
+		// error("matching '}' expected, not %s", token.toChars());
 	    }
 	    else
 		nextToken();
@@ -578,7 +605,7 @@ enum LINK Parser::parseLinkage()
 	}
 	else
 	{
-	    error("valid linkage identifiers are D, C, C++, Pascal, Windows, System");
+	    // error("valid linkage identifiers are D, C, C++, Pascal, Windows, System");
 	    link = LINKd;
 	}
     }
@@ -608,8 +635,8 @@ Condition *Parser::parseDebugCondition()
 	    id = token.ident;
 	else if (token.value == TOKint32v)
 	    level = (unsigned)token.uns64value;
-	else
-	    error("identifier or integer expected, not %s", token.toChars());
+	/* else
+	    error("identifier or integer expected, not %s", token.toChars()); */
 	nextToken();
 	check(TOKrparen);
 	c = new DebugCondition(mod, level, id);
@@ -637,14 +664,14 @@ Condition *Parser::parseVersionCondition()
 	    id = token.ident;
 	else if (token.value == TOKint32v)
 	    level = (unsigned)token.uns64value;
-	else
-	    error("identifier or integer expected, not %s", token.toChars());
+	/* else
+	    error("identifier or integer expected, not %s", token.toChars()); */
 	nextToken();
 	check(TOKrparen);
 
     }
-    else
-       error("(condition) expected following version");
+    /* else
+       error("(condition) expected following version"); */
     c = new VersionCondition(mod, level, id);
     return c;
 
@@ -672,7 +699,7 @@ Condition *Parser::parseStaticIfCondition()
 	check(TOKrparen);
     }
     else
-    {   error("(expression) expected following static if");
+    {   // error("(expression) expected following static if");
 	exp = NULL;
     }
     condition = new StaticIfCondition(loc, exp);
@@ -774,9 +801,10 @@ InvariantDeclaration *Parser::parseInvariant()
     Loc loc = this->loc;
 
     nextToken();
-    if (token.value == TOKlparen)	// optional ()
-    {
-	nextToken();
+
+    // () are optional
+    if (token.value == TOKlparen)
+    {	nextToken();
 	check(TOKrparen);
     }
 
@@ -841,8 +869,8 @@ DeleteDeclaration *Parser::parseDelete()
 
     nextToken();
     arguments = parseParameters(&varargs);
-    if (varargs)
-	error("... not allowed in delete function parameter list");
+    /* if (varargs)
+	error("... not allowed in delete function parameter list"); */
     f = new DeleteDeclaration(loc, 0, arguments);
     parseContracts(f);
     return f;
@@ -865,78 +893,105 @@ Arguments *Parser::parseParameters(int *pvarargs)
 	Type *at;
 	Argument *a;
 	unsigned storageClass;
+	unsigned stc;
 	Expression *ae;
 
 	ai = NULL;
-	storageClass = STCin;		// parameter is "in" by default
-	switch (token.value)
+	storageClass = 0;		// parameter is "in" by default
+	for (;1; nextToken())
 	{
-	    case TOKrparen:
-		break;
+	    switch (token.value)
+	    {
+		case TOKrparen:
+		    break;
 
-	    case TOKdotdotdot:
-		varargs = 1;
-		nextToken();
-		break;
-
-	    case TOKin:
-		storageClass = STCin;
-		nextToken();
-		goto L1;
-
-	    case TOKout:
-		storageClass = STCout;
-		nextToken();
-		goto L1;
-
-	    case TOKinout:
-	    case TOKref:
-		storageClass = STCref;
-		nextToken();
-		goto L1;
-
-	    case TOKlazy:
-		storageClass = STClazy;
-		nextToken();
-		goto L1;
-
-	    default:
-	    L1:
-		tb = parseBasicType();
-		at = parseDeclarator(tb, &ai);
-		ae = NULL;
-		if (token.value == TOKassign)	// = defaultArg
-		{   nextToken();
-		    ae = parseAssignExp();
-		    hasdefault = 1;
-		}
-		else
-		{   if (hasdefault)
-			error("default argument expected for %s",
-				ai ? ai->toChars() : at->toChars());
-		}
-		if (token.value == TOKdotdotdot)
-		{   /* This is:
-		     *	at ai ...
-		     */
-
-		    if (storageClass & (STCout | STCref))
-			error("variadic argument cannot be out or ref");
-		    varargs = 2;
-		    a = new Argument(storageClass, at, ai, ae);
-		    arguments->push(a);
+		case TOKdotdotdot:
+		    varargs = 1;
 		    nextToken();
 		    break;
-		}
-		a = new Argument(storageClass, at, ai, ae);
-		arguments->push(a);
-		if (token.value == TOKcomma)
-		{   nextToken();
+
+		case TOKconst:
+		    if (peek(&token)->value == TOKlparen)
+			goto Ldefault;
+		    stc = STCconst;
+		    goto L2;
+
+		case TOKinvariant:
+		    if (peek(&token)->value == TOKlparen)
+			goto Ldefault;
+		    stc = STCinvariant;
+		    goto L2;
+
+		case TOKin:	   stc = STCin;		goto L2;
+		case TOKout:	   stc = STCout;	goto L2;
+		case TOKinout:
+		case TOKref:	   stc = STCref;	goto L2;
+		case TOKlazy:	   stc = STClazy;	goto L2;
+		case TOKscope:	   stc = STCscope;	goto L2;
+		case TOKfinal:	   stc = STCfinal;	goto L2;
+		case TOKstatic:	   stc = STCstatic;	goto L2;
+		L2:
+		    /* if (storageClass & stc ||
+			(storageClass & STCin && stc & (STCfinal | STCconst | STCscope)) ||
+			(stc & STCin && storageClass & (STCfinal | STCconst | STCscope))
+		       )
+			error("redundant storage class %s", Token::toChars(token.value)); */
+		    storageClass |= stc;
+		    {
+		    unsigned u = storageClass & (STCconst | STCinvariant);
+		    /* if (u & (u - 1))
+			error("conflicting storage class %s", Token::toChars(token.value)); */
+		    }
 		    continue;
-		}
-		break;
+
+		default:
+		Ldefault:
+		    stc = storageClass & (STCin | STCout | STCref | STClazy);
+		    /* if (stc & (stc - 1))	// if stc is not a power of 2
+			error("incompatible parameter storage classes"); */
+		    /* if ((storageClass & (STCfinal | STCout)) == (STCfinal | STCout))
+			error("out cannot be final"); */
+		    /* if ((storageClass & STCscope) &&
+			(storageClass & (STCref | STCout)))
+			error("scope cannot be ref or out"); */
+		    at = parseType(&ai);
+		    ae = NULL;
+		    if (token.value == TOKassign)	// = defaultArg
+		    {   nextToken();
+			ae = parseAssignExp();
+			hasdefault = 1;
+		    }
+		    else
+		    {   /* if (hasdefault)
+			    error("default argument expected for %s",
+				    ai ? ai->toChars() : at->toChars()); */
+		    }
+		    if (token.value == TOKdotdotdot)
+		    {   /* This is:
+			 *	at ai ...
+			 */
+
+			/* if (storageClass & (STCout | STCref))
+			    error("variadic argument cannot be out or ref"); */
+			varargs = 2;
+			a = new Argument(storageClass, at, ai, ae);
+			arguments->push(a);
+			nextToken();
+			break;
+		    }
+		    a = new Argument(storageClass, at, ai, ae);
+		    arguments->push(a);
+		    if (token.value == TOKcomma)
+		    {   nextToken();
+			goto L1;
+		    }
+		    break;
+	    }
+	    break;
 	}
 	break;
+
+    L1:	;
     }
     check(TOKrparen);
     *pvarargs = varargs;
@@ -1008,14 +1063,14 @@ EnumDeclaration *Parser::parseEnum()
 		comment = token.blockComment;
 	    }
 	    else
-	    {	error("enum member expected");
+	    {	// error("enum member expected");
 		nextToken();
 	    }
 	}
 	nextToken();
     }
-    else
-	error("enum declaration is invalid");
+    /* else
+	error("enum declaration is invalid"); */
 
     return e;
 }
@@ -1050,8 +1105,8 @@ Dsymbol *Parser::parseAggregate()
     {	case TOKclass:
 	case TOKinterface:
 	{
-	    if (!id)
-		error("anonymous classes not allowed");
+	    /* if (!id)
+		error("anonymous classes not allowed"); */
 
 	    // Collect base class(es)
 	    BaseClasses *baseclasses = NULL;
@@ -1060,8 +1115,8 @@ Dsymbol *Parser::parseAggregate()
 		nextToken();
 		baseclasses = parseBaseClasses();
 
-		if (token.value != TOKlcurly)
-		    error("members expected");
+		/* if (token.value != TOKlcurly)
+		    error("members expected"); */
 	    }
 
 	    if (tok == TOKclass)
@@ -1097,8 +1152,8 @@ Dsymbol *Parser::parseAggregate()
 	//printf("aggregate definition\n");
 	nextToken();
 	Array *decl = parseDeclDefs(0);
-	if (token.value != TOKrcurly)
-	    error("} expected following member declarations in aggregate");
+	/* if (token.value != TOKrcurly)
+	    error("} expected following member declarations in aggregate"); */
 	nextToken();
 	if (anon)
 	{
@@ -1111,7 +1166,7 @@ Dsymbol *Parser::parseAggregate()
     }
     else
     {
-	error("{ } expected following aggregate declaration");
+	// error("{ } expected following aggregate declaration");
 	a = new StructDeclaration(loc, NULL);
     }
 
@@ -1156,7 +1211,7 @@ BaseClasses *Parser::parseBaseClasses()
 		protection = PROTpublic;
 		continue;
 	    default:
-		error("base classes expected instead of %s", token.toChars());
+		// error("base classes expected instead of %s", token.toChars());
 		return NULL;
 	}
 	BaseClass *b = new BaseClass(parseBasicType(), protection);
@@ -1182,7 +1237,7 @@ TemplateDeclaration *Parser::parseTemplateDeclaration()
 
     nextToken();
     if (token.value != TOKidentifier)
-    {   error("TemplateIdentifier expected following template");
+    {   // error("TemplateIdentifier expected following template");
 	goto Lerr;
     }
     id = token.ident;
@@ -1192,7 +1247,7 @@ TemplateDeclaration *Parser::parseTemplateDeclaration()
 	goto Lerr;
 
     if (token.value != TOKlcurly)
-    {	error("members of template declaration expected");
+    {	// error("members of template declaration expected");
 	goto Lerr;
     }
     else
@@ -1200,7 +1255,7 @@ TemplateDeclaration *Parser::parseTemplateDeclaration()
 	nextToken();
 	decldefs = parseDeclDefs(0);
 	if (token.value != TOKrcurly)
-	{   error("template member expected");
+	{   // error("template member expected");
 	    goto Lerr;
 	}
 	nextToken();
@@ -1222,7 +1277,7 @@ TemplateParameters *Parser::parseTemplateParameterList()
     TemplateParameters *tpl;
 
     if (token.value != TOKlparen)
-    {   error("parenthesized TemplateParameterList expected following TemplateIdentifier");
+    {   // error("parenthesized TemplateParameterList expected following TemplateIdentifier");
 	goto Lerr;
     }
     tpl = new TemplateParameters();
@@ -1250,7 +1305,7 @@ TemplateParameters *Parser::parseTemplateParameterList()
 	    {	// AliasParameter
 		nextToken();
 		if (token.value != TOKidentifier)
-		{   error("Identifier expected for template parameter");
+		{   // error("Identifier expected for template parameter");
 		    goto Lerr;
 		}
 		tp_ident = token.ident;
@@ -1258,14 +1313,12 @@ TemplateParameters *Parser::parseTemplateParameterList()
 		if (token.value == TOKcolon)	// : Type
 		{
 		    nextToken();
-		    tp_spectype = parseBasicType();
-		    tp_spectype = parseDeclarator(tp_spectype, NULL);
+		    tp_spectype = parseType();
 		}
 		if (token.value == TOKassign)	// = Type
 		{
 		    nextToken();
-		    tp_defaulttype = parseBasicType();
-		    tp_defaulttype = parseDeclarator(tp_defaulttype, NULL);
+		    tp_defaulttype = parseType();
 		}
 		tp = new TemplateAliasParameter(loc, tp_ident, tp_spectype, tp_defaulttype);
 	    }
@@ -1273,7 +1326,7 @@ TemplateParameters *Parser::parseTemplateParameterList()
 		     t->value == TOKcomma || t->value == TOKrparen)
 	    {	// TypeParameter
 		if (token.value != TOKidentifier)
-		{   error("Identifier expected for template parameter");
+		{   // error("Identifier expected for template parameter");
 		    goto Lerr;
 		}
 		tp_ident = token.ident;
@@ -1281,21 +1334,19 @@ TemplateParameters *Parser::parseTemplateParameterList()
 		if (token.value == TOKcolon)	// : Type
 		{
 		    nextToken();
-		    tp_spectype = parseBasicType();
-		    tp_spectype = parseDeclarator(tp_spectype, NULL);
+		    tp_spectype = parseType();
 		}
 		if (token.value == TOKassign)	// = Type
 		{
 		    nextToken();
-		    tp_defaulttype = parseBasicType();
-		    tp_defaulttype = parseDeclarator(tp_defaulttype, NULL);
+		    tp_defaulttype = parseType();
 		}
 		tp = new TemplateTypeParameter(loc, tp_ident, tp_spectype, tp_defaulttype);
 	    }
 	    else if (token.value == TOKidentifier && t->value == TOKdotdotdot)
 	    {	// ident...
-		if (isvariadic)
-		    error("variadic template parameter must be last");
+		/* if (isvariadic)
+		    error("variadic template parameter must be last"); */
 		isvariadic = 1;
 		tp_ident = token.ident;
 		nextToken();
@@ -1304,11 +1355,10 @@ TemplateParameters *Parser::parseTemplateParameterList()
 	    }
 	    else
 	    {	// ValueParameter
-		tp_valtype = parseBasicType();
-		tp_valtype = parseDeclarator(tp_valtype, &tp_ident);
+		tp_valtype = parseType(&tp_ident);
 		if (!tp_ident)
 		{
-		    error("no identifier for template value parameter");
+		    // error("no identifier for template value parameter");
 		    goto Lerr;
 		}
 		if (token.value == TOKcolon)	// : CondExpression
@@ -1374,7 +1424,7 @@ Dsymbol *Parser::parseMixin()
 	}
 	if (token.value != TOKidentifier)
 	{
-	    error("identifier expected, not %s", token.toChars());
+	    // error("identifier expected, not %s", token.toChars());
 	    goto Lerr;
 	}
 	id = token.ident;
@@ -1404,7 +1454,7 @@ Dsymbol *Parser::parseMixin()
 
 	nextToken();
 	if (token.value != TOKidentifier)
-	{   error("identifier expected following '.' instead of '%s'", token.toChars());
+	{   // error("identifier expected following '.' instead of '%s'", token.toChars());
 	    break;
 	}
 	id = token.ident;
@@ -1421,8 +1471,8 @@ Dsymbol *Parser::parseMixin()
 	id = NULL;
 
     tm = new TemplateMixin(loc, id, tqual, idents, tiargs);
-    if (token.value != TOKsemicolon)
-	error("';' expected after mixin");
+    /* if (token.value != TOKsemicolon)
+	error("';' expected after mixin"); */
     nextToken();
 
     return tm;
@@ -1442,11 +1492,16 @@ Lerr:
 Objects *Parser::parseTemplateArgumentList()
 {
     //printf("Parser::parseTemplateArgumentList()\n");
-    Objects *tiargs = new Objects();
     if (token.value != TOKlparen)
-    {   error("!(TemplateArgumentList) expected following TemplateIdentifier");
-	return tiargs;
+    {   // error("!(TemplateArgumentList) expected following TemplateIdentifier");
+	return new Objects();
     }
+    return parseTemplateArgumentList2();
+}
+
+Objects *Parser::parseTemplateArgumentList2()
+{
+    Objects *tiargs = new Objects();
     nextToken();
 
     // Get TemplateArgumentList
@@ -1460,8 +1515,7 @@ Objects *Parser::parseTemplateArgumentList()
 		Type *ta;
 
 		// Get TemplateArgument
-		ta = parseBasicType();
-		ta = parseDeclarator(ta, NULL);
+		ta = parseType();
 		tiargs->push(ta);
 	    }
 	    else
@@ -1493,7 +1547,7 @@ Import *Parser::parseImport(Array *decldefs, int isstatic)
      L1:
 	nextToken();
 	if (token.value != TOKidentifier)
-	{   error("Identifier expected following import");
+	{   // error("Identifier expected following import");
 	    break;
 	}
 
@@ -1513,7 +1567,7 @@ Import *Parser::parseImport(Array *decldefs, int isstatic)
 	    a->push(id);
 	    nextToken();
 	    if (token.value != TOKidentifier)
-	    {   error("Identifier expected following package");
+	    {   // error("Identifier expected following package");
 		break;
 	    }
 	    id = token.ident;
@@ -1535,7 +1589,7 @@ Import *Parser::parseImport(Array *decldefs, int isstatic)
 
 		nextToken();
 		if (token.value != TOKidentifier)
-		{   error("Identifier expected following :");
+		{   // error("Identifier expected following :");
 		    break;
 		}
 		alias = token.ident;
@@ -1544,7 +1598,7 @@ Import *Parser::parseImport(Array *decldefs, int isstatic)
 		{
 		    nextToken();
 		    if (token.value != TOKidentifier)
-		    {   error("Identifier expected following %s=", alias->toChars());
+		    {   // error("Identifier expected following %s=", alias->toChars());
 			break;
 		    }
 		    name = token.ident;
@@ -1566,11 +1620,38 @@ Import *Parser::parseImport(Array *decldefs, int isstatic)
  	nextToken();
     else
     {
-	error("';' expected");
+	// error("';' expected");
 	nextToken();
     }
 
     return NULL;
+}
+
+Type *Parser::parseType(Identifier **pident, TemplateParameters **tpl)
+{   Type *t;
+
+    if (token.value == TOKconst && peek(&token)->value != TOKlparen)
+    {
+	nextToken();
+	/* const type
+	 */
+	t = parseType(pident, tpl);
+	t = t->makeConst();
+	return t;
+    }
+    else if (token.value == TOKinvariant && peek(&token)->value != TOKlparen)
+    {
+	nextToken();
+	/* invariant type
+	 */
+	t = parseType(pident, tpl);
+	t = t->makeInvariant();
+	return t;
+    }
+    else
+	t = parseBasicType();
+    t = parseDeclarator(t, pident, tpl);
+    return t;
 }
 
 Type *Parser::parseBasicType()
@@ -1603,7 +1684,7 @@ Type *Parser::parseBasicType()
 	    while (token.value == TOKdot)
 	    {	nextToken();
 		if (token.value != TOKidentifier)
-		{   error("identifier expected following '.' instead of '%s'", token.toChars());
+		{   // error("identifier expected following '.' instead of '%s'", token.toChars());
 		    break;
 		}
 		id = token.ident;
@@ -1636,8 +1717,26 @@ Type *Parser::parseBasicType()
 	    goto Lident2;
 	}
 
+	case TOKconst:
+	    // const(type)
+	    nextToken();
+	    check(TOKlparen);
+	    t = parseType();
+	    check(TOKrparen);
+	    t = t->makeConst();
+	    break;
+
+	case TOKinvariant:
+	    // invariant(type)
+	    nextToken();
+	    check(TOKlparen);
+	    t = parseType();
+	    check(TOKrparen);
+	    t = t->makeInvariant();
+	    break;
+
 	default:
-	    error("basic type expected, not %s", token.toChars());
+	    // error("basic type expected, not %s", token.toChars());
 	    t = Type::tint32;
 	    break;
     }
@@ -1660,7 +1759,6 @@ Type *Parser::parseBasicType2(Type *t)
 		continue;
 
 	    case TOKlbracket:
-#if LTORARRAYDECL
 		// Handle []. Make sure things like
 		//     int[3][1] a;
 		// is (array[1] of array[3] of int)
@@ -1675,8 +1773,7 @@ Type *Parser::parseBasicType2(Type *t)
 		    Type *index;
 
 		    //printf("it's an associative array\n");
-		    index = parseBasicType();
-		    index = parseDeclarator(index, NULL);	// [ type ]
+		    index = parseType();		// [ type ]
 		    t = new TypeAArray(t, index);
 		    check(TOKrbracket);
 		}
@@ -1698,44 +1795,6 @@ Type *Parser::parseBasicType2(Type *t)
 		    check(TOKrbracket);
 		}
 		continue;
-#else
-		// Handle []. Make sure things like
-		//     int[3][1] a;
-		// is (array[3] of array[1] of int)
-		ts = t;
-		while (token.value == TOKlbracket)
-		{
-		    nextToken();
-		    if (token.value == TOKrbracket)
-		    {
-			ta = new TypeDArray(t);			// []
-			nextToken();
-		    }
-		    else if (isDeclaration(&token, 0, TOKrbracket, NULL))
-		    {   // It's an associative array declaration
-			Type *index;
-
-			//printf("it's an associative array\n");
-			index = parseBasicType();
-			index = parseDeclarator(index, NULL);	// [ type ]
-			check(TOKrbracket);
-			ta = new TypeAArray(t, index);
-		    }
-		    else
-		    {
-			//printf("it's [expression]\n");
-			Expression *e = parseExpression();	// [ expression ]
-			ta = new TypeSArray(t,e);
-			check(TOKrbracket);
-		    }
-		    Type **pt;
-		    for (pt = &ts; *pt != t; pt = &(*pt)->next)
-			;
-		    *pt = ta;
-		}
-		t = ts;
-		continue;
-#endif
 
 	    case TOKdelegate:
 	    case TOKfunction:
@@ -1767,7 +1826,6 @@ Type *Parser::parseBasicType2(Type *t)
 
 Type *Parser::parseDeclarator(Type *t, Identifier **pident, TemplateParameters **tpl)
 {   Type *ts;
-    Type *ta;
 
     //printf("parseDeclarator(tpl = %p)\n", tpl);
     t = parseBasicType2(t);
@@ -1778,8 +1836,8 @@ Type *Parser::parseDeclarator(Type *t, Identifier **pident, TemplateParameters *
 	case TOKidentifier:
 	    if (pident)
 		*pident = token.ident;
-	    else
-		error("unexpected identifer '%s' in declarator", token.ident->toChars());
+	    /* else
+		error("unexpected identifer '%s' in declarator", token.ident->toChars()); */
 	    ts = t;
 	    nextToken();
 	    break;
@@ -1802,6 +1860,7 @@ Type *Parser::parseDeclarator(Type *t, Identifier **pident, TemplateParameters *
 #if CARRAYDECL
 	    case TOKlbracket:
 	    {	// This is the old C-style post [] syntax.
+		TypeNext *ta;
 		nextToken();
 		if (token.value == TOKrbracket)
 		{
@@ -1813,8 +1872,7 @@ Type *Parser::parseDeclarator(Type *t, Identifier **pident, TemplateParameters *
 		    Type *index;
 
 		    //printf("it's an associative array\n");
-		    index = parseBasicType();
-		    index = parseDeclarator(index, NULL);	// [ type ]
+		    index = parseType();		// [ type ]
 		    check(TOKrbracket);
 		    ta = new TypeAArray(t, index);
 		}
@@ -1825,8 +1883,8 @@ Type *Parser::parseDeclarator(Type *t, Identifier **pident, TemplateParameters *
 		    ta = new TypeSArray(t, e);
 		    check(TOKrbracket);
 		}
-		Type **pt;
-		for (pt = &ts; *pt != t; pt = &(*pt)->next)
+		TypeNext **pt;
+		for (pt = (TypeNext **)&ts; *pt != t; pt = (TypeNext **)&(*pt)->next)
 		    ;
 		*pt = ta;
 		continue;
@@ -1835,7 +1893,6 @@ Type *Parser::parseDeclarator(Type *t, Identifier **pident, TemplateParameters *
 	    case TOKlparen:
 	    {	Arguments *arguments;
 		int varargs;
-		Type **pt;
 
 		if (tpl)
 		{
@@ -1852,8 +1909,9 @@ Type *Parser::parseDeclarator(Type *t, Identifier **pident, TemplateParameters *
 		}
 
 		arguments = parseParameters(&varargs);
-		ta = new TypeFunction(arguments, t, varargs, linkage);
-		for (pt = &ts; *pt != t; pt = &(*pt)->next)
+		TypeNext *ta = new TypeFunction(arguments, t, varargs, linkage);
+		TypeNext **pt;
+		for (pt = (TypeNext **)&ts; *pt != t; pt = (TypeNext **)&(*pt)->next)
 		    ;
 		*pt = ta;
 		break;
@@ -1901,7 +1959,18 @@ Array *Parser::parseDeclarations()
     {
 	switch (token.value)
 	{
-	    case TOKconst:	stc = STCconst;		 goto L1;
+	    case TOKconst:
+		if (peek(&token)->value == TOKlparen)
+		    break;
+		stc = STCconst;
+		goto L1;
+
+	    case TOKinvariant:
+		if (peek(&token)->value == TOKlparen)
+		    break;
+		stc = STCinvariant;
+		goto L1;
+
 	    case TOKstatic:	stc = STCstatic;	 goto L1;
 	    case TOKfinal:	stc = STCfinal;		 goto L1;
 	    case TOKauto:	stc = STCauto;		 goto L1;
@@ -1911,8 +1980,8 @@ Array *Parser::parseDeclarations()
 	    case TOKsynchronized: stc = STCsynchronized; goto L1;
 	    case TOKdeprecated: stc = STCdeprecated;	 goto L1;
 	    L1:
-		if (storage_class & stc)
-		    error("redundant storage class '%s'", token.toChars());
+		/* if (storage_class & stc)
+		    error("redundant storage class '%s'", token.toChars()); */
 		storage_class = (STC) (storage_class | stc);
 		nextToken();
 		continue;
@@ -1958,13 +2027,13 @@ Array *Parser::parseDeclarations()
 	    nextToken();
 	    if (!(token.value == TOKidentifier && peek(&token)->value == TOKassign))
 	    {
-		error("Identifier expected following comma");
+		// error("Identifier expected following comma");
 	    }
 	    else
 		continue;
 	}
-	else
-	    error("semicolon expected following auto declaration, not '%s'", token.toChars());
+	/* else
+	    error("semicolon expected following auto declaration, not '%s'", token.toChars()); */
 	return a;
     }
 
@@ -1992,11 +2061,11 @@ Array *Parser::parseDeclarations()
 	assert(t);
 	if (!tfirst)
 	    tfirst = t;
-	else if (t != tfirst)
+	/* else if (t != tfirst)
 	    error("multiple declarations must have the same type, not %s and %s",
-		tfirst->toChars(), t->toChars());
-	if (!ident)
-	    error("no identifier for declarator %s", t->toChars());
+		tfirst->toChars(), t->toChars()); */
+	/* if (!ident)
+	    error("no identifier for declarator %s", t->toChars()); */
 
 	if (tok == TOKtypedef || tok == TOKalias)
 	{   Declaration *v;
@@ -2011,8 +2080,8 @@ Array *Parser::parseDeclarations()
 	    if (tok == TOKtypedef)
 		v = new TypedefDeclaration(loc, ident, t, init);
 	    else
-	    {	if (init)
-		    error("alias cannot have initializer");
+	    {	/* if (init)
+		    error("alias cannot have initializer"); */
 		v = new AliasDeclaration(loc, ident, t);
 	    }
 	    v->storage_class = storage_class;
@@ -2037,7 +2106,7 @@ Array *Parser::parseDeclarations()
 		    continue;
 
 		default:
-		    error("semicolon expected to close %s declaration", Token::toChars(tok));
+		    // error("semicolon expected to close %s declaration", Token::toChars(tok));
 		    break;
 	    }
 	}
@@ -2105,7 +2174,7 @@ Array *Parser::parseDeclarations()
 		    continue;
 
 		default:
-		    error("semicolon expected, not '%s'", token.toChars());
+		    // error("semicolon expected, not '%s'", token.toChars());
 		    break;
 	    }
 	}
@@ -2130,8 +2199,8 @@ L1:
     switch (token.value)
     {
 	case TOKlcurly:
-	    if (f->frequire || f->fensure)
-		error("missing body { ... } after in or out");
+	    /* if (f->frequire || f->fensure)
+		error("missing body { ... } after in or out"); */
 	    f->fbody = parseStatement(PSsemi);
 	    f->endloc = endloc;
 	    break;
@@ -2143,8 +2212,8 @@ L1:
 	    break;
 
 	case TOKsemicolon:
-	    if (f->frequire || f->fensure)
-		error("missing body { ... } after in or out");
+	    /* if (f->frequire || f->fensure)
+		error("missing body { ... } after in or out"); */
 	    nextToken();
 	    break;
 
@@ -2177,8 +2246,8 @@ L1:
 
 	case TOKin:
 	    nextToken();
-	    if (f->frequire)
-		error("redundant 'in' statement");
+	    /* if (f->frequire)
+		error("redundant 'in' statement"); */
 	    f->frequire = parseStatement(PScurly | PSscope);
 	    goto L1;
 
@@ -2188,19 +2257,19 @@ L1:
 	    if (token.value != TOKlcurly)
 	    {
 		check(TOKlparen);
-		if (token.value != TOKidentifier)	   
-		    error("(identifier) following 'out' expected, not %s", token.toChars());
+		/* if (token.value != TOKidentifier)	   
+		    error("(identifier) following 'out' expected, not %s", token.toChars()); */
 		f->outId = token.ident;
 		nextToken();
 		check(TOKrparen);
 	    }
-	    if (f->fensure)
-		error("redundant 'out' statement");
+	    /* if (f->fensure)
+		error("redundant 'out' statement"); */
 	    f->fensure = parseStatement(PScurly | PSscope);
 	    goto L1;
 
 	default:
-	    error("semicolon expected following function declaration");
+	    // error("semicolon expected following function declaration");
 	    break;
     }
     linkage = linksave;
@@ -2262,8 +2331,8 @@ Initializer *Parser::parseInitializer()
 		switch (token.value)
 		{
 		    case TOKidentifier:
-			if (comma == 1)
-			    error("comma expected separating field initializers");
+			/* if (comma == 1)
+			    error("comma expected separating field initializers"); */
 			t = peek(&token);
 			if (t->value == TOKcolon)
 			{
@@ -2310,7 +2379,7 @@ Initializer *Parser::parseInitializer()
 		{
 		    default:
 			if (comma == 1)
-			{   error("comma expected separating array initializers, not %s", token.toChars());
+			{   // error("comma expected separating array initializers, not %s", token.toChars());
 			    nextToken();
 			    break;
 			}
@@ -2332,8 +2401,8 @@ Initializer *Parser::parseInitializer()
 
 		    case TOKlcurly:
 		    case TOKlbracket:
-			if (comma == 1)
-			    error("comma expected separating array initializers, not %s", token.toChars());
+			/* if (comma == 1)
+			    error("comma expected separating array initializers, not %s", token.toChars()); */
 			value = parseInitializer();
 			ia->addInit(NULL, value);
 			comma = 1;
@@ -2349,7 +2418,7 @@ Initializer *Parser::parseInitializer()
 			break;
 
 		    case TOKeof:
-			error("found '%s' instead of array initializer", token.toChars());
+			// error("found '%s' instead of array initializer", token.toChars());
 			break;
 		}
 		break;
@@ -2389,8 +2458,8 @@ Statement *Parser::parseStatement(int flags)
 
     //printf("parseStatement()\n");
 
-    if (flags & PScurly && token.value != TOKlcurly)
-	error("statement expected to be { }, not %s", token.toChars());
+    /* if (flags & PScurly && token.value != TOKlcurly)
+	error("statement expected to be { }, not %s", token.toChars()); */
 
     switch (token.value)
     {
@@ -2451,6 +2520,7 @@ Statement *Parser::parseStatement(int flags)
 	case TOKtypeid:
 	case TOKis:
 	case TOKlbracket:
+	case TOKtraits:
 	Lexp:
 	{   Expression *exp;
 
@@ -2584,8 +2654,8 @@ Statement *Parser::parseStatement(int flags)
 	}
 
 	case TOKsemicolon:
-	    if (!(flags & PSsemi))
-		error("use '{ }' for an empty statement, not a ';'");
+	    /* if (!(flags & PSsemi))
+		error("use '{ }' for an empty statement, not a ';'"); */
 	    nextToken();
 	    s = new ExpStatement(loc, NULL);
 	    break;
@@ -2683,10 +2753,9 @@ Statement *Parser::parseStatement(int flags)
 			goto Larg;
 		    }
 		}
-		tb = parseBasicType();
-		at = parseDeclarator(tb, &ai);
-		if (!ai)
-		    error("no identifier for declarator %s", at->toChars());
+		at = parseType(&ai);
+		/* if (!ai)
+		    error("no identifier for declarator %s", at->toChars()); */
 	      Larg:
 		a = new Argument(storageClass, at, ai, NULL);
 		arguments->push(a);
@@ -2699,9 +2768,22 @@ Statement *Parser::parseStatement(int flags)
 	    check(TOKsemicolon);
 
 	    aggr = parseExpression();
-	    check(TOKrparen);
-	    body = parseStatement(0);
-	    s = new ForeachStatement(loc, op, arguments, aggr, body);
+	    if (token.value == TOKslice && arguments->dim == 1)
+	    {
+		Argument *a = (Argument *)arguments->data[0];
+		delete arguments;
+		nextToken();
+		Expression *upr = parseExpression();
+		check(TOKrparen);
+		body = parseStatement(0);
+		s = new ForeachRangeStatement(loc, op, a, aggr, upr, body);
+	    }
+	    else
+	    {
+		check(TOKrparen);
+		body = parseStatement(0);
+		s = new ForeachStatement(loc, op, arguments, aggr, body);
+	    }
 	    break;
 	}
 
@@ -2722,30 +2804,28 @@ Statement *Parser::parseStatement(int flags)
 		    Token *t = peek(&token);
 		    if (t->value == TOKassign)
 		    {
-			arg = new Argument(STCin, NULL, token.ident, NULL);
+			arg = new Argument(0, NULL, token.ident, NULL);
 			nextToken();
 			nextToken();
 		    }
 		    else
-		    {   error("= expected following auto identifier");
+		    {   // error("= expected following auto identifier");
 			goto Lerror;
 		    }
 		}
 		else
-		{   error("identifier expected following auto");
+		{   // error("identifier expected following auto");
 		    goto Lerror;
 		}
 	    }
 	    else if (isDeclaration(&token, 2, TOKassign, NULL))
 	    {
-		Type *tb;
 		Type *at;
 		Identifier *ai;
 
-		tb = parseBasicType();
-		at = parseDeclarator(tb, &ai);
+		at = parseType(&ai);
 		check(TOKassign);
-		arg = new Argument(STCin, at, ai, NULL);
+		arg = new Argument(0, at, ai, NULL);
 	    }
 
 	    // Check for " ident;"
@@ -2754,11 +2834,11 @@ Statement *Parser::parseStatement(int flags)
 		Token *t = peek(&token);
 		if (t->value == TOKcomma || t->value == TOKsemicolon)
 		{
-		    arg = new Argument(STCin, NULL, token.ident, NULL);
+		    arg = new Argument(0, NULL, token.ident, NULL);
 		    nextToken();
 		    nextToken();
-		    if (1 || !global.params.useDeprecated)
-			error("if (v; e) is deprecated, use if (auto v = e)");
+		    /* if (1 || !global.params.useDeprecated)
+			error("if (v; e) is deprecated, use if (auto v = e)"); */
 		}
 	    }
 
@@ -2782,7 +2862,7 @@ Statement *Parser::parseStatement(int flags)
 	    nextToken();
 	    check(TOKlparen);
 	    if (token.value != TOKidentifier)
-	    {	error("scope identifier expected");
+	    {	// error("scope identifier expected");
 		goto Lerror;
 	    }
 	    else
@@ -2795,8 +2875,8 @@ Statement *Parser::parseStatement(int flags)
 		    t = TOKon_scope_failure;
 		else if (id == Id::success)
 		    t = TOKon_scope_success;
-		else
-		    error("valid scope identifiers are exit, failure, or success, not %s", id->toChars());
+		/* else
+		    error("valid scope identifiers are exit, failure, or success, not %s", id->toChars()); */
 		nextToken();
 		check(TOKrparen);
 		Statement *st = parseStatement(PScurlyscope);
@@ -2833,7 +2913,7 @@ Statement *Parser::parseStatement(int flags)
 	    nextToken();
 	    check(TOKlparen);
 	    if (token.value != TOKidentifier)
-	    {   error("pragma(identifier expected");
+	    {   // error("pragma(identifier expected");
 		goto Lerror;
 	    }
 	    ident = token.ident;
@@ -2983,7 +3063,7 @@ Statement *Parser::parseStatement(int flags)
 	    else
 	    {
 		if (token.value != TOKidentifier)
-		{   error("Identifier expected following goto");
+		{   // error("Identifier expected following goto");
 		    ident = NULL;
 		}
 		else
@@ -3051,9 +3131,8 @@ Statement *Parser::parseStatement(int flags)
 		else
 		{
 		    check(TOKlparen);
-		    t = parseBasicType();
 		    id = NULL;
-		    t = parseDeclarator(t, &id);
+		    t = parseType(&id);
 		    check(TOKrparen);
 		}
 		handler = parseStatement(0);
@@ -3069,8 +3148,8 @@ Statement *Parser::parseStatement(int flags)
 	    }
 
 	    s = body;
-	    if (!catches && !finalbody)
-		error("catch or finally expected following try");
+	    if (!catches && !finalbody) {}
+		// error("catch or finally expected following try");
 	    else
 	    {	if (catches)
 		    s = new TryCatchStatement(loc, body, catches);
@@ -3137,7 +3216,7 @@ Statement *Parser::parseStatement(int flags)
 		    case TOKrcurly:
 			if (toklist || label)
 			{
-			    error("asm statements must end in ';'");
+			    // error("asm statements must end in ';'");
 			}
 			break;
 
@@ -3159,7 +3238,7 @@ Statement *Parser::parseStatement(int flags)
 
 		    case TOKeof:
 			/* { */
-			error("matching '}' expected, not end of file");
+			// error("matching '}' expected, not end of file");
 			break;
 
 		    default:
@@ -3180,7 +3259,7 @@ Statement *Parser::parseStatement(int flags)
 	}
 
 	default:
-	    error("found '%s' instead of statement", token.toChars());
+	    // error("found '%s' instead of statement", token.toChars());
 	    goto Lerror;
 
 	Lerror:
@@ -3204,16 +3283,16 @@ void Parser::check(enum TOK value)
 
 void Parser::check(Loc loc, enum TOK value)
 {
-    if (token.value != value)
-	error(loc, "found '%s' when expecting '%s'", token.toChars(), Token::toChars(value));
+    /* if (token.value != value)
+	error(loc, "found '%s' when expecting '%s'", token.toChars(), Token::toChars(value)); */
     nextToken();
 }
 
 void Parser::check(enum TOK value, char *string)
 {
-    if (token.value != value)
+    /* if (token.value != value)
 	error("found '%s' when expecting '%s' following '%s'",
-	    token.toChars(), Token::toChars(value), string);
+	    token.toChars(), Token::toChars(value), string); */
     nextToken();
 }
 
@@ -3228,6 +3307,14 @@ void Parser::check(enum TOK value, char *string)
 int Parser::isDeclaration(Token *t, int needId, enum TOK endtok, Token **pt)
 {
     int haveId = 0;
+
+    if ((t->value == TOKconst || t->value == TOKinvariant) &&
+	peek(t)->value != TOKlparen)
+    {	/* const type
+	 * invariant type
+	 */
+	t = peek(t);
+    }
 
     if (!isBasicType(&t))
 	return FALSE;
@@ -3250,6 +3337,7 @@ int Parser::isBasicType(Token **pt)
     Token *t = *pt;
     Token *t2;
     int parens;
+    int haveId = 0;
 
     switch (t->value)
     {
@@ -3302,6 +3390,18 @@ int Parser::isBasicType(Token **pt)
 	    if (!skipParens(t, &t))
 		goto Lfalse;
 	    goto L2;
+
+	case TOKconst:
+	case TOKinvariant:
+	    // const(type)  or  invariant(type)
+	    t = peek(t);
+	    if (t->value != TOKlparen)
+		goto Lfalse;
+	    t = peek(t);
+	    if (!isDeclaration(t, 0, TOKrparen, &t))
+		goto Lfalse;
+	    t = peek(t);
+	    break;
 
 	default:
 	    goto Lfalse;
@@ -3468,7 +3568,7 @@ int Parser::isParameters(Token **pt)
 	return FALSE;
 
     t = peek(t);
-    while (1)
+    for (;1; t = peek(t))
     {
 	switch (t->value)
 	{
@@ -3484,7 +3584,12 @@ int Parser::isParameters(Token **pt)
 	    case TOKinout:
 	    case TOKref:
 	    case TOKlazy:
-		t = peek(t);
+	    case TOKconst:
+	    case TOKinvariant:
+	    case TOKfinal:
+	    case TOKstatic:
+		continue;
+
 	    default:
 		if (!isBasicType(&t))
 		    return FALSE;
@@ -3503,7 +3608,7 @@ int Parser::isParameters(Token **pt)
 		    break;
 		}
 		if (t->value == TOKcomma)
-		{   t = peek(t);
+		{
 		    continue;
 		}
 		break;
@@ -3526,6 +3631,7 @@ int Parser::isExpression(Token **pt)
     Token *t = *pt;
     int brnest = 0;
     int panest = 0;
+    int curlynest = 0;
 
     for (;; t = peek(t))
     {
@@ -3554,10 +3660,24 @@ int Parser::isExpression(Token **pt)
 		    continue;
 		break;
 
+	    case TOKlcurly:
+		curlynest++;
+		continue;
+
+	    case TOKrcurly:
+		if (--curlynest >= 0)
+		    continue;
+		return FALSE;
+
 	    case TOKslice:
 		if (brnest)
 		    continue;
 		break;
+
+	    case TOKsemicolon:
+		if (curlynest)
+		    continue;
+		return FALSE;
 
 	    case TOKeof:
 		return FALSE;
@@ -3699,6 +3819,7 @@ Expression *Parser::parsePrimaryExp()
     enum TOK save;
     Loc loc = this->loc;
 
+    //printf("parsePrimaryExp(): loc = %d\n", loc.linnum);
     switch (token.value)
     {
 	case TOKidentifier:
@@ -3718,8 +3839,8 @@ Expression *Parser::parsePrimaryExp()
 	    break;
 
 	case TOKdollar:
-	    if (!inBrackets)
-		error("'$' is valid only inside [] of index or slice");
+	    /* if (!inBrackets)
+		error("'$' is valid only inside [] of index or slice"); */
 	    e = new DollarExp(loc);
 	    nextToken();
 	    break;
@@ -3837,8 +3958,8 @@ Expression *Parser::parsePrimaryExp()
 		    unsigned char *s2;
 
 		    if (token.postfix)
-		    {	if (token.postfix != postfix)
-			    error("mismatched string literal postfixes '%c' and '%c'", postfix, token.postfix);
+		    {	/* if (token.postfix != postfix)
+			    error("mismatched string literal postfixes '%c' and '%c'", postfix, token.postfix); */
 			postfix = token.postfix;
 		    }
 
@@ -3862,7 +3983,7 @@ Expression *Parser::parsePrimaryExp()
 	L1:
 	    check(TOKdot, t->toChars());
 	    if (token.value != TOKidentifier)
-	    {   error("found '%s' when expecting identifier following '%s.'", token.toChars(), t->toChars());
+	    {   // error("found '%s' when expecting identifier following '%s.'", token.toChars(), t->toChars());
 		goto Lerr;
 	    }
 	    e = new TypeDotIdExp(loc, t, token.ident);
@@ -3888,10 +4009,32 @@ Expression *Parser::parsePrimaryExp()
 
 	    nextToken();
 	    check(TOKlparen, "typeid");
-	    t = parseBasicType();
-	    t = parseDeclarator(t,NULL);	// ( type )
+	    t = parseType();		// ( type )
 	    check(TOKrparen);
 	    e = new TypeidExp(loc, t);
+	    break;
+	}
+
+	case TOKtraits:
+	{   /* __traits(identifier, args...)
+	     */
+	    Identifier *ident;
+	    Objects *args = NULL;
+
+	    nextToken();
+	    check(TOKlparen);
+	    if (token.value != TOKidentifier)
+	    {   // error("__traits(identifier, args...) expected");
+		goto Lerr;
+	    }
+	    ident = token.ident;
+	    nextToken();
+	    if (token.value == TOKcomma)
+		args = parseTemplateArgumentList2();	// __traits(identifier, args...)
+	    else
+		check(TOKrparen);		// __traits(identifier)
+
+	    e = new TraitsExp(loc, ident, args);
 	    break;
 	}
 
@@ -3907,8 +4050,7 @@ Expression *Parser::parsePrimaryExp()
 	    if (token.value == TOKlparen)
 	    {
 		nextToken();
-		targ = parseBasicType();
-		targ = parseDeclarator(targ, &ident);
+		targ = parseType(&ident);
 		if (token.value == TOKcolon || token.value == TOKequal)
 		{
 		    tok = token.value;
@@ -3930,14 +4072,13 @@ Expression *Parser::parsePrimaryExp()
 		    }
 		    else
 		    {
-			tspec = parseBasicType();
-			tspec = parseDeclarator(tspec, NULL);
+			tspec = parseType();
 		    }
 		}
 		check(TOKrparen);
 	    }
 	    else
-	    {   error("(type identifier : specialization) expected following is");
+	    {   // error("(type identifier : specialization) expected following is");
 		goto Lerr;
 	    }
 	    e = new IftypeExp(loc, targ, ident, tok, tspec, tok2);
@@ -4013,7 +4154,7 @@ Expression *Parser::parsePrimaryExp()
 			e = parseAssignExp();
 		    }
 		    else if (keys)
-		    {	error("'key:value' expected for associative array literal");
+		    {	// error("'key:value' expected for associative array literal");
 			delete keys;
 			keys = NULL;
 		    }
@@ -4076,7 +4217,7 @@ Expression *Parser::parsePrimaryExp()
 	}
 
 	default:
-	    error("expression expected, not '%s'", token.toChars());
+	    // error("expression expected, not '%s'", token.toChars());
 	Lerr:
 	    // Anything for e, as long as it's not NULL
 	    e = new IntegerExp(loc, 0, Type::tint32);
@@ -4119,8 +4260,8 @@ Expression *Parser::parsePostExp(Expression *e)
 		    e = parseNewExp(e);
 		    continue;
 		}
-		else
-		    error("identifier expected following '.', not '%s'", token.toChars());
+		/* else
+		    error("identifier expected following '.', not '%s'", token.toChars()); */
 		break;
 
 	    case TOKplusplus:
@@ -4260,12 +4401,23 @@ Expression *Parser::parseUnaryExp()
 
 	    nextToken();
 	    check(TOKlparen);
-	    t = parseBasicType();
-	    t = parseDeclarator(t,NULL);	// ( type )
-	    check(TOKrparen);
-
-	    e = parseUnaryExp();
-	    e = new CastExp(loc, e, t);
+	    /* Look for cast(const) and cast(invariant)
+	     */
+	    if ((token.value == TOKconst || token.value == TOKinvariant) &&
+		peek(&token)->value == TOKrparen)
+	    {	enum TOK tok = token.value;
+		nextToken();
+		nextToken();
+		e = parseUnaryExp();
+		e = new CastExp(loc, e, tok);
+	    }
+	    else
+	    {
+		t = parseType();		// ( type )
+		check(TOKrparen);
+		e = parseUnaryExp();
+		e = new CastExp(loc, e, t);
+	    }
 	    break;
 	}
 
@@ -4322,8 +4474,7 @@ Expression *Parser::parseUnaryExp()
 			Type *t;
 
 			nextToken();
-			t = parseBasicType();
-			t = parseDeclarator(t,NULL);
+			t = parseType();
 			check(TOKrparen);
 
 			// if .identifier
@@ -4331,7 +4482,7 @@ Expression *Parser::parseUnaryExp()
 			{
 			    nextToken();
 			    if (token.value != TOKidentifier)
-			    {   error("Identifier expected following (type).");
+			    {   // error("Identifier expected following (type).");
 				return NULL;
 			    }
 			    e = new TypeDotIdExp(loc, t, token.ident);
@@ -4342,7 +4493,7 @@ Expression *Parser::parseUnaryExp()
 			{
 			    e = parseUnaryExp();
 			    e = new CastExp(loc, e, t);
-			    error("C style cast illegal, use %s", e->toChars());
+			    // error("C style cast illegal, use %s", e->toChars());
 			}
 			return e;
 		    }
@@ -4489,11 +4640,11 @@ Expression *Parser::parseEqualExp()
 		continue;
 
 	    case TOKidentity:
-		error("'===' is no longer legal, use 'is' instead");
+		// error("'===' is no longer legal, use 'is' instead");
 		goto L1;
 
 	    case TOKnotidentity:
-		error("'!==' is no longer legal, use '!is' instead");
+		// error("'!==' is no longer legal, use '!is' instead");
 		goto L1;
 
 	    case TOKis:
@@ -4739,7 +4890,7 @@ Expression *Parser::parseExpression()
     Expression *e2;
     Loc loc = this->loc;
 
-    //printf("Parser::parseExpression()\n");
+    //printf("Parser::parseExpression() loc = %d\n", loc.linnum);
     e = parseAssignExp();
     while (token.value == TOKcomma)
     {
@@ -4819,15 +4970,15 @@ Expression *Parser::parseNewExp(Expression *thisexp)
 	ClassDeclaration *cd = new ClassDeclaration(loc, id, baseclasses);
 
 	if (token.value != TOKlcurly)
-	{   error("{ members } expected for anonymous class");
+	{   // error("{ members } expected for anonymous class");
 	    cd->members = NULL;
 	}
 	else
 	{
 	    nextToken();
 	    Array *decl = parseDeclDefs(0);
-	    if (token.value != TOKrcurly)
-		error("class member expected");
+	    /* if (token.value != TOKrcurly)
+		error("class member expected"); */
 	    nextToken();
 	    cd->members = decl;
 	}
@@ -4837,22 +4988,21 @@ Expression *Parser::parseNewExp(Expression *thisexp)
 	return e;
     }
 
-#if LTORARRAYDECL
     t = parseBasicType();
     t = parseBasicType2(t);
     if (t->ty == Taarray)
-    {
-	Type *index = ((TypeAArray *)t)->index;
+    {	TypeAArray *taa = (TypeAArray *)t;
+	Type *index = taa->index;
 
 	Expression *e = index->toExpression();
 	if (e)
 	{   arguments = new Expressions();
 	    arguments->push(e);
-	    t = new TypeDArray(t->next);
+	    t = new TypeDArray(taa->next);
 	}
 	else
 	{
-	    error("need size of rightmost array, not type %s", index->toChars());
+	    // error("need size of rightmost array, not type %s", index->toChars());
 	    return new NullExp(loc);
 	}
     }
@@ -4863,33 +5013,12 @@ Expression *Parser::parseNewExp(Expression *thisexp)
 
 	arguments = new Expressions();
 	arguments->push(e);
-	t = new TypeDArray(t->next);
+	t = new TypeDArray(tsa->next);
     }
     else if (token.value == TOKlparen)
     {
 	arguments = parseArguments();
     }
-#else
-    t = parseBasicType();
-    while (token.value == TOKmul)
-    {   t = new TypePointer(t);
-	nextToken();
-    }
-    if (token.value == TOKlbracket)
-    {
-	Expression *e;
-
-	nextToken();
-	e = parseAssignExp();
-	arguments = new Array();
-	arguments->push(e);
-	check(TOKrbracket);
-	t = parseDeclarator(t, NULL);
-	t = new TypeDArray(t);
-    }
-    else if (token.value == TOKlparen)
-	arguments = parseArguments();
-#endif
     e = new NewExp(loc, thisexp, newargs, t, arguments);
     return e;
 }

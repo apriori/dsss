@@ -46,7 +46,7 @@ typedef struct TYPE type;
 #endif
 struct Symbol;
 
-enum TY
+enum ENUMTY
 {
     Tarray,		// dynamic array
     Tsarray,		// static array
@@ -96,17 +96,23 @@ enum TY
     Tslice,
     TMAX
 };
+typedef unsigned char TY;	// ENUMTY
 
 #define Tascii Tchar
 
 extern int Tsize_t;
 extern int Tptrdiff_t;
 
+
 struct Type : Object
 {
     TY ty;
-    Type *next;
+    unsigned char mod;	// modifiers (MODconst, MODinvariant)
+	#define MODconst     1	// type is const
+	#define MODinvariant 2	// type is invariant
     char *deco;
+    Type *cto;		// MODconst ? mutable version of this type : const version
+    Type *ito;		// MODinvariant ? mutable version of this type : invariant version
     Type *pto;		// merged pointer to this type
     Type *rto;		// reference to this type
     Type *arrayof;	// array of this type
@@ -166,9 +172,12 @@ struct Type : Object
     static ClassDeclaration *typeinfofunction;
     static ClassDeclaration *typeinfodelegate;
     static ClassDeclaration *typeinfotypelist;
+    static ClassDeclaration *typeinfoconst;
+    static ClassDeclaration *typeinfoinvariant;
 
     static Type *basic[TMAX];
     static unsigned char mangleChar[TMAX];
+    static unsigned char sizeTy[TMAX];
     static StringTable stringtable;
 
     // These tables are for implicit conversion of binary ops;
@@ -180,7 +189,7 @@ struct Type : Object
     // If !=0, give warning on implicit conversion
     static unsigned char impcnvWarn[TMAX][TMAX];
 
-    Type(TY ty, Type *next);
+    Type(TY ty);
     virtual Type *syntaxCopy();
     int equals(Object *o);
     int dyncast() { return DYNCAST_TYPE; } // kludge for template.isType()
@@ -192,12 +201,11 @@ struct Type : Object
     virtual d_uns64 size(Loc loc);
     virtual unsigned alignsize();
     virtual Type *semantic(Loc loc, Scope *sc);
-    virtual void toDecoBuffer(OutBuffer *buf);
-    virtual void toTypeInfoBuffer(OutBuffer *buf);
+    virtual void toDecoBuffer(OutBuffer *buf, int flag = 0);
     Type *merge();
-    void toCBuffer(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
-    virtual void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
-    virtual int isbit();
+    virtual void toCBuffer(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    virtual void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
+    void toCBuffer3(OutBuffer *buf, HdrGenState *hgs, int mod);
     virtual int isintegral();
     virtual int isfloating();	// real, imaginary, or complex
     virtual int isreal();
@@ -208,13 +216,23 @@ struct Type : Object
     virtual int isauto();
     virtual int isString();
     virtual int checkBoolean();	// if can be converted to boolean value
-    void checkDeprecated(Loc loc, Scope *sc);
+    virtual void checkDeprecated(Loc loc, Scope *sc);
+    int isConst()	{ return mod == MODconst; }
+    int isInvariant()	{ return mod == MODinvariant; }
+    int isMutable()	{ return mod == 0; }
+    Type *constOf();
+    Type *invariantOf();
+    Type *mutableOf();
     Type *pointerTo();
     Type *referenceTo();
     Type *arrayOf();
+    virtual Type *makeConst();
+    virtual Type *makeInvariant();
     virtual Dsymbol *toDsymbol(Scope *sc);
     virtual Type *toBasetype();
+    virtual Type *toCanonConst();
     virtual int isBaseOf(Type *t, int *poffset);
+    virtual MATCH constConv(Type *to);
     virtual MATCH implicitConvTo(Type *to);
     virtual ClassDeclaration *isClassHandle();
     virtual Expression *getProperty(Loc loc, Identifier *ident);
@@ -230,7 +248,7 @@ struct Type : Object
     virtual Type *reliesOnTident();
     virtual Expression *toExpression();
     virtual int hasPointers();
-    Type *nextOf() { return next; }
+    virtual Type *nextOf();
 
     static void error(Loc loc, const char *format, ...);
 
@@ -238,10 +256,23 @@ struct Type : Object
     virtual TypeBasic *isTypeBasic();
 };
 
+struct TypeNext : Type
+{
+    Type *next;
+
+    TypeNext(TY ty, Type *next);
+    void toDecoBuffer(OutBuffer *buf, int flag);
+    void checkDeprecated(Loc loc, Scope *sc);
+    Type *reliesOnTident();
+    Type *nextOf();
+    Type *makeConst();
+    Type *makeInvariant();
+    MATCH constConv(Type *to);
+};
+
 struct TypeBasic : Type
 {
     char *dstring;
-    char *cstring;
     unsigned flags;
 
     TypeBasic(TY ty);
@@ -251,7 +282,7 @@ struct TypeBasic : Type
     Expression *getProperty(Loc loc, Identifier *ident);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     char *toChars();
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     int isintegral();
     int isbit();
     int isfloating();
@@ -268,11 +299,9 @@ struct TypeBasic : Type
     TypeBasic *isTypeBasic();
 };
 
-struct TypeArray : Type
+struct TypeArray : TypeNext
 {
     TypeArray(TY ty, Type *next);
-    virtual void toPrettyBracket(OutBuffer *buf, HdrGenState *hgs) = 0;
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
 };
 
@@ -287,16 +316,15 @@ struct TypeSArray : TypeArray
     unsigned alignsize();
     Type *semantic(Loc loc, Scope *sc);
     void resolve(Loc loc, Scope *sc, Expression **pe, Type **pt, Dsymbol **ps);
-    void toDecoBuffer(OutBuffer *buf);
-    void toTypeInfoBuffer(OutBuffer *buf);
-    void toPrettyBracket(OutBuffer *buf, HdrGenState *hgs);
+    void toDecoBuffer(OutBuffer *buf, int flag);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     int isString();
     int isZeroInit();
     unsigned memalign(unsigned salign);
+    MATCH constConv(Type *to);
     MATCH implicitConvTo(Type *to);
     Expression *defaultInit();
-    dt_t **toDtElem(dt_t **pdt, Expression *e);
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
     Expression *toExpression();
     int hasPointers();
@@ -310,9 +338,8 @@ struct TypeDArray : TypeArray
     d_uns64 size(Loc loc);
     unsigned alignsize();
     Type *semantic(Loc loc, Scope *sc);
-    void toDecoBuffer(OutBuffer *buf);
-    void toTypeInfoBuffer(OutBuffer *buf);
-    void toPrettyBracket(OutBuffer *buf, HdrGenState *hgs);
+    void toDecoBuffer(OutBuffer *buf, int flag);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     int isString();
     int isZeroInit();
@@ -324,15 +351,14 @@ struct TypeDArray : TypeArray
 
 struct TypeAArray : TypeArray
 {
-    Type *index;		// key type for type checking
-    Type *key;			// actual key type
+    Type *index;		// key type
 
     TypeAArray(Type *t, Type *index);
     Type *syntaxCopy();
     d_uns64 size(Loc loc);
     Type *semantic(Loc loc, Scope *sc);
-    void toDecoBuffer(OutBuffer *buf);
-    void toPrettyBracket(OutBuffer *buf, HdrGenState *hgs);
+    void toDecoBuffer(OutBuffer *buf, int flag);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     Expression *defaultInit();
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
@@ -343,13 +369,13 @@ struct TypeAArray : TypeArray
     Symbol *aaGetSymbol(char *func, int flags);
 };
 
-struct TypePointer : Type
+struct TypePointer : TypeNext
 {
     TypePointer(Type *t);
     Type *syntaxCopy();
     Type *semantic(Loc loc, Scope *sc);
     d_uns64 size(Loc loc);
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     MATCH implicitConvTo(Type *to);
     int isscalar();
     Expression *defaultInit();
@@ -357,12 +383,13 @@ struct TypePointer : Type
     int hasPointers();
 };
 
-struct TypeReference : Type
+struct TypeReference : TypeNext
 {
     TypeReference(Type *t);
     Type *syntaxCopy();
+    Type *semantic(Loc loc, Scope *sc);
     d_uns64 size(Loc loc);
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     Expression *defaultInit();
     int isZeroInit();
@@ -374,8 +401,10 @@ enum RET
     RETstack	= 2,	// returned on stack
 };
 
-struct TypeFunction : Type
+struct TypeFunction : TypeNext
 {
+    // .next is the return type
+
     Arguments *parameters;	// function parameters
     int varargs;	// 1: T t, ...) style for variable number of arguments
 			// 2: T t ...) style for variable number of arguments
@@ -386,21 +415,24 @@ struct TypeFunction : Type
     TypeFunction(Arguments *parameters, Type *treturn, int varargs, enum LINK linkage);
     Type *syntaxCopy();
     Type *semantic(Loc loc, Scope *sc);
-    void toDecoBuffer(OutBuffer *buf);
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toDecoBuffer(OutBuffer *buf, int flag);
+    void toCBuffer(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
     Type *reliesOnTident();
 
     int callMatch(Expressions *toargs);
 };
 
-struct TypeDelegate : Type
+struct TypeDelegate : TypeNext
 {
+    // .next is a TypeFunction
+
     TypeDelegate(Type *t);
     Type *syntaxCopy();
     Type *semantic(Loc loc, Scope *sc);
     d_uns64 size(Loc loc);
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *defaultInit();
     int isZeroInit();
     int checkBoolean();
@@ -416,7 +448,7 @@ struct TypeQualified : Type
     TypeQualified(TY ty, Loc loc);
     void syntaxCopyHelper(TypeQualified *t);
     void addIdent(Identifier *ident);
-    void toCBuffer2Helper(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toCBuffer2Helper(OutBuffer *buf, HdrGenState *hgs);
     d_uns64 size(Loc loc);
     void resolveHelper(Loc loc, Scope *sc, Dsymbol *s, Dsymbol *scopesym,
 	Expression **pe, Type **pt, Dsymbol **ps);
@@ -429,8 +461,8 @@ struct TypeIdentifier : TypeQualified
     TypeIdentifier(Loc loc, Identifier *ident);
     Type *syntaxCopy();
     //char *toChars();
-    void toDecoBuffer(OutBuffer *buf);
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toDecoBuffer(OutBuffer *buf, int flag);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     void resolve(Loc loc, Scope *sc, Expression **pe, Type **pt, Dsymbol **ps);
     Dsymbol *toDsymbol(Scope *sc);
     Type *semantic(Loc loc, Scope *sc);
@@ -448,8 +480,8 @@ struct TypeInstance : TypeQualified
     TypeInstance(Loc loc, TemplateInstance *tempinst);
     Type *syntaxCopy();
     //char *toChars();
-    //void toDecoBuffer(OutBuffer *buf);
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    //void toDecoBuffer(OutBuffer *buf, int flag);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     void resolve(Loc loc, Scope *sc, Expression **pe, Type **pt, Dsymbol **ps);
     Type *semantic(Loc loc, Scope *sc);
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
@@ -462,7 +494,7 @@ struct TypeTypeof : TypeQualified
     TypeTypeof(Loc loc, Expression *exp);
     Type *syntaxCopy();
     Dsymbol *toDsymbol(Scope *sc);
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Type *semantic(Loc loc, Scope *sc);
     d_uns64 size(Loc loc);
 };
@@ -478,9 +510,8 @@ struct TypeStruct : Type
     Type *syntaxCopy();
     Type *semantic(Loc loc, Scope *sc);
     Dsymbol *toDsymbol(Scope *sc);
-    void toDecoBuffer(OutBuffer *buf);
-    void toTypeInfoBuffer(OutBuffer *buf);
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toDecoBuffer(OutBuffer *buf, int flag);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     unsigned memalign(unsigned salign);
     Expression *defaultInit();
@@ -488,6 +519,9 @@ struct TypeStruct : Type
     int checkBoolean();
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
     int hasPointers();
+    MATCH implicitConvTo(Type *to);
+    MATCH constConv(Type *to);
+    Type *toCanonConst();
 };
 
 struct TypeEnum : Type
@@ -500,9 +534,8 @@ struct TypeEnum : Type
     char *toChars();
     Type *semantic(Loc loc, Scope *sc);
     Dsymbol *toDsymbol(Scope *sc);
-    void toDecoBuffer(OutBuffer *buf);
-    void toTypeInfoBuffer(OutBuffer *buf);
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toDecoBuffer(OutBuffer *buf, int flag);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     Expression *getProperty(Loc loc, Identifier *ident);
     int isintegral();
@@ -510,6 +543,7 @@ struct TypeEnum : Type
     int isscalar();
     int isunsigned();
     MATCH implicitConvTo(Type *to);
+    MATCH constConv(Type *to);
     Type *toBasetype();
     Expression *defaultInit();
     int isZeroInit();
@@ -528,9 +562,8 @@ struct TypeTypedef : Type
     char *toChars();
     Type *semantic(Loc loc, Scope *sc);
     Dsymbol *toDsymbol(Scope *sc);
-    void toDecoBuffer(OutBuffer *buf);
-    void toTypeInfoBuffer(OutBuffer *buf);
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toDecoBuffer(OutBuffer *buf, int flag);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     int isbit();
     int isintegral();
@@ -543,10 +576,14 @@ struct TypeTypedef : Type
     int checkBoolean();
     Type *toBasetype();
     MATCH implicitConvTo(Type *to);
+    MATCH constConv(Type *to);
     Expression *defaultInit();
     int isZeroInit();
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
     int hasPointers();
+    Type *toCanonConst();
+
+    type *toCParamtype();
 };
 
 struct TypeClass : Type
@@ -559,8 +596,8 @@ struct TypeClass : Type
     Type *syntaxCopy();
     Type *semantic(Loc loc, Scope *sc);
     Dsymbol *toDsymbol(Scope *sc);
-    void toDecoBuffer(OutBuffer *buf);
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toDecoBuffer(OutBuffer *buf, int flag);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     ClassDeclaration *isClassHandle();
     int isBaseOf(Type *t, int *poffset);
@@ -571,6 +608,9 @@ struct TypeClass : Type
     int isauto();
     int checkBoolean();
     int hasPointers();
+    Type *toCanonConst();
+
+    Symbol *toSymbol();
 };
 
 struct TypeTuple : Type
@@ -583,12 +623,12 @@ struct TypeTuple : Type
     Type *semantic(Loc loc, Scope *sc);
     int equals(Object *o);
     Type *reliesOnTident();
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
-    void toDecoBuffer(OutBuffer *buf);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
+    void toDecoBuffer(OutBuffer *buf, int flag);
     Expression *getProperty(Loc loc, Identifier *ident);
 };
 
-struct TypeSlice : Type
+struct TypeSlice : TypeNext
 {
     Expression *lwr;
     Expression *upr;
@@ -597,7 +637,7 @@ struct TypeSlice : Type
     Type *syntaxCopy();
     Type *semantic(Loc loc, Scope *sc);
     void resolve(Loc loc, Scope *sc, Expression **pe, Type **pt, Dsymbol **ps);
-    void toCBuffer2(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
 };
 
 /**************************************************************/

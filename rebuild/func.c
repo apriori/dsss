@@ -131,8 +131,8 @@ void FuncDeclaration::semantic(Scope *sc)
     //printf("function storage_class = x%x\n", storage_class);
     Dsymbol *parent = toParent();
 
-    /*if (isConst() || isAuto() || isScope())
-	error("functions cannot be const or auto"); */
+    /* if (isAuto() || isScope())
+	error("functions cannot be scope or auto"); */
 
     /*if (isAbstract() && !isVirtual())
 	error("non-virtual functions cannot be abstract"); */
@@ -403,8 +403,8 @@ void FuncDeclaration::semantic(Scope *sc)
 #if 0
 				if (offset)
 				    ti = fdv->type;
-				else if (type->next->ty == Tclass)
-				{   ClassDeclaration *cdn = ((TypeClass *)type->next)->sym;
+				else if (type->nextOf()->ty == Tclass)
+				{   ClassDeclaration *cdn = ((TypeClass *)type->nextOf())->sym;
 				    if (cdn && cdn->sizeok != 1)
 					ti = fdv->type;
 				}
@@ -478,8 +478,8 @@ void FuncDeclaration::semantic(Scope *sc)
 	    {
 		Argument *arg0 = Argument::getNth(f->parameters, 0);
 		if (arg0->type->ty != Tarray ||
-		    arg0->type->next->ty != Tarray ||
-		    arg0->type->next->next->ty != Tchar ||
+		    arg0->type->nextOf()->ty != Tarray ||
+		    arg0->type->nextOf()->nextOf()->ty != Tchar ||
 		    arg0->storageClass & (STCout | STCref | STClazy))
 		    goto Lmainerr;
 		break;
@@ -602,7 +602,7 @@ void FuncDeclaration::semantic3(Scope *sc)
 	sc2->sw = NULL;
 	sc2->fes = fes;
 	sc2->linkage = LINKd;
-	sc2->stc &= ~(STCauto | STCscope | STCstatic | STCabstract | STCdeprecated);
+	sc2->stc &= ~(STCauto | STCscope | STCstatic | STCabstract | STCdeprecated | STCconst | STCfinal | STCinvariant);
 	sc2->protection = PROTpublic;
 	sc2->explicitProtection = 0;
 	sc2->structalign = 8;
@@ -624,8 +624,27 @@ void FuncDeclaration::semantic3(Scope *sc)
 	    {
 		assert(!isNested());	// can't be both member and nested
 		assert(ad->handle);
-		v = new ThisDeclaration(ad->handle);
-		v->storage_class |= STCparameter | STCin;
+		Type *thandle = ad->handle;
+		if (storage_class & STCconst)
+		{
+		    if (thandle->ty == Tclass)
+			thandle = thandle->constOf();
+		    else
+		    {	assert(thandle->ty == Tpointer);
+			thandle = thandle->nextOf()->constOf()->pointerTo();
+		    }
+		}
+		else if (storage_class & STCinvariant)
+		{
+		    if (thandle->ty == Tclass)
+			thandle = thandle->invariantOf();
+		    else
+		    {	assert(thandle->ty == Tpointer);
+			thandle = thandle->nextOf()->invariantOf()->pointerTo();
+		    }
+		}
+		v = new ThisDeclaration(thandle);
+		v->storage_class |= STCparameter;
 		v->semantic(sc2);
 		if (!sc2->insert(v))
 		    assert(0);
@@ -638,7 +657,7 @@ void FuncDeclaration::semantic3(Scope *sc)
 	    VarDeclaration *v;
 
 	    v = new ThisDeclaration(Type::tvoid->pointerTo());
-	    v->storage_class |= STCparameter | STCin;
+	    v->storage_class |= STCparameter;
 	    v->semantic(sc2);
 	    if (!sc2->insert(v))
 		assert(0);
@@ -728,7 +747,7 @@ void FuncDeclaration::semantic3(Scope *sc)
 		v->storage_class |= STCparameter;
 		if (f->varargs == 2 && i + 1 == nparams)
 		    v->storage_class |= STCvariadic;
-		v->storage_class |= arg->storageClass & (STCin | STCout | STCref | STClazy);
+		v->storage_class |= arg->storageClass & (STCin | STCout | STCref | STClazy | STCfinal | STCconst | STCinvariant);
 		if (v->storage_class & STClazy)
 		    v->storage_class |= STCin;
 		v->semantic(sc2);
@@ -913,7 +932,7 @@ void FuncDeclaration::semantic3(Scope *sc)
 	    {	// If no return type inferred yet, then infer a void
 		if (!type->nextOf())
 		{
-		    type->next = Type::tvoid;
+		    ((TypeFunction *)type)->next = Type::tvoid;
 		    type = type->semantic(loc, sc);
 		}
 		f = (TypeFunction *)type;
@@ -945,8 +964,8 @@ void FuncDeclaration::semantic3(Scope *sc)
 		    for (int i = 0; i < cd->fields.dim; i++)
 		    {   VarDeclaration *v = (VarDeclaration *)cd->fields.data[i];
 
-			/*if (v->ctorinit == 0 && v->isCtorinit())
-			    error("missing initializer for const field %s", v->toChars()); */
+			/* if (v->ctorinit == 0 && v->isCtorinit())
+			    error("missing initializer for final field %s", v->toChars()); */
 		    }
 		}
 
@@ -1280,10 +1299,6 @@ int FuncDeclaration::overloadInsert(Dsymbol *s)
     return TRUE;
 }
 
-/********************************************
- * Find function in overload list that exactly matches t.
- */
-
 /***************************************************
  * Visit each overloaded function in turn, and call
  * (*fp)(param, f) on it.
@@ -1341,6 +1356,31 @@ int overloadApply(FuncDeclaration *fstart,
 }
 
 /********************************************
+ * If there are no overloads of function f, return that function,
+ * otherwise return NULL.
+ */
+
+static int fpunique(void *param, FuncDeclaration *f)
+{   FuncDeclaration **pf = (FuncDeclaration **)param;
+
+    if (*pf)
+    {	*pf = NULL;
+	return 1;		// ambiguous, done
+    }
+    else
+    {	*pf = f;
+	return 0;
+    }
+}
+
+FuncDeclaration *FuncDeclaration::isUnique()
+{   FuncDeclaration *result = NULL;
+
+    overloadApply(this, &fpunique, &result);
+    return result;
+}
+
+/********************************************
  * Find function in overload list that exactly matches t.
  */
 
@@ -1385,48 +1425,6 @@ FuncDeclaration *FuncDeclaration::overloadExactMatch(Type *t)
     return p.f;
 }
 
-#if 0
-FuncDeclaration *FuncDeclaration::overloadExactMatch(Type *t)
-{
-    FuncDeclaration *f;
-    Declaration *d;
-    Declaration *next;
-
-    for (d = this; d; d = next)
-    {	FuncAliasDeclaration *fa = d->isFuncAliasDeclaration();
-
-	if (fa)
-	{
-	    FuncDeclaration *f2 = fa->funcalias->overloadExactMatch(t);
-	    if (f2)
-		return f2;
-	    next = fa->overnext;
-	}
-	else
-	{
-	    AliasDeclaration *a = d->isAliasDeclaration();
-
-	    if (a)
-	    {
-		Dsymbol *s = a->toAlias();
-		next = s->isDeclaration();
-		if (next == a)
-		    break;
-	    }
-	    else
-	    {
-		f = d->isFuncDeclaration();
-		if (!f)
-		    break;		// BUG: should print error message?
-		if (t->equals(d->type))
-		    return f;
-		next = f->overnext;
-	    }
-	}
-    }
-    return NULL;
-}
-#endif
 
 /********************************************
  * Decide which function matches the arguments best.
@@ -1485,7 +1483,6 @@ int fp2(void *param, FuncDeclaration *f)
     return 0;
 }
 
-
 void overloadResolveX(Match *m, FuncDeclaration *fstart, Expressions *arguments)
 {
     Param2 p;
@@ -1494,87 +1491,6 @@ void overloadResolveX(Match *m, FuncDeclaration *fstart, Expressions *arguments)
     overloadApply(fstart, &fp2, &p);
 }
 
-#if 0
-// Recursive helper function
-
-void overloadResolveX(Match *m, FuncDeclaration *fstart, Expressions *arguments)
-{
-    MATCH match;
-    Declaration *d;
-    Declaration *next;
-
-    for (d = fstart; d; d = next)
-    {
-	FuncDeclaration *f;
-	FuncAliasDeclaration *fa;
-	AliasDeclaration *a;
-
-	fa = d->isFuncAliasDeclaration();
-	if (fa)
-	{
-	    overloadResolveX(m, fa->funcalias, arguments);
-	    next = fa->overnext;
-	}
-	else if ((f = d->isFuncDeclaration()) != NULL)
-	{
-	    next = f->overnext;
-	    if (f == m->lastf)
-		continue;			// skip duplicates
-	    else
-	    {
-		TypeFunction *tf;
-
-		m->anyf = f;
-		tf = (TypeFunction *)f->type;
-		match = (MATCH) tf->callMatch(arguments);
-		//printf("match = %d\n", match);
-		if (match != MATCHnomatch)
-		{
-		    if (match > m->last)
-			goto LfIsBetter;
-
-		    if (match < m->last)
-			goto LlastIsBetter;
-
-		    /* See if one of the matches overrides the other.
-		     */
-		    if (m->lastf->overrides(f))
-			goto LlastIsBetter;
-		    else if (f->overrides(m->lastf))
-			goto LfIsBetter;
-
-		Lambiguous:
-		    m->nextf = f;
-		    m->count++;
-		    continue;
-
-		LfIsBetter:
-		    m->last = match;
-		    m->lastf = f;
-		    m->count = 1;
-		    continue;
-
-		LlastIsBetter:
-		    continue;
-		}
-	    }
-	}
-	else if ((a = d->isAliasDeclaration()) != NULL)
-	{
-	    Dsymbol *s = a->toAlias();
-	    next = s->isDeclaration();
-	    if (next == a)
-		break;
-	    if (next == fstart)
-		break;
-	}
-	else
-	{   //d->error("is aliased to a function");
-	    break;
-	}
-    }
-}
-#endif
 
 FuncDeclaration *FuncDeclaration::overloadResolve(Loc loc, Expressions *arguments)
 {
@@ -1818,6 +1734,22 @@ int FuncDeclaration::isVirtual()
     return isMember() &&
 	!(isStatic() || protection == PROTprivate || protection == PROTpackage) &&
 	toParent()->isClassDeclaration();
+}
+
+int FuncDeclaration::isFinal()
+{
+#if 0
+    printf("FuncDeclaration::isFinal(%s)\n", toChars());
+    printf("%p %d %d %d %d\n", isMember(), isStatic(), protection == PROTprivate, isCtorDeclaration(), linkage != LINKd);
+    printf("result is %d\n",
+	isMember() &&
+	!(isStatic() || protection == PROTprivate || protection == PROTpackage) &&
+	toParent()->isClassDeclaration());
+#endif
+    ClassDeclaration *cd;
+    return isMember() &&
+	(Declaration::isFinal() ||
+	 ((cd = toParent()->isClassDeclaration()) != NULL && cd->storage_class & STCfinal));
 }
 
 int FuncDeclaration::isAbstract()

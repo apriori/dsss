@@ -65,6 +65,7 @@ OBJS=\
   stringtable.o \
   struct.o \
   template.o \
+  traits.o \
   unialpha.o \
   utf.o \
   version.o \

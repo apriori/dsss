@@ -1092,7 +1092,8 @@ Statement *ForeachStatement::syntaxCopy()
 {
     Arguments *args = Argument::arraySyntaxCopy(arguments);
     Expression *exp = aggr->syntaxCopy();
-    ForeachStatement *s = new ForeachStatement(loc, op, args, exp, body->syntaxCopy());
+    ForeachStatement *s = new ForeachStatement(loc, op, args, exp,
+	body ? body->syntaxCopy() : NULL);
     return s;
 }
 
@@ -1204,10 +1205,8 @@ Statement *ForeachStatement::semantic(Scope *sc)
 		    VarDeclaration *v = new VarDeclaration(loc, arg->type, arg->ident, ie);
 		    if (e->isConst())
 			v->storage_class |= STCconst;
-#if V2
 		    else
 			v->storage_class |= STCfinal;
-#endif
 		    var = v;
 		}
 	    }
@@ -1257,7 +1256,7 @@ Statement *ForeachStatement::semantic(Scope *sc)
 	    /* Look for special case of parsing char types out of char type
 	     * array.
 	     */
-	    tn = tab->next->toBasetype();
+	    tn = tab->nextOf()->toBasetype();
 	    if (tn->ty == Tchar || tn->ty == Twchar || tn->ty == Tdchar)
 	    {	Argument *arg;
 
@@ -1286,7 +1285,16 @@ Statement *ForeachStatement::semantic(Scope *sc)
 
 		var = new VarDeclaration(loc, arg->type, arg->ident, NULL);
 		var->storage_class |= STCforeach;
-		var->storage_class |= arg->storageClass & (STCin | STCout | STCref);
+		var->storage_class |= arg->storageClass & (STCin | STCout | STCref | STCfinal | STCconst);
+		if (dim == 2 && i == 0)
+		{   key = var;
+		    var->storage_class |= STCfinal;
+		}
+		else
+		{   if (!(arg->storageClass & STCref))
+			var->storage_class |= STCfinal;
+		    value = var;
+		}
 #if 1
 		DeclarationExp *de = new DeclarationExp(loc, var);
 		de->semantic(sc);
@@ -1295,26 +1303,19 @@ Statement *ForeachStatement::semantic(Scope *sc)
 		/*if (!sc->insert(var))
 		    error("%s already defined", var->ident->toChars()); */
 #endif
-		if (dim == 2 && i == 0)
-		    key = var;
-		else
-		    value = var;
 	    }
 
 	    sc->sbreak = this;
 	    sc->scontinue = this;
 	    body = body->semantic(sc);
 
-	    if (!value->type->equals(tab->next))
+	    if (tab->nextOf()->implicitConvTo(value->type) < MATCHconst)
 	    {
 		if (aggr->op == TOKstring)
 		    aggr = aggr->implicitCastTo(sc, value->type->arrayOf());
 		/*else
 		    error("foreach: %s is not an array of %s", tab->toChars(), value->type->toChars()); */
 	    }
-
-	    /*if (value->storage_class & STCout && value->type->toBasetype()->ty == Tbit)
-		error("foreach: value cannot be out and type bit"); */
 
 	    if (key &&
 		((key->type->ty != Tint32 && key->type->ty != Tuns32) ||
@@ -1358,7 +1359,7 @@ Statement *ForeachStatement::semantic(Scope *sc)
 	    Identifier *id;
 	    Type *tret;
 
-	    tret = func->type->next;
+	    tret = func->type->nextOf();
 
 	    // Need a variable to hold value from any return statements in body.
 	    if (!sc->func->vresult && tret && tret != Type::tvoid)
@@ -1432,8 +1433,8 @@ Statement *ForeachStatement::semantic(Scope *sc)
 			error("foreach: index must be type %s, not %s", taa->index->toChars(), arg->type->toChars()); */
 		    arg = (Argument *)arguments->data[1];
 		}
-		/* if (!arg->type->equals(taa->next))
-		    error("foreach: value must be type %s, not %s", taa->next->toChars(), arg->type->toChars()); */
+		/* if (!arg->type->equals(taa->nextOf()))
+		    error("foreach: value must be type %s, not %s", taa->nextOf()->toChars(), arg->type->toChars()); */
 
 		/* Call:
 		 *	_aaApply(aggr, keysize, flde)
@@ -1445,7 +1446,7 @@ Statement *ForeachStatement::semantic(Scope *sc)
 		ec = new VarExp(0, fdapply);
 		Expressions *exps = new Expressions();
 		exps->push(aggr);
-		size_t keysize = taa->key->size();
+		size_t keysize = taa->index->size();
 		keysize = (keysize + 3) & ~3;
 		exps->push(new IntegerExp(0, keysize, Type::tint32));
 		exps->push(flde);
@@ -1591,7 +1592,6 @@ void ForeachStatement::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 {
     buf->writestring(Token::toChars(op));
     buf->writestring(" (");
-    int i;
     for (int i = 0; i < arguments->dim; i++)
     {
 	Argument *a = (Argument *)arguments->data[i];
@@ -1607,6 +1607,146 @@ void ForeachStatement::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
     }
     buf->writestring("; ");
     aggr->toCBuffer(buf, hgs);
+    buf->writebyte(')');
+    buf->writenl();
+    buf->writebyte('{');
+    buf->writenl();
+    if (body)
+	body->toCBuffer(buf, hgs);
+    buf->writebyte('}');
+    buf->writenl();
+}
+
+/**************************** ForeachRangeStatement ***************************/
+
+ForeachRangeStatement::ForeachRangeStatement(Loc loc, enum TOK op, Argument *arg,
+	Expression *lwr, Expression *upr, Statement *body)
+    : Statement(loc)
+{
+    this->op = op;
+    this->arg = arg;
+    this->lwr = lwr;
+    this->upr = upr;
+    this->body = body;
+
+    this->key = NULL;
+}
+
+Statement *ForeachRangeStatement::syntaxCopy()
+{
+    ForeachRangeStatement *s = new ForeachRangeStatement(loc, op,
+	arg->syntaxCopy(),
+	lwr->syntaxCopy(),
+	upr->syntaxCopy(),
+	body ? body->syntaxCopy() : NULL);
+    return s;
+}
+
+Statement *ForeachRangeStatement::semantic(Scope *sc)
+{
+    //printf("ForeachRangeStatement::semantic() %p\n", this);
+    ScopeDsymbol *sym;
+    Statement *s = this;
+
+    lwr = lwr->semantic(sc);
+    lwr = resolveProperties(sc, lwr);
+    if (!lwr->type)
+    {
+	// error("invalid range lower bound %s", lwr->toChars());
+	return this;
+    }
+
+    upr = upr->semantic(sc);
+    upr = resolveProperties(sc, upr);
+    if (!upr->type)
+    {
+	// error("invalid range upper bound %s", upr->toChars());
+	return this;
+    }
+
+    if (arg->type)
+    {
+	lwr = lwr->implicitCastTo(sc, arg->type);
+	upr = upr->implicitCastTo(sc, arg->type);
+    }
+    else
+    {
+	/* Must infer types from lwr and upr
+	 */
+	AddExp ea(loc, lwr, upr);
+	ea.typeCombine(sc);
+	arg->type = ea.type;
+	lwr = ea.e1;
+	upr = ea.e2;
+    }
+    /* if (!arg->type->isscalar())
+	error("%s is not a scalar type", arg->type->toChars()); */
+
+    sym = new ScopeDsymbol();
+    sym->parent = sc->scopesym;
+    sc = sc->push(sym);
+
+    sc->noctor++;
+
+    key = new VarDeclaration(loc, arg->type, arg->ident, NULL);
+    DeclarationExp *de = new DeclarationExp(loc, key);
+    de->semantic(sc);
+
+    /* if (key->storage_class)
+	error("foreach range: key cannot have storage class"); */
+
+    sc->sbreak = this;
+    sc->scontinue = this;
+    body = body->semantic(sc);
+
+    sc->noctor--;
+    sc->pop();
+    return s;
+}
+
+int ForeachRangeStatement::hasBreak()
+{
+    return TRUE;
+}
+
+int ForeachRangeStatement::hasContinue()
+{
+    return TRUE;
+}
+
+int ForeachRangeStatement::usesEH()
+{
+    return body->usesEH();
+}
+
+int ForeachRangeStatement::fallOffEnd()
+{
+    if (body)
+	body->fallOffEnd();
+    return TRUE;
+}
+
+int ForeachRangeStatement::comeFrom()
+{
+    if (body)
+	return body->comeFrom();
+    return FALSE;
+}
+
+void ForeachRangeStatement::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
+{
+    buf->writestring(Token::toChars(op));
+    buf->writestring(" (");
+
+    if (arg->type)
+	arg->type->toCBuffer(buf, arg->ident, hgs);
+    else
+	buf->writestring(arg->ident->toChars());
+
+    buf->writestring("; ");
+    lwr->toCBuffer(buf, hgs);
+    buf->writestring(" .. ");
+    upr->toCBuffer(buf, hgs);
     buf->writebyte(')');
     buf->writenl();
     buf->writebyte('{');
@@ -1894,8 +2034,8 @@ Statement *PragmaStatement::semantic(Scope *sc)
 		    StringExp *se = (StringExp *)e;
                     linkLibrary((char *) se->string);
 		}
-		else
-		    error("string expected for link, not '%s'", e->toChars());
+		/* else
+		    error("string expected for link, not '%s'", e->toChars()); */
 	    }
 	}
         
@@ -1918,8 +2058,8 @@ Statement *PragmaStatement::semantic(Scope *sc)
                 {
                     toadd = e->toChars();
                 }
-                else
-                    error("string or identifier expected for export_version, not '%s'", e->toChars());
+                /* else
+                    error("string or identifier expected for export_version, not '%s'", e->toChars()); */
                 
                 /* add this version flag to our own idea of versions, as
                  * well as the compile line */
@@ -2039,8 +2179,9 @@ Statement *SwitchStatement::semantic(Scope *sc)
 	// If it's not an array, cast it to one
 	if (condition->type->ty != Tarray)
 	{
-	    condition = condition->implicitCastTo(sc, condition->type->next->arrayOf());
+	    condition = condition->implicitCastTo(sc, condition->type->nextOf()->arrayOf());
 	}
+	condition->type = condition->type->constOf();
     }
     else
     {	condition = condition->integralPromotions(sc);
@@ -2447,9 +2588,9 @@ Statement *ReturnStatement::semantic(Scope *sc)
 	}
     }
 
-    Type *tret = fd->type->next;
+    Type *tret = fd->type->nextOf();
     if (fd->tintro)
-	tret = fd->tintro->next;
+	tret = fd->tintro->nextOf();
     Type *tbret = NULL;
 
     if (tret)
@@ -2509,18 +2650,18 @@ Statement *ReturnStatement::semantic(Scope *sc)
 	}
 	else if (fd->inferRetType)
 	{
-	    if (fd->type->next)
+	    if (fd->type->nextOf())
 	    {
-		/*if (!exp->type->equals(fd->type->next))
+		/* if (!exp->type->equals(fd->type->nextOf()))
 		    error("mismatched function return type inference of %s and %s",
-			exp->type->toChars(), fd->type->next->toChars()); */
+			exp->type->toChars(), fd->type->nextOf()->toChars()); */
 	    }
 	    else
 	    {
-		fd->type->next = exp->type;
+		((TypeFunction *)fd->type)->next = exp->type;
 		fd->type = fd->type->semantic(loc, sc);
 		if (!fd->tintro)
-		{   tret = fd->type->next;
+		{   tret = fd->type->nextOf();
 		    tbret = tret->toBasetype();
 		}
 	    }
@@ -2532,15 +2673,15 @@ Statement *ReturnStatement::semantic(Scope *sc)
     }
     else if (fd->inferRetType)
     {
-	if (fd->type->next)
+	if (fd->type->nextOf())
 	{
-	    /*if (fd->type->next->ty != Tvoid)
+	    /* if (fd->type->nextOf()->ty != Tvoid)
 		error("mismatched function return type inference of void and %s",
-		    fd->type->next->toChars()); */
+		    fd->type->nextOf()->toChars()); */
 	}
 	else
 	{
-	    fd->type->next = Type::tvoid;
+	    ((TypeFunction *)fd->type)->next = Type::tvoid;
 	    fd->type = fd->type->semantic(loc, sc);
 	    if (!fd->tintro)
 	    {   tret = Type::tvoid;
@@ -2567,7 +2708,7 @@ Statement *ReturnStatement::semantic(Scope *sc)
 	    sc->fes->cases.push(this);
 	    s = new ReturnStatement(0, new IntegerExp(sc->fes->cases.dim + 1));
 	}
-	else if (fd->type->next->toBasetype() == Type::tvoid)
+	else if (fd->type->nextOf()->toBasetype() == Type::tvoid)
 	{
 	    Statement *s1;
 	    Statement *s2;
@@ -2988,7 +3129,7 @@ Statement *WithStatement::semantic(Scope *sc)
 
 	sym = es->type->toDsymbol(sc)->isScopeDsymbol();
 	if (!sym)
-	{   error("%s has no members", es->toChars());
+	{   // error("%s has no members", es->toChars());
 	    body = body->semantic(sc);
 	    return this;
 	}
@@ -3418,7 +3559,8 @@ Statement *VolatileStatement::syntaxCopy()
 
 Statement *VolatileStatement::semantic(Scope *sc)
 {
-    statement = statement ? statement->semantic(sc) : NULL;
+    if (statement)
+	statement = statement->semantic(sc);
     return this;
 }
 
