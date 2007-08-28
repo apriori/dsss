@@ -395,7 +395,9 @@ void buildLibrary(char[] target, char[] bl, char[] bflags, char[] docbl,
                 if (targetGNUOrPosix()) {
                     // first do a static library
                     if (exists("libS" ~ target ~ ".a")) std.file.remove("libS" ~ target ~ ".a");
-                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -oflibS" ~ target ~ ".a";
+                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib " ~ fileList ~ " -oflibS" ~ target ~ ".a";
+                    if (testLibs || (shLibSupport() && ("shared" in settings)))
+                        stbl ~= " -full";
                     saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
 
                     // perhaps test the static library
@@ -420,7 +422,9 @@ void buildLibrary(char[] target, char[] bl, char[] bflags, char[] docbl,
                 } else if (targetVersion("Windows")) {
                     // for the moment, only do a static library
                     if (exists("S" ~ target ~ ".lib")) std.file.remove("S" ~ target ~ ".lib");
-                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib -full " ~ fileList ~ " -ofS" ~ target ~ ".lib";
+                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib " ~ fileList ~ " -ofS" ~ target ~ ".lib";
+                    if (testLibs)
+                        stbl ~= " -full";
                     saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
 
                     // perhaps test the static library

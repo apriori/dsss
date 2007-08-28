@@ -1,3 +1,7 @@
+SVN from 0.72:
+        - Rebuild: Merged DMD 2.003.
+        - Improved incremental build speed.
+
 0.72 from 0.71:
         - More DMD fixes - now always compiles one file at a time.
         - Fixed -version=OSXUniversalBinary (see ticket #121).
