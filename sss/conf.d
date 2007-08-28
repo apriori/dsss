@@ -794,7 +794,7 @@ body {
         // make sure it's not excluded for any reason
         if (!force &&
             (ndir in conf.settings || // a separate target
-             excluded(ndir))) {
+             excluded(canonPath(ndir)))) {
             return;
         }
         
@@ -818,13 +818,13 @@ body {
 
             } else if (ext == "d") {
                 // or just add it
-                if (!excluded(file)) {
+                if (!excluded(canonPath(file))) {
                     files ~= file;
                 }
 
             } else if (ext == "di") {
                 // only add .di files if we should
-                if (includeDi) {
+                if (includeDi && !excluded(canonPath(file))) {
                     files ~= file;
                 }
             }

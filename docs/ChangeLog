@@ -1,6 +1,8 @@
 SVN from 0.72:
         - Rebuild: Merged DMD 2.003.
         - Improved incremental build speed.
+        - Fixed excludes to work with a larger variety of paths (see ticket #126).
+        - Added a warning for targets containing no files.
 
 0.72 from 0.71:
         - More DMD fixes - now always compiles one file at a time.

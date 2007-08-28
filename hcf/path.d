@@ -163,6 +163,11 @@ char[] canonPath(char[] origpath)
             i--;
         }
     }
+
+    // get rid of any introductory ./'s
+    while (ret.length > 2 && ret[0..2] == "." ~ std.path.sep) {
+        ret = ret[2..$];
+    }
     
     // finally, get rid of any trailing separators
     while (ret.length &&

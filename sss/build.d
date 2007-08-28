@@ -245,6 +245,10 @@ version (build) {
             
             // output what we're building
             writefln("%s => %s", build, target);
+            if (files.length == 0) {
+                writefln("WARNING: Section %s has no files.", build);
+                continue;
+            }
 
             // prepare to do documentation
             prepareDocs(build, doDocs);

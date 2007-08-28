@@ -93,6 +93,11 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
         // figure out what it is
         if (type == "library" && libsSafe()) {
             // far more complicated
+            char[][] srcFiles = targetToFiles(build, conf, true);
+            if (srcFiles.length == 0) {
+                // warning is in sss.build
+                continue;
+            }
             
             // 1) copy in library files
             if (targetGNUOrPosix()) {
@@ -148,7 +153,6 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
             }
             
             // 2) install generated .di files
-            char[][] srcFiles = targetToFiles(build, conf, true);
             foreach (file; srcFiles) {
                 // if it's already a .di file, this is simpler
                 if (std.string.tolower(getExt(file)) == "di") {
