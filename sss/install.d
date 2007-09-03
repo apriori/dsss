@@ -104,7 +104,7 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
                 // copy in the .a and .so/.dll files
                 
                 // 1) .a
-                copyAndManifest("libS" ~ target ~ ".a", libPrefix);
+                copyAndManifest("lib" ~ target ~ ".a", libPrefix);
 
                 // and perhaps the debug version as well
                 if (buildDebug)
@@ -139,7 +139,7 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
                 // copy in the .lib and .dll files
                 
                 // 1) .lib
-                copyAndManifest("S" ~ target ~ ".lib", libPrefix);
+                copyAndManifest(target ~ ".lib", libPrefix);
                 
                 char[] shlibname = getShLibName(settings);
                 

@@ -104,7 +104,7 @@ int distclean(DSSSConf conf = null)
         if (type == "library" || type == "sourcelibrary") {
             if (targetGNUOrPosix()) {
                 // first remove the static library
-                tryRemove("libS" ~ target ~ ".a");
+                tryRemove("lib" ~ target ~ ".a");
 
                 // then any testing binary
                 tryRemove("test_" ~ target);
@@ -120,7 +120,7 @@ int distclean(DSSSConf conf = null)
                 
             } else if (targetVersion("Windows")) {
                 // first remove the static library
-                tryRemove("S" ~ target ~ ".lib");
+                tryRemove(target ~ ".lib");
 
                 // then any testing binary
                 tryRemove("test_" ~ target);

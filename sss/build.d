@@ -112,18 +112,16 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
                     if (buildDebug)
                         debugPrefix = "debug-";
                     
-                    if (shLibSupport() &&
-                        ("shared" in settings)) {
+                    // generate the pragmas
+                    char[] defaultLibName = libraryName(build);
+                    if (defaultLibName == target) {
                         std.file.write(ifile, std.file.read(file) ~ `
+import sss.platform;
 version (build) {
-    version (DSSS_Static_` ~ usname ~ `) {
-        debug {
-            pragma(link, "S` ~ debugPrefix ~ target ~ `");
-        } else {
-            pragma(link, "S` ~ target ~ `");
-        }
+    debug {
+        pragma(link, "` ~ debugPrefix ~ `D" ~ DSSS_PLATFORM ~ "` ~ target[2..$] ~ `");
     } else {
-        pragma(link, "` ~ target ~ `");
+        pragma(link, "D" ~ DSSS_PLATFORM ~ "` ~ target[2..$] ~ `");
     }
 }
 `);
@@ -131,9 +129,9 @@ version (build) {
                         std.file.write(ifile, std.file.read(file) ~ `
 version (build) {
     debug {
-        pragma(link, "S` ~ debugPrefix ~ target ~ `");
+        pragma(link, "` ~ debugPrefix ~ target ~ `");
     } else {
-        pragma(link, "S` ~ target ~ `");
+        pragma(link, "` ~ target ~ `");
     }
 }
 `);
@@ -213,9 +211,9 @@ version (build) {
         
             chdir(origcwd);
         }
-   }
+    }
 
-   // 3) Make real libraries and do special steps and subdirs
+    // 3) Make real libraries and do special steps and subdirs
     foreach (build; buildSources) {
         char[][char[]] settings = conf.settings[build];
         
@@ -398,8 +396,8 @@ void buildLibrary(char[] target, char[] bl, char[] bflags, char[] docbl,
 
                 if (targetGNUOrPosix()) {
                     // first do a static library
-                    if (exists("libS" ~ target ~ ".a")) std.file.remove("libS" ~ target ~ ".a");
-                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib " ~ fileList ~ " -oflibS" ~ target ~ ".a";
+                    if (exists("lib" ~ target ~ ".a")) std.file.remove("lib" ~ target ~ ".a");
+                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib " ~ fileList ~ " -oflib" ~ target ~ ".a";
                     if (testLibs || (shLibSupport() && ("shared" in settings)))
                         stbl ~= " -full";
                     saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
@@ -425,8 +423,8 @@ void buildLibrary(char[] target, char[] bl, char[] bflags, char[] docbl,
                     
                 } else if (targetVersion("Windows")) {
                     // for the moment, only do a static library
-                    if (exists("S" ~ target ~ ".lib")) std.file.remove("S" ~ target ~ ".lib");
-                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib " ~ fileList ~ " -ofS" ~ target ~ ".lib";
+                    if (exists(target ~ ".lib")) std.file.remove(target ~ ".lib");
+                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib " ~ fileList ~ " -of" ~ target ~ ".lib";
                     if (testLibs)
                         stbl ~= " -full";
                     saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);

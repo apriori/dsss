@@ -38,6 +38,7 @@ import std.string;
 import std.c.stdlib;
 
 import sss.clean;
+import sss.platform;
 
 import hcf.env;
 import hcf.path;
@@ -593,30 +594,9 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
                     char[] pkg = std.string.replace(canonPath(section),
                                                     "\\", "/");
                     
-                    // LNC:
-                    // D<compiler>-<package-with-hyphens>
-                    
-                    // D
-                    char[] lname = "D";
-                    
-                    // <compiler>
-                    // FIXME: this should check with dsss_build
-                    if (targetVersion("GNU")) {
-                        lname ~= "G";
-                    } else if (targetVersion("DigitalMars")) {
-                        lname ~= "D";
-                    } else {
-                        lname ~= "O";
-                    }
-                    lname ~= "-";
-                        
-                    // <package>
-                    // swap out /'s
-                    pkg =
-                        std.string.replace(pkg, "/", "-");
                     // name it
                     conf.settings[section]["target"] =
-                        lname ~ pkg;
+                        libraryName(section);
                         
                 } else {
                     conf.settings[section]["type"] = "binary";
@@ -1277,4 +1257,34 @@ char[][] readDSSSRC()
         }
     }
     return ret;
+}
+
+/// Generate a library name from a section
+char[] libraryName(char[] pkg)
+{
+    pkg = std.string.replace(canonPath(pkg),
+                             "\\", "/");
+
+    // LNC:
+    // D<compiler>-<package-with-hyphens>
+
+    // D
+    char[] lname = "D";
+
+    // <compiler>
+    // FIXME: this should check with dsss_build
+    if (targetVersion("GNU")) {
+        lname ~= DSSS_PLATFORM_GDC;
+    } else if (targetVersion("DigitalMars")) {
+        lname ~= DSSS_PLATFORM_DMD;
+    } else {
+        lname ~= DSSS_PLATFORM_OTHER;
+    }
+    lname ~= "-";
+
+    // <package>
+    // swap out /'s
+    lname ~=
+        std.string.replace(pkg, "/", "-");
+    return lname;
 }
