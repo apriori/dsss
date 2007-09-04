@@ -3,6 +3,7 @@ SVN from 0.72:
         - Improved incremental build speed.
         - Fixed excludes to work with a larger variety of paths (see ticket #126).
         - Added a warning for targets containing no files.
+        - Fixed a hang in rebuild with unmatched braces (see ticket #129).
 
 0.72 from 0.71:
         - More DMD fixes - now always compiles one file at a time.

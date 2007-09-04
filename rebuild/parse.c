@@ -3259,7 +3259,7 @@ Statement *Parser::parseStatement(int flags)
 	}
 
 	default:
-	    // error("found '%s' instead of statement", token.toChars());
+	    error("found '%s' instead of statement", token.toChars());
 	    goto Lerror;
 
 	Lerror:
