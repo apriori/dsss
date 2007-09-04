@@ -1259,6 +1259,18 @@ char[][] readDSSSRC()
     return ret;
 }
 
+/// Get the short name for the compiler
+char[] compilerShort()
+{
+    if (targetVersion("GNU")) {
+        return DSSS_PLATFORM_GDC;
+    } else if (targetVersion("DigitalMars")) {
+        return DSSS_PLATFORM_DMD;
+    } else {
+        return DSSS_PLATFORM_OTHER;
+    }
+}
+
 /// Generate a library name from a section
 char[] libraryName(char[] pkg)
 {
@@ -1273,14 +1285,7 @@ char[] libraryName(char[] pkg)
 
     // <compiler>
     // FIXME: this should check with dsss_build
-    if (targetVersion("GNU")) {
-        lname ~= DSSS_PLATFORM_GDC;
-    } else if (targetVersion("DigitalMars")) {
-        lname ~= DSSS_PLATFORM_DMD;
-    } else {
-        lname ~= DSSS_PLATFORM_OTHER;
-    }
-    lname ~= "-";
+    lname ~= compilerShort() ~ "-";
 
     // <package>
     // swap out /'s

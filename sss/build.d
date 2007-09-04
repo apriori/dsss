@@ -69,8 +69,8 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
     
     // add -oq if we don't have such a setting
     if (find(forceFlags, "-o") == -1) {
-        mkdirP("dsss_objs");
-        bl ~= "-oqdsss_objs ";
+        mkdirP("dsss_objs" ~ std.path.sep ~ compilerShort());
+        bl ~= "-oqdsss_objs" ~ std.path.sep ~ compilerShort() ~ " ";
     }
     
     // 1) Make .di files for everything
