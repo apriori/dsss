@@ -112,16 +112,28 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
                     if (buildDebug)
                         debugPrefix = "debug-";
                     
-                    // generate the pragmas
+                    /* generate the pragmas (FIXME: this should be done in a
+                     * nicer way) */
                     char[] defaultLibName = libraryName(build);
                     if (defaultLibName == target) {
                         std.file.write(ifile, std.file.read(file) ~ `
-import sss.platform;
 version (build) {
     debug {
-        pragma(link, "` ~ debugPrefix ~ `D" ~ DSSS_PLATFORM ~ "` ~ target[2..$] ~ `");
+        version (GNU) {
+            pragma(link, "` ~ debugPrefix ~ `DG` ~ target[2..$] ~ `");
+        } else version (DigitalMars) {
+            pragma(link, "` ~ debugPrefix ~ `DD` ~ target[2..$] ~ `");
+        } else {
+            pragma(link, "` ~ debugPrefix ~ `DO` ~ target[2..$] ~ `");
+        }
     } else {
-        pragma(link, "D" ~ DSSS_PLATFORM ~ "` ~ target[2..$] ~ `");
+        version (GNU) {
+            pragma(link, "DG` ~ target[2..$] ~ `");
+        } else version (DigitalMars) {
+            pragma(link, "DD` ~ target[2..$] ~ `");
+        } else {
+            pragma(link, "DO` ~ target[2..$] ~ `");
+        }
     }
 }
 `);

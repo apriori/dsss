@@ -2029,13 +2029,14 @@ Statement *PragmaStatement::semantic(Scope *sc)
 		Expression *e = (Expression *)args->data[i];
 
 		e = e->semantic(sc);
+                e = e->optimize(WANTvalue | WANTinterpret);
 		if (e->op == TOKstring)
 		{
 		    StringExp *se = (StringExp *)e;
                     linkLibrary((char *) se->string);
 		}
-		/* else
-		    error("string expected for link, not '%s'", e->toChars()); */
+		else
+		    error("string expected for link, not '%s'", e->toChars());
 	    }
 	}
         
@@ -2049,6 +2050,7 @@ Statement *PragmaStatement::semantic(Scope *sc)
                 char *toadd = NULL;
                 
 		e = e->semantic(sc);
+                e = e->optimize(WANTvalue | WANTinterpret);
 		if (e->op == TOKstring)
 		{
 		    StringExp *se = (StringExp *)e;
@@ -2058,8 +2060,8 @@ Statement *PragmaStatement::semantic(Scope *sc)
                 {
                     toadd = e->toChars();
                 }
-                /* else
-                    error("string or identifier expected for export_version, not '%s'", e->toChars()); */
+                else
+                    error("string or identifier expected for export_version, not '%s'", e->toChars());
                 
                 /* add this version flag to our own idea of versions, as
                  * well as the compile line */

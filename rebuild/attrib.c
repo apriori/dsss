@@ -832,6 +832,7 @@ void PragmaDeclaration::semantic(Scope *sc)
 		Expression *e = (Expression *)args->data[i];
 
 		e = e->semantic(sc);
+                e = e->optimize(WANTvalue | WANTinterpret);
 		if (e->op == TOKstring)
 		{
 		    StringExp *se = (StringExp *)e;
@@ -853,6 +854,7 @@ void PragmaDeclaration::semantic(Scope *sc)
                 char *toadd = NULL;
                 
 		e = e->semantic(sc);
+                e = e->optimize(WANTvalue | WANTinterpret);
 		if (e->op == TOKstring)
 		{
 		    StringExp *se = (StringExp *)e;
