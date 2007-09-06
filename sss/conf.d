@@ -900,9 +900,9 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
 
                     } else {
                         // or install this file
-                        dsssScriptedStep(conf, "install " ~
-                                         ndir ~ std.path.sep ~ file ~ " " ~
-                                         comps[2] ~ ipostfix);
+                        manifest ~= dsssScriptedStep(conf, "install " ~
+                            ndir ~ std.path.sep ~ file ~ " " ~
+                            comps[2] ~ ipostfix);
 
                     }
                 }

@@ -6,6 +6,7 @@ SVN from 0.72:
         - Fixed a hang in rebuild with unmatched braces (see ticket #129).
         - Object files are now put in compiler-specific directories (see
           ticket #128).
+        - installdir hook command now manifests properly.
 
 0.72 from 0.71:
         - More DMD fixes - now always compiles one file at a time.
