@@ -7,6 +7,7 @@ SVN from 0.72:
         - Object files are now put in compiler-specific directories (see
           ticket #128).
         - installdir hook command now manifests properly.
+        - 'include' setting, counter to 'exclude' (see ticket #111).
 
 0.72 from 0.71:
         - More DMD fixes - now always compiles one file at a time.

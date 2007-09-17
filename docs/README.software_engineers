@@ -152,6 +152,13 @@ exclude=mydpackage/brokenpackage
 The 'exclude' setting is useful in concert with versioning, described in a later
 section.
 
+You may also explicitly include files in a library with the 'include' setting:
+[mydpackage]
+include=mydpackage/all.d
+
+Note that, if 'include' is found, only those files listed in 'include' and
+their dependencies will be included.
+
 When using GDC on POSIX, it is also possible to build shared libraries (.so
 files). To specify that a shared library should be built, set the 'shared'
 option in the library's section:

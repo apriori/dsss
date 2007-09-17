@@ -767,6 +767,32 @@ body {
         }
         return false;
     }
+
+    // and inclusion list
+    char[][] include;
+    if ("include" in settings) {
+        // get the dependencies
+        files = split(settings["include"]);
+        char[][] rawFiles;
+        systemResponse(dsss_build ~ "-files -offiles.tmp " ~ settings["include"],
+                       "-rf", "temp.rf", true);
+        rawFiles = split(cast(char[]) std.file.read("files.tmp"));
+        foreach (f; rawFiles) {
+            while (f.length &&
+                   (f[$-1] == '\r' ||
+                    f[$-1] == '\n')) {
+                f = f[0..$-1];
+            }
+            if (f.length && f[$-1] != 'i' && f[$-1] != 'I') {
+                // the file exists and is not a .di file, so it's part of this build
+                files ~= f;
+            }
+        }
+        tryRemove("files.tmp");
+
+        // done!
+        return files;
+    }
     
     // 2) stomp through the directory adding files
     void addDir(char[] ndir, bool force = false)
