@@ -157,7 +157,8 @@ You may also explicitly include files in a library with the 'include' setting:
 include=mydpackage/all.d
 
 Note that, if 'include' is found, only those files listed in 'include' and
-their dependencies will be included.
+their dependencies will be included. Please note that the 'include' setting is
+being tested and may be changed dramatically.
 
 When using GDC on POSIX, it is also possible to build shared libraries (.so
 files). To specify that a shared library should be built, set the 'shared'
@@ -445,6 +446,18 @@ will cause API documentation for every library to be generated with CandyDoc,
 which beautifies and organizes the documentation.
 
 
-To-be-written:
 == SUBDIRECTORIES ==
+
+It is possible to contain an entire DSSS-enabled software package inside of
+another. This is useful for keeping libraries from different sources separated,
+and occasionally for adapting non-DSSS-aware packages to use DSSS. Essentially,
+a section named for the directory of the sub-package has its type set to subdir:
+[dziplib]
+type=subdir
+
+Note that you must manully add buildflags such as -Idziplib if you want to
+import sources from the subdirectory into sources in the parent directory.
+
+
+To be written:
 == NET INSTALLATION ==
