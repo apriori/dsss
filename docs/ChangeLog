@@ -8,6 +8,8 @@ SVN from 0.72:
           ticket #128).
         - installdir hook command now manifests properly.
         - 'include' setting, counter to 'exclude' (see ticket #111).
+        - Now throws an exception if a hook command fails, rather than
+          exiting. This allows DSSS to clean up after itself more effectively.
 
 0.72 from 0.71:
         - More DMD fixes - now always compiles one file at a time.

@@ -846,6 +846,14 @@ body {
     return files;
 }
 
+/** Exception to be thrown when a scripted step fails */
+class HookException : Exception {
+    this(char[] smsg)
+    {
+        super(smsg);
+    }
+}
+
 /** Perform a pre- or post- script step. Returns a list of installed files (if
  * applicable) */
 char[][] dsssScriptedStep(DSSSConf conf, char[] step)
@@ -878,7 +886,7 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
         } else if (cmd.length > 6 &&
                    cmd[0..6] == "error ") {
             writefln("ERROR: %s", cmd[6..$]);
-            exit(1);
+            throw new HookException("error hook encountered.");
             
         } else if (cmd.length > 8 &&
                    cmd[0..8] == "install ") {

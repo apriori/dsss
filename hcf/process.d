@@ -255,6 +255,14 @@ class PStream : Stream {
     }
 }
 
+/** Exception to be thrown when a command called dies */
+class ProcessDeathException : Exception {
+    this(char[] smsg)
+    {
+        super(smsg);
+    }
+}
+
 /** system + guarantee success */
 void systemOrDie(char[] cmd)
 {
@@ -266,7 +274,7 @@ void systemOrDie(char[] cmd)
         int p = cmd.find(' ');
         if(p!=-1) cmd=cmd[0..p];
         writefln("Command " ~ cmd ~ " returned with code ", res, ", aborting.");
-        exit(1);
+        throw new ProcessDeathException("Command failed, aborting.");
     }
 }
 
@@ -313,7 +321,7 @@ void systemROrDie(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
         int p = cmd.find(' ');
         if(p!=-1) cmd=cmd[0..p];
         writefln("Command " ~ cmd ~ " returned with code ", res, ", aborting.");
-        exit(1);
+        throw new ProcessDeathException("Command failed, aborting.");
     }
 }
 
