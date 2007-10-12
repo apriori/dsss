@@ -1,3 +1,7 @@
+SVN from 0.73:
+        - Made `dsss net fetch` fall back on copying where renaming is
+          impossible (see ticket #138).
+
 0.73 from 0.72:
         - Rebuild: Merged DMD 2.003.
         - Improved incremental build speed.

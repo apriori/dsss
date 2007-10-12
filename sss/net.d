@@ -302,8 +302,15 @@ int net(char[][] args)
                 }
                 
                 // move into place
-                std.file.rename(archname,
-                                origcwd ~ std.path.sep ~ archname);
+                try {
+                    std.file.rename(archname,
+                                    origcwd ~ std.path.sep ~ archname);
+                } catch (Exception x) {
+                    // can't rename, copy
+                    std.file.copy(archname,
+                                  origcwd ~ std.path.sep ~ archname);
+                    std.file.remove(archname);
+                }
                 
                 writefln("Archive %s created.", archname);
                 return 0;
