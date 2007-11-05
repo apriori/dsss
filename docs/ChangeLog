@@ -2,6 +2,8 @@ SVN from 0.73:
         - Made `dsss net fetch` fall back on copying where renaming is
           impossible (see ticket #138).
         - rebuild now ignores -v1
+        - DSSS no longer builds libraries or performs incremental compilation
+          with DMD, as neither of these build strategies is supportable.
 
 0.73 from 0.72:
         - Rebuild: Merged DMD 2.003.

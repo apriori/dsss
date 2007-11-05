@@ -5,6 +5,7 @@ inifile=dmd.conf
 
 exeext=
 objext=o
+flags=-full
 
 
 version=DigitalMars
@@ -38,7 +39,6 @@ version=-version=$i
 
 
 [link]
-oneatatime=yes
 cmd=dmd -L--start-group -L-lphobos $i -of$o
 
 libdir=-L-L$i
@@ -47,8 +47,7 @@ flag=-L$i
 
 
 [liblink]
-safe=yes
-oneatatime=yes
+safe=no
 cmd=ar rc $o $i
 
 libdir=
