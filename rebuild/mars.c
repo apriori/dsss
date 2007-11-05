@@ -209,7 +209,6 @@ Usage:\n\
   -exec          run resulting program\n\
   -v             verbose\n\
   -n             just list the commands to be run, don't run them\n\
-  -v1            D language version 1\n\
   -version=level compile in version code >= level\n\
   -version=ident compile in version code identified by ident\n\
   -debug         compile in debug code\n\
@@ -613,11 +612,6 @@ int main(int argc, char *argv[])
                 global.params.listonly = 1;
                 global.params.fullbuild = 1;
             }
-	    else if (strcmp(p + 1, "v1") == 0)
-	    {
-		error("use DMD 1.0 series compilers for -v1 switch");
-		break;
-	    }
 	    else if (strcmp(p + 1, "w") == 0)
 		global.params.warnings = 1;
 	    else if (strcmp(p + 1, "O") == 0)
