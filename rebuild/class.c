@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2006 by Digital Mars
+// Copyright (c) 1999-2007 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -147,6 +147,7 @@ ClassDeclaration::ClassDeclaration(Loc loc, Identifier *id, BaseClasses *basecla
 		Type::typeinfotypelist = this;
 	    }
 
+#if V2
 	    if (id == Id::TypeInfo_Const)
 	    {	if (Type::typeinfoconst)
 		    Type::typeinfoconst->error("%s", msg);
@@ -158,6 +159,7 @@ ClassDeclaration::ClassDeclaration(Loc loc, Identifier *id, BaseClasses *basecla
 		    Type::typeinfoinvariant->error("%s", msg);
 		Type::typeinfoinvariant = this;
 	    }
+#endif
 	}
 
 	if (id == Id::Object)
@@ -180,10 +182,6 @@ ClassDeclaration::ClassDeclaration(Loc loc, Identifier *id, BaseClasses *basecla
     }
 
     com = 0;
-#if 0
-    if (id == Id::IUnknown)		// IUnknown is the root of all COM objects
-	com = 1;
-#endif
     isauto = 0;
     isabstract = 0;
     isnested = 0;
@@ -261,6 +259,14 @@ void ClassDeclaration::semantic(Scope *sc)
     methods.setDim(0);
 #endif
 
+    if (sc->stc & STCdeprecated)
+    {
+	isdeprecated = 1;
+    }
+
+    if (sc->linkage == LINKcpp)
+	error("cannot create C++ classes");
+
     // Expand any tuples in baseclasses[]
     for (i = 0; i < baseclasses.dim; )
     {	BaseClass *b = (BaseClass *)baseclasses.data[i];
@@ -298,6 +304,18 @@ void ClassDeclaration::semantic(Scope *sc)
 	else
 	{
 	    tc = (TypeClass *)(tb);
+
+	    if (tc->sym->isDeprecated())
+	    {
+		if (!isDeprecated())
+		{
+		    // Deriving from deprecated class makes this one deprecated too
+		    isdeprecated = 1;
+
+		    tc->checkDeprecated(loc, sc);
+		}
+	    }
+
 	    if (tc->sym->isInterfaceDeclaration())
 		;
 	    else
@@ -352,6 +370,17 @@ void ClassDeclaration::semantic(Scope *sc)
 	}
 	else
 	{
+	    if (tc->sym->isDeprecated())
+	    {
+		if (!isDeprecated())
+		{
+		    // Deriving from deprecated class makes this one deprecated too
+		    isdeprecated = 1;
+
+		    tc->checkDeprecated(loc, sc);
+		}
+	    }
+
 	    // Check for duplicate interfaces
 	    for (size_t j = (baseClass ? 1 : 0); j < i; j++)
 	    {
@@ -492,8 +521,6 @@ void ClassDeclaration::semantic(Scope *sc)
 	isauto = 1;
     if (storage_class & STCabstract)
 	isabstract = 1;
-    if (storage_class & STCdeprecated)
-	isdeprecated = 1;
 
     sc = sc->push(this);
     sc->stc &= ~(STCfinal | STCauto | STCscope | STCstatic |
@@ -766,6 +793,50 @@ Dsymbol *ClassDeclaration::search(Loc loc, Identifier *ident, int flags)
     return s;
 }
 
+/**********************************************************
+ * fd is in the vtbl[] for this class.
+ * Return 1 if function is hidden (not findable through search).
+ */
+
+#if V2
+int isf(void *param, FuncDeclaration *fd)
+{
+    //printf("param = %p, fd = %p %s\n", param, fd, fd->toChars());
+    return param == fd;
+}
+
+int ClassDeclaration::isFuncHidden(FuncDeclaration *fd)
+{
+    //printf("ClassDeclaration::isFuncHidden(%s)\n", fd->toChars());
+    Dsymbol *s = search(0, fd->ident, 4|2);
+    if (!s)
+    {	//printf("not found\n");
+	/* Because, due to a hack, if there are multiple definitions
+	 * of fd->ident, NULL is returned.
+	 */
+	return 0;
+    }
+    s = s->toAlias();
+    OverloadSet *os = s->isOverloadSet();
+    if (os)
+    {
+	for (int i = 0; i < os->a.dim; i++)
+	{   Dsymbol *s = (Dsymbol *)os->a.data[i];
+	    FuncDeclaration *f2 = s->isFuncDeclaration();
+	    if (f2 && overloadApply(f2, &isf, fd))
+		return 0;
+	}
+	return 1;
+    }
+    else
+    {
+	FuncDeclaration *fdstart = s->isFuncDeclaration();
+	//printf("%s fdstart = %p\n", s->kind(), fdstart);
+	return !overloadApply(fdstart, &isf, fd);
+    }
+}
+#endif
+
 /****************
  * Find virtual function matching identifier and type.
  * Used to build virtual function tables for interface implementations.
@@ -803,19 +874,23 @@ FuncDeclaration *ClassDeclaration::findFunc(Identifier *ident, TypeFunction *tf)
 }
 
 void ClassDeclaration::interfaceSemantic(Scope *sc)
-{   int i;
+{
+    InterfaceDeclaration *id = isInterfaceDeclaration();
 
     vtblInterfaces = new BaseClasses();
     vtblInterfaces->reserve(interfaces_dim);
 
-    for (i = 0; i < interfaces_dim; i++)
+    for (size_t i = 0; i < interfaces_dim; i++)
     {
 	BaseClass *b = interfaces[i];
 
 	// If this is an interface, and it derives from a COM interface,
 	// then this is a COM interface too.
-	if (b->base->isCOMclass())
+	if (b->base->isCOMinterface())
 	    com = 1;
+
+	if (b->base->isCPPinterface() && id)
+	    id->cpp = 1;
 
 	vtblInterfaces->push(b);
 	b->copyBaseInterfaces(vtblInterfaces);
@@ -828,6 +903,16 @@ void ClassDeclaration::interfaceSemantic(Scope *sc)
 int ClassDeclaration::isCOMclass()
 {
     return com;
+}
+
+int ClassDeclaration::isCOMinterface()
+{
+    return 0;
+}
+
+int ClassDeclaration::isCPPinterface()
+{
+    return 0;
 }
 
 
@@ -896,8 +981,11 @@ InterfaceDeclaration::InterfaceDeclaration(Loc loc, Identifier *id, BaseClasses 
     : ClassDeclaration(loc, id, baseclasses)
 {
     com = 0;
-    if (id == Id::IUnknown)		// IUnknown is the root of all COM objects
-	com = 1;
+    cpp = 0;
+    if (id == Id::IUnknown)	// IUnknown is the root of all COM interfaces
+    {	com = 1;
+	cpp = 1;		// IUnknown is also a C++ interface
+    }
 }
 
 Dsymbol *InterfaceDeclaration::syntaxCopy(Dsymbol *s)
@@ -939,6 +1027,11 @@ void InterfaceDeclaration::semantic(Scope *sc)
 	scope = NULL;
     }
 
+    if (sc->stc & STCdeprecated)
+    {
+	isdeprecated = 1;
+    }
+
     // Expand any tuples in baseclasses[]
     for (i = 0; i < baseclasses.dim; )
     {	BaseClass *b = (BaseClass *)baseclasses.data[0];
@@ -959,6 +1052,9 @@ void InterfaceDeclaration::semantic(Scope *sc)
 	else
 	    i++;
     }
+
+    if (!baseclasses.dim && sc->linkage == LINKcpp)
+	cpp = 1;
 
     // Check for errors, handle forward references
     for (i = 0; i < baseclasses.dim; )
@@ -1056,8 +1152,10 @@ void InterfaceDeclaration::semantic(Scope *sc)
 
     sc = sc->push(this);
     sc->parent = this;
-    if (isCOMclass())
+    if (isCOMinterface())
 	sc->linkage = LINKwindows;
+    else if (isCPPinterface())
+	sc->linkage = LINKcpp;
     sc->structalign = 8;
     structalign = sc->structalign;
     sc->offset = 8;
@@ -1146,16 +1244,26 @@ int InterfaceDeclaration::isBaseOf(BaseClass *bc, int *poffset)
 
 /****************************************
  * Determine if slot 0 of the vtbl[] is reserved for something else.
- * For class objects, yes, this is where the classinfo ptr goes.
+ * For class objects, yes, this is where the ClassInfo ptr goes.
  * For COM interfaces, no.
  * For non-COM interfaces, yes, this is where the Interface ptr goes.
  */
 
 int InterfaceDeclaration::vtblOffset()
 {
-    if (isCOMclass())
+    if (isCOMinterface() || isCPPinterface())
 	return 0;
     return 1;
+}
+
+int InterfaceDeclaration::isCOMinterface()
+{
+    return com;
+}
+
+int InterfaceDeclaration::isCPPinterface()
+{
+    return cpp;
 }
 
 /*******************************************

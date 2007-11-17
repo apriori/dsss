@@ -72,12 +72,13 @@ struct TemplateDeclaration : ScopeDsymbol
     int leastAsSpecialized(TemplateDeclaration *td2);
 
     MATCH deduceMatch(Objects *targsi, Expressions *fargs, Objects *dedargs);
-    FuncDeclaration *deduce(Scope *sc, Loc loc, Objects *targsi, Expressions *fargs);
+    FuncDeclaration *deduce(Scope *sc, Loc loc, Objects *targsi, Expressions *fargs, int flags = 0);
     void declareParameter(Scope *sc, TemplateParameter *tp, Object *o);
 
     TemplateDeclaration *isTemplateDeclaration() { return this; }
 
     TemplateTupleParameter *isVariadic();
+    int isOverloadable();
 };
 
 struct TemplateParameter
@@ -274,7 +275,7 @@ struct TemplateInstance : ScopeDsymbol
     char *mangle();
 
     // Internal
-    static void semanticTiargs(Loc loc, Scope *sc, Objects *tiargs);
+    static void semanticTiargs(Loc loc, Scope *sc, Objects *tiargs, int flags);
     void semanticTiargs(Scope *sc);
     TemplateDeclaration *findTemplateDeclaration(Scope *sc);
     TemplateDeclaration *findBestMatch(Scope *sc);

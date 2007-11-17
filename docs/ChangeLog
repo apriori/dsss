@@ -4,6 +4,7 @@ SVN from 0.73:
         - rebuild now ignores -v1
         - DSSS no longer builds libraries or performs incremental compilation
           with DMD, as neither of these build strategies is supportable.
+        - Rebuild: Merged DMD 2.007.
 
 0.73 from 0.72:
         - Rebuild: Merged DMD 2.003.

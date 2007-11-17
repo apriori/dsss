@@ -43,6 +43,7 @@ struct HdrGenState;
 struct BinExp;
 struct InterState;
 struct Symbol;		// back end symbol
+struct OverloadSet;
 
 enum TOK;
 
@@ -60,12 +61,13 @@ void initPrecedence();
 
 Expression *resolveProperties(Scope *sc, Expression *e);
 void accessCheck(Loc loc, Scope *sc, Expression *e, Declaration *d);
-Dsymbol *search_function(AggregateDeclaration *ad, Identifier *funcid);
+Dsymbol *search_function(ScopeDsymbol *ad, Identifier *funcid);
 void inferApplyArgTypes(enum TOK op, Arguments *arguments, Expression *aggr);
 void argExpTypesToCBuffer(OutBuffer *buf, Expressions *arguments, HdrGenState *hgs);
 void argsToCBuffer(OutBuffer *buf, Expressions *arguments, HdrGenState *hgs);
 void expandTuples(Expressions *exps);
 FuncDeclaration *hasThis(Scope *sc);
+Expression *fromConstInitializer(int result, Expression *e);
 
 struct Expression : Object
 {
@@ -106,7 +108,7 @@ struct Expression : Object
     void checkScalar();
     void checkNoBool();
     Expression *checkIntegral();
-    void checkArithmetic();
+    Expression *checkArithmetic();
     void checkDeprecated(Scope *sc, Dsymbol *s);
     virtual Expression *checkToBoolean();
     Expression *checkToPointer();
@@ -229,8 +231,9 @@ struct DollarExp : IdentifierExp
 struct DsymbolExp : Expression
 {
     Dsymbol *s;
+    int hasOverloads;
 
-    DsymbolExp(Loc loc, Dsymbol *s);
+    DsymbolExp(Loc loc, Dsymbol *s, int hasOverloads = 0);
     Expression *semantic(Scope *sc);
     char *toChars();
     void dump(int indent);
@@ -301,6 +304,7 @@ struct StringExp : Expression
     Expression *castTo(Scope *sc, Type *t);
     int compare(Object *obj);
     int isBool(int result);
+    unsigned charAt(size_t i);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     void toMangleBuffer(OutBuffer *buf);
 };
@@ -347,7 +351,6 @@ struct ArrayLiteralExp : Expression
     Expression *interpret(InterState *istate);
     MATCH implicitConvTo(Type *t);
     Expression *castTo(Scope *sc, Type *t);
-    dt_t **toDt(dt_t **pdt);
 
     int inlineCost(InlineCostState *ics);
     Expression *doInline(InlineDoState *ids);
@@ -364,7 +367,6 @@ struct AssocArrayLiteralExp : Expression
     Expression *syntaxCopy();
     Expression *semantic(Scope *sc);
     int isBool(int result);
-    elem *toElem(IRState *irs);
     int checkSideEffect(int flag);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     void toMangleBuffer(OutBuffer *buf);
@@ -395,14 +397,12 @@ struct StructLiteralExp : Expression
     Expression *semantic(Scope *sc);
     Expression *getField(Type *type, unsigned offset);
     int getFieldIndex(Type *type, unsigned offset);
-    elem *toElem(IRState *irs);
     int checkSideEffect(int flag);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     void toMangleBuffer(OutBuffer *buf);
     void scanForNestedRef(Scope *sc);
     Expression *optimize(int result);
     Expression *interpret(InterState *istate);
-    dt_t **toDt(dt_t **pdt);
     Expression *toLvalue(Scope *sc, Expression *e);
 
     int inlineCost(InlineCostState *ics);
@@ -490,13 +490,19 @@ struct NewAnonClassExp : Expression
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 };
 
-// Offset from symbol
-
-struct SymOffExp : Expression
+struct SymbolExp : Expression
 {
     Declaration *var;
-    unsigned offset;
     int hasOverloads;
+
+    SymbolExp(Loc loc, enum TOK op, int size, Declaration *var, int hasOverloads);
+};
+
+// Offset from symbol
+
+struct SymOffExp : SymbolExp
+{
+    unsigned offset;
 
     SymOffExp(Loc loc, Declaration *var, unsigned offset, int hasOverloads = 0);
     Expression *semantic(Scope *sc);
@@ -512,11 +518,8 @@ struct SymOffExp : Expression
 
 // Variable
 
-struct VarExp : Expression
+struct VarExp : SymbolExp
 {
-    Declaration *var;
-    int hasOverloads;
-
     VarExp(Loc loc, Declaration *var, int hasOverloads = 0);
     int equals(Object *o);
     Expression *semantic(Scope *sc);
@@ -534,6 +537,17 @@ struct VarExp : Expression
     Expression *doInline(InlineDoState *ids);
     //Expression *inlineScan(InlineScanState *iss);
 };
+
+// Overload Set
+
+struct OverExp : Expression
+{
+    OverloadSet *vars;
+
+    OverExp(OverloadSet *s);
+    Expression *toLvalue(Scope *sc, Expression *e);
+};
+
 
 // Function/Delegate literal
 
@@ -601,7 +615,7 @@ struct HaltExp : Expression
     int checkSideEffect(int flag);
 };
 
-struct IftypeExp : Expression
+struct IsExp : Expression
 {
     /* is(targ id tok tspec)
      * is(targ id == tok2)
@@ -611,8 +625,10 @@ struct IftypeExp : Expression
     enum TOK tok;	// ':' or '=='
     Type *tspec;	// can be NULL
     enum TOK tok2;	// 'struct', 'union', 'typedef', etc.
+    TemplateParameters *parameters;
 
-    IftypeExp(Loc loc, Type *targ, Identifier *id, enum TOK tok, Type *tspec, enum TOK tok2);
+    IsExp(Loc loc, Type *targ, Identifier *id, enum TOK tok, Type *tspec,
+	enum TOK tok2, TemplateParameters *parameters);
     Expression *syntaxCopy();
     Expression *semantic(Scope *sc);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
@@ -669,8 +685,6 @@ struct BinExp : Expression
     Expression *inlineScan(InlineScanState *iss);
 
     Expression *op_overload(Scope *sc);
-
-    elem *toElemBin(IRState *irs, int op);
 };
 
 struct BinAssignExp : BinExp
@@ -805,7 +819,6 @@ struct AddrExp : UnaExp
 {
     AddrExp(Loc loc, Expression *e);
     Expression *semantic(Scope *sc);
-    elem *toElem(IRState *irs);
     MATCH implicitConvTo(Type *t);
     Expression *castTo(Scope *sc, Type *t);
     Expression *optimize(int result);
@@ -821,6 +834,9 @@ struct PtrExp : UnaExp
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     Expression *optimize(int result);
     Expression *interpret(InterState *istate);
+
+    // For operator overloading
+    Identifier *opId();
 };
 
 struct NegExp : UnaExp

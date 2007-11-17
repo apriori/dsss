@@ -38,8 +38,6 @@ Msgtable msgtable[] =
     { "dtor", "_dtor" },
     { "classInvariant", "__invariant" },
     { "unitTest", "_unitTest" },
-    { "staticCtor", "_staticCtor" },
-    { "staticDtor", "_staticDtor" },
     { "init" },
     { "size" },
     { "__sizeof", "sizeof" },
@@ -97,6 +95,7 @@ Msgtable msgtable[] =
     { "TIMESTAMP", "__TIMESTAMP__" },
     { "VENDOR", "__VENDOR__" },
     { "VERSIONX", "__VERSION__" },
+    { "EOFX", "__EOF__" },
 
     { "nan" },
     { "infinity" },
@@ -191,6 +190,7 @@ Msgtable msgtable[] =
     { "next",	 "opNext" },
     { "opIn" },
     { "opIn_r" },
+    { "opStar" },
 
     { "classNew", "new" },
     { "classDelete", "delete" },
@@ -217,15 +217,25 @@ Msgtable msgtable[] =
     { "export_version" },
     { "nolink" },
 
-    // For toHash/toString
+    // For special functions
     { "tohash", "toHash" },
     { "tostring", "toString" },
+    { "getmembers", "getMembers" },
 
     // Special functions
     { "alloca" },
     { "main" },
     { "WinMain" },
     { "DllMain" },
+
+    // Builtin functions
+    { "std" },
+    { "math" },
+    { "sin" },
+    { "cos" },
+    { "tan" },
+    { "_sqrt", "sqrt" },
+    { "fabs" },
 
     // Traits
     { "isAbstractClass" },
@@ -246,6 +256,8 @@ Msgtable msgtable[] =
     { "classInstanceSize" },
     { "allMembers" },
     { "derivedMembers" },
+    { "isSame" },
+    { "compiles" },
 };
 
 

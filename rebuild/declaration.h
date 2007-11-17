@@ -31,6 +31,7 @@ struct ExpInitializer;
 struct StructDeclaration;
 struct TupleType;
 struct InterState;
+struct IRState;
 
 enum PROT;
 enum LINK;
@@ -210,7 +211,7 @@ struct VarDeclaration : Declaration
     Initializer *init;
     unsigned offset;
     int noauto;			// no auto semantics
-    int nestedref;		// referenced by a lexically nested function
+    FuncDeclarations nestedrefs; // referenced by these lexically nested functions
     int inuse;
     int ctorinit;		// it has been initialized in a ctor
     int onstack;		// 1: it has been allocated on the stack
@@ -219,6 +220,7 @@ struct VarDeclaration : Declaration
     Dsymbol *aliassym;		// if redone as alias to another symbol
     Expression *value;		// when interpreting, this is the value
 				// (NULL if value not determinable)
+    Scope *scope;		// !=NULL means context to use
 
     VarDeclaration(Loc loc, Type *t, Identifier *id, Initializer *init);
     Dsymbol *syntaxCopy(Dsymbol *);
@@ -384,6 +386,20 @@ enum ILS
 };
 
 /**************************************************************/
+#if V2
+
+enum BUILTIN
+{
+    BUILTINunknown = -1,	// not known if this is a builtin
+    BUILTINnot,			// this is not a builtin
+    BUILTINsin,			// std.math.sin
+    BUILTINcos,			// std.math.cos
+    BUILTINtan,			// std.math.tan
+    BUILTINsqrt,		// std.math.sqrt
+    BUILTINfabs,		// std.math.fabs
+};
+
+#endif
 
 struct FuncDeclaration : Declaration
 {
@@ -414,14 +430,14 @@ struct FuncDeclaration : Declaration
     int inlineNest;			// !=0 if nested inline
     int cantInterpret;			// !=0 if cannot interpret function
     int semanticRun;			// !=0 if semantic3() had been run
-    int nestedFrameRef;			// !=0 if nested variables referenced frame ptr
+					// this function's frame ptr
     ForeachStatement *fes;		// if foreach body, this is the foreach
     int introducing;			// !=0 if 'introducing' function
     Type *tintro;			// if !=NULL, then this is the type
 					// of the 'introducing' function
 					// this one is overriding
     int inferRetType;			// !=0 if return type is to be inferred
-    Scope *scope;		// !=NULL means context to use
+    Scope *scope;			// !=NULL means context to use
 
     // Things that should really go into Scope
     int hasReturnExp;			// 1 if there's a return exp; statement
@@ -434,6 +450,20 @@ struct FuncDeclaration : Declaration
     VarDeclaration *nrvo_var;		// variable to replace with shidden
     Symbol *shidden;			// hidden pointer passed to function
 
+#if V2
+    enum BUILTIN builtin;		// set if this is a known, builtin
+					// function we can evaluate at compile
+					// time
+
+    int tookAddressOf;			// set if someone took the address of
+					// this function
+    Dsymbols closureVars;		// local variables in this function
+					// which are referenced by nested
+					// functions
+#else
+    int nestedFrameRef;			// !=0 if nested variables referenced
+#endif
+
     FuncDeclaration(Loc loc, Loc endloc, Identifier *id, enum STC storage_class, Type *type);
     Dsymbol *syntaxCopy(Dsymbol *);
     void semantic(Scope *sc);
@@ -444,7 +474,7 @@ struct FuncDeclaration : Declaration
     int overrides(FuncDeclaration *fd);
     int overloadInsert(Dsymbol *s);
     FuncDeclaration *overloadExactMatch(Type *t);
-    FuncDeclaration *overloadResolve(Loc loc, Expressions *arguments);
+    FuncDeclaration *overloadResolve(Loc loc, Expressions *arguments, int flags = 0);
     LabelDsymbol *searchLabel(Identifier *ident);
     AggregateDeclaration *isThis();
     AggregateDeclaration *isMember2();
@@ -459,6 +489,7 @@ struct FuncDeclaration : Declaration
     int isImportedSymbol();
     int isAbstract();
     int isCodeseg();
+    int isOverloadable();
     virtual int isNested();
     int needThis();
     virtual int isVirtual();
@@ -472,11 +503,13 @@ struct FuncDeclaration : Declaration
     char *kind();
     void toDocBuffer(OutBuffer *buf);
     FuncDeclaration *isUnique();
+    int needsClosure();
 
     static FuncDeclaration *genCfunc(Type *treturn, char *name);
     static FuncDeclaration *genCfunc(Type *treturn, Identifier *id);
 
     Symbol *toThunkSymbol(int offset);	// thunk version
+    void buildClosure(IRState *irs);
 
     FuncDeclaration *isFuncDeclaration() { return this; }
 };

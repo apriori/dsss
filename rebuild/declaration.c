@@ -445,18 +445,11 @@ void AliasDeclaration::semantic(Scope *sc)
     else if (e)
     {
 	// Try to convert Expression to Dsymbol
-        if (e->op == TOKvar)
-	{   s = ((VarExp *)e)->var;
+	s = getDsymbol(e);
+	if (s)
 	    goto L2;
-	}
-        else if (e->op == TOKfunction)
-	{   s = ((FuncExp *)e)->fd;
-	    goto L2;
-	}
-        else
-	{   //error("cannot alias an expression %s", e->toChars());
-	    t = e->type;
-	}
+	// error("cannot alias an expression %s", e->toChars());
+	t = e->type;
     }
     else if (t)
 	type = t;
@@ -594,13 +587,13 @@ VarDeclaration::VarDeclaration(Loc loc, Type *type, Identifier *id, Initializer 
     this->loc = loc;
     offset = 0;
     noauto = 0;
-    nestedref = 0;
     inuse = 0;
     ctorinit = 0;
     aliassym = NULL;
     onstack = 0;
     canassign = 0;
     value = NULL;
+    scope = NULL;
 }
 
 Dsymbol *VarDeclaration::syntaxCopy(Dsymbol *s)
@@ -648,7 +641,8 @@ Dsymbol *VarDeclaration::syntaxCopy(Dsymbol *s)
 void VarDeclaration::semantic(Scope *sc)
 {
     //printf("VarDeclaration::semantic('%s', parent = '%s')\n", toChars(), sc->parent->toChars());
-    //printf("type = %s\n", type->toChars());
+    //printf(" type = %s\n", type->toChars());
+    //printf("stc = x%x\n", sc->stc);
     //printf("linkage = %d\n", sc->linkage);
     //if (strcmp(toChars(), "mul") == 0) halt();
 
@@ -746,8 +740,19 @@ void VarDeclaration::semantic(Scope *sc)
 	storage_class |= STCctorinit;
     }
 
+Lagain:
     if (isConst())
     {
+	/* Rewrite things like:
+	 *  const string s;
+	 * to:
+	 *  invariant string s;
+	 */
+	if (type->nextOf() && type->nextOf()->isInvariant())
+	{   storage_class |= STCinvariant;
+	    storage_class &= ~STCconst;
+	    goto Lagain;
+	}
 	type = type->constOf();
 	if (isParameter())
 	{   storage_class |= STCfinal;
@@ -834,19 +839,25 @@ void VarDeclaration::semantic(Scope *sc)
     }
 
     if (!init && !sc->inunion && !isStatic() && !isConst() && fd &&
-	!(storage_class & (STCfield | STCin | STCforeach)))
+	!(storage_class & (STCfield | STCin | STCforeach)) &&
+	type->size() != 0)
     {
 	// Provide a default initializer
 	//printf("Providing default initializer for '%s'\n", toChars());
 	if (type->ty == Tstruct &&
 	    ((TypeStruct *)type)->sym->zeroInit == 1)
-	{
+	{   /* If a struct is all zeros, as a special case
+	     * set it's initializer to the integer 0.
+	     * In AssignExp::toElem(), we check for this and issue
+	     * a memset() to initialize the struct.
+	     * Must do same check in interpreter.
+	     */
 	    Expression *e = new IntegerExp(loc, 0, Type::tint32);
 	    Expression *e1;
 	    e1 = new VarExp(loc, this);
 	    e = new AssignExp(loc, e1, e);
-	    e->type = e1->type;
-	    init = new ExpInitializer(loc, e/*->type->defaultInit()*/);
+	    e->type = e1->type;		// don't type check this, it would fail
+	    init = new ExpInitializer(loc, e);
 	    return;
 	}
 	else if (type->ty == Ttypedef)
@@ -870,11 +881,12 @@ void VarDeclaration::semantic(Scope *sc)
     if (init)
     {
 	ArrayInitializer *ai = init->isArrayInitializer();
-	if (ai && type->toBasetype()->ty == Taarray)
+	if (ai && tb->ty == Taarray)
 	{
 	    init = ai->toAssocArrayInitializer();
 	}
 
+	StructInitializer *si = init->isStructInitializer();
 	ExpInitializer *ei = init->isExpInitializer();
 
 	// See if we can allocate on the stack
@@ -922,15 +934,19 @@ void VarDeclaration::semantic(Scope *sc)
 		t = type->toBasetype();
 		if (t->ty == Tsarray)
 		{
-		    dim = ((TypeSArray *)t)->dim->toInteger();
-		    // If multidimensional static array, treat as one large array
-		    while (1)
+		    ei->exp = ei->exp->semantic(sc);
+		    if (!ei->exp->implicitConvTo(type))
 		    {
-			t = t->nextOf()->toBasetype();
-			if (t->ty != Tsarray)
-			    break;
-			dim *= ((TypeSArray *)t)->dim->toInteger();
-			e1->type = new TypeSArray(t->nextOf(), new IntegerExp(0, dim, Type::tindex));
+			dim = ((TypeSArray *)t)->dim->toInteger();
+			// If multidimensional static array, treat as one large array
+			while (1)
+			{
+			    t = t->nextOf()->toBasetype();
+			    if (t->ty != Tsarray)
+				break;
+			    dim *= ((TypeSArray *)t)->dim->toInteger();
+			    e1->type = new TypeSArray(t->nextOf(), new IntegerExp(0, dim, Type::tindex));
+			}
 		    }
 		    e1 = new SliceExp(loc, e1, NULL, NULL);
 		}
@@ -964,31 +980,54 @@ void VarDeclaration::semantic(Scope *sc)
 	     * Ignore failure.
 	     */
 
-	    if (ei && !global.errors && !inferred)
+	    if (!global.errors && !inferred)
 	    {
 		unsigned errors = global.errors;
 		global.gag++;
 		//printf("+gag\n");
-		Expression *e = ei->exp->syntaxCopy();
+		Expression *e;
+		Initializer *i2 = init;
 		inuse++;
-		e = e->semantic(sc);
+		if (ei)
+		{
+		    e = ei->exp->syntaxCopy();
+		    e = e->semantic(sc);
+		    e = e->implicitCastTo(sc, type);
+		}
+		else if (si || ai)
+		{   i2 = init->syntaxCopy();
+		    i2 = i2->semantic(sc, type);
+		}
 		inuse--;
-		e = e->implicitCastTo(sc, type);
 		global.gag--;
 		//printf("-gag\n");
 		if (errors != global.errors)	// if errors happened
 		{
 		    if (global.gag == 0)
 			global.errors = errors;	// act as if nothing happened
+
+		    /* Save scope for later use, to try again
+		     */
+		    scope = new Scope(*sc);
+		    scope->setNoFree();
 		}
-		else
+		else if (ei)
 		{
 		    e = e->optimize(WANTvalue | WANTinterpret);
 		    if (e->op == TOKint64 || e->op == TOKstring)
 		    {
 			ei->exp = e;		// no errors, keep result
 		    }
+		    else
+		    {
+			/* Save scope for later use, to try again
+			 */
+			scope = new Scope(*sc);
+			scope->setNoFree();
+		    }
 		}
+		else
+		    init = i2;		// no errors, keep result
 	    }
 	}
     }
@@ -1080,27 +1119,46 @@ void VarDeclaration::checkCtorConstInit()
 }
 
 /************************************
- * Check to see if variable is a reference to an enclosing function
- * or not.
+ * Check to see if this variable is actually in an enclosing function
+ * rather than the current one.
  */
 
 void VarDeclaration::checkNestedReference(Scope *sc, Loc loc)
 {
-    if (!isDataseg() && parent != sc->parent && parent)
+    if (parent && !isDataseg() && parent != sc->parent)
     {
+	// The function that this variable is in
 	FuncDeclaration *fdv = toParent()->isFuncDeclaration();
+	// The current function
 	FuncDeclaration *fdthis = sc->parent->isFuncDeclaration();
 
-	if (fdv && fdthis)
+	if (fdv && fdthis && fdv != fdthis)
 	{
 	    if (loc.filename)
 		fdthis->getLevel(loc, fdv);
-	    nestedref = 1;
-	    fdv->nestedFrameRef = 1;
+
+	    for (int i = 0; i < nestedrefs.dim; i++)
+	    {	FuncDeclaration *f = (FuncDeclaration *)nestedrefs.data[i];
+		if (f == fdthis)
+		    goto L1;
+	    }
+	    nestedrefs.push(fdthis);
+	  L1: ;
+
+
+	    for (int i = 0; i < fdv->closureVars.dim; i++)
+	    {	Dsymbol *s = (Dsymbol *)fdv->closureVars.data[i];
+		if (s == this)
+		    goto L2;
+	    }
+	    fdv->closureVars.push(this);
+	  L2: ;
+
 	    //printf("var %s in function %s is nested ref\n", toChars(), fdv->toChars());
 	}
     }
 }
+
 
 /*******************************
  * Does symbol go into data segment?
@@ -1116,6 +1174,7 @@ int VarDeclaration::isDataseg()
     Dsymbol *parent = this->toParent();
     if (!parent && !(storage_class & (STCstatic | STCconst)))
     {	//error("forward referenced");
+halt();
 	type = Type::terror;
 	return 0;
     }
@@ -1225,17 +1284,21 @@ void TypeInfoDeclaration::semantic(Scope *sc)
 
 /***************************** TypeInfoConstDeclaration **********************/
 
+#if V2
 TypeInfoConstDeclaration::TypeInfoConstDeclaration(Type *tinfo)
     : TypeInfoDeclaration(tinfo, 0)
 {
 }
+#endif
 
 /***************************** TypeInfoInvariantDeclaration **********************/
 
+#if V2
 TypeInfoInvariantDeclaration::TypeInfoInvariantDeclaration(Type *tinfo)
     : TypeInfoDeclaration(tinfo, 0)
 {
 }
+#endif
 
 /***************************** TypeInfoStructDeclaration **********************/
 

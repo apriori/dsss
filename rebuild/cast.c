@@ -95,13 +95,16 @@ MATCH Expression::implicitConvTo(Type *t)
     printf("Expression::implicitConvTo(this=%s, type=%s, t=%s)\n",
 	toChars(), type->toChars(), t->toChars());
 #endif
+    //static int nest; if (++nest == 10) halt();
     if (!type)
     {	//error("%s is not an expression", toChars());
 	type = Type::terror;
     }
     Expression *e = optimize(WANTvalue | WANTflags);
+    if (e->type == t)
+	return MATCHexact;
     if (e != this)
-    {	//printf("optimzed to %s\n", e->toChars());
+    {	//printf("optimized to %s\n", e->toChars());
 	return e->implicitConvTo(t);
     }
     MATCH match = type->implicitConvTo(t);
@@ -480,10 +483,30 @@ MATCH AddrExp::implicitConvTo(Type *t)
     if (result == MATCHnomatch)
     {
 	// Look for pointers to functions where the functions are overloaded.
-	VarExp *ve;
-	FuncDeclaration *f;
 
 	t = t->toBasetype();
+
+	if (e1->op == TOKoverloadset &&
+	    (t->ty == Tpointer || t->ty == Tdelegate) && t->nextOf()->ty == Tfunction)
+	{   OverExp *eo = (OverExp *)e1;
+	    FuncDeclaration *f = NULL;
+	    for (int i = 0; i < eo->vars->a.dim; i++)
+	    {   Dsymbol *s = (Dsymbol *)eo->vars->a.data[i];
+		FuncDeclaration *f2 = s->isFuncDeclaration();
+		assert(f2);
+		if (f2->overloadExactMatch(t->nextOf()))
+		{   if (f)
+			/* Error if match in more than one overload set,
+			 * even if one is a 'better' match than the other.
+			 */
+			ScopeDsymbol::multiplyDefined(loc, f, f2);
+		    else
+			f = f2;
+		    result = MATCHexact;
+		}
+	    }
+	}
+
 	if (type->ty == Tpointer && type->nextOf()->ty == Tfunction &&
 	    t->ty == Tpointer && t->nextOf()->ty == Tfunction &&
 	    e1->op == TOKvar)
@@ -493,8 +516,8 @@ MATCH AddrExp::implicitConvTo(Type *t)
 	     * converted to a SymOffExp.
 	     */
 	    assert(0);
-	    ve = (VarExp *)e1;
-	    f = ve->var->isFuncDeclaration();
+	    VarExp *ve = (VarExp *)e1;
+	    FuncDeclaration *f = ve->var->isFuncDeclaration();
 	    if (f && f->overloadExactMatch(t->nextOf()))
 		result = MATCHexact;
 	}
@@ -592,6 +615,8 @@ Expression *Expression::castTo(Scope *sc, Type *t)
     printf("Expression::castTo(this=%s, type=%s, t=%s)\n",
 	toChars(), type->toChars(), t->toChars());
 #endif
+    if (type == t)
+	return this;
     e = this;
     tb = t->toBasetype();
     type = type->toBasetype();
@@ -692,9 +717,13 @@ Expression *NullExp::castTo(Scope *sc, Type *t)
 
 Expression *StringExp::castTo(Scope *sc, Type *t)
 {
+    /* This follows copy-on-write; any changes to 'this'
+     * will result in a copy.
+     * The this->string member is considered immutable.
+     */
     StringExp *se;
     Type *tb;
-    int unique;
+    int copied = 0;
 
     //printf("StringExp::castTo(t = %s), '%s' committed = %d\n", t->toChars(), toChars(), committed);
 
@@ -703,66 +732,70 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	error("cannot convert string literal to void*");
     } */
 
+    se = this;
+    if (!committed)
+    {   se = (StringExp *)copy();
+	se->committed = 1;
+	copied = 1;
+    }
+
+    if (type == t)
+    {
+	return se;
+    }
+
     tb = t->toBasetype();
     //printf("\ttype = %s\n", type->toChars());
     if (tb->ty == Tdelegate && type->toBasetype()->ty != Tdelegate)
 	return Expression::castTo(sc, t);
 
-    se = this;
-    unique = 0;
-    if (!committed)
+    Type *typeb = type->toBasetype();
+    if (typeb == tb)
     {
-	// Copy when committing the type
-	void *s;
-
-	s = (unsigned char *)mem.malloc((len + 1) * sz);
-	memcpy(s, string, (len + 1) * sz);
-	se = new StringExp(loc, s, len);
-	se->type = type;
-	se->sz = sz;
-	se->committed = 0;
-	unique = 1;		// this is the only instance
-    }
-    se->type = type->toBasetype();
-    if (tb == se->type)
-    {	se->type = t;
-	se->committed = 1;
+	if (!copied)
+	{   se = (StringExp *)copy();
+	    copied = 1;
+	}
+	se->type = t;
 	return se;
     }
 
     if (tb->ty != Tsarray && tb->ty != Tarray && tb->ty != Tpointer)
-    {	se->committed = 1;
+    {	if (!copied)
+	{   se = (StringExp *)copy();
+	    copied = 1;
+	}
 	goto Lcast;
     }
-    if (se->type->ty != Tsarray && se->type->ty != Tarray && se->type->ty != Tpointer)
-    {	se->committed = 1;
-	goto Lcast;
-    }
-
-    if (se->committed == 1)
-    {
-	if (se->type->nextOf()->size() == tb->nextOf()->size())
-	{   se->type = t;
-	    return se;
+    if (typeb->ty != Tsarray && typeb->ty != Tarray && typeb->ty != Tpointer)
+    {	if (!copied)
+	{   se = (StringExp *)copy();
+	    copied = 1;
 	}
 	goto Lcast;
     }
 
-    se->committed = 1;
+    if (typeb->nextOf()->size() == tb->nextOf()->size())
+    {
+	if (!copied)
+	{   se = (StringExp *)copy();
+	    copied = 1;
+	}
+	if (tb->ty == Tsarray)
+	    goto L2;	// handle possible change in static array dimension
+	se->type = t;
+	return se;
+    }
 
-    int tfty;
-    int ttty;
-    char *p;
-    size_t u;
-    unsigned c;
-    size_t newlen;
+    if (committed)
+	goto Lcast;
 
 #define X(tf,tt)	((tf) * 256 + (tt))
     {
     OutBuffer buffer;
-    newlen = 0;
-    tfty = se->type->nextOf()->toBasetype()->ty;
-    ttty = tb->nextOf()->toBasetype()->ty;
+    size_t newlen = 0;
+    int tfty = typeb->nextOf()->toBasetype()->ty;
+    int ttty = tb->nextOf()->toBasetype()->ty;
     switch (X(tfty, ttty))
     {
 	case X(Tchar, Tchar):
@@ -771,9 +804,9 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	    break;
 
 	case X(Tchar, Twchar):
-	    for (u = 0; u < len;)
-	    {
-		p = utf_decodeChar((unsigned char *)se->string, len, &u, &c);
+	    for (size_t u = 0; u < len;)
+	    {	unsigned c;
+		char *p = utf_decodeChar((unsigned char *)se->string, len, &u, &c);
 		if (p)
 		    error("%s", p);
 		else
@@ -784,9 +817,9 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	    goto L1;
 
 	case X(Tchar, Tdchar):
-	    for (u = 0; u < len;)
-	    {
-		p = utf_decodeChar((unsigned char *)se->string, len, &u, &c);
+	    for (size_t u = 0; u < len;)
+	    {	unsigned c;
+		char *p = utf_decodeChar((unsigned char *)se->string, len, &u, &c);
 		if (p)
 		    error("%s", p);
 		buffer.write4(c);
@@ -796,9 +829,9 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	    goto L1;
 
 	case X(Twchar,Tchar):
-	    for (u = 0; u < len;)
-	    {
-		p = utf_decodeWchar((unsigned short *)se->string, len, &u, &c);
+	    for (size_t u = 0; u < len;)
+	    {	unsigned c;
+		char *p = utf_decodeWchar((unsigned short *)se->string, len, &u, &c);
 		if (p)
 		    error("%s", p);
 		else
@@ -809,9 +842,9 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	    goto L1;
 
 	case X(Twchar,Tdchar):
-	    for (u = 0; u < len;)
-	    {
-		p = utf_decodeWchar((unsigned short *)se->string, len, &u, &c);
+	    for (size_t u = 0; u < len;)
+	    {	unsigned c;
+		char *p = utf_decodeWchar((unsigned short *)se->string, len, &u, &c);
 		if (p)
 		    error("%s", p);
 		buffer.write4(c);
@@ -821,9 +854,9 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	    goto L1;
 
 	case X(Tdchar,Tchar):
-	    for (u = 0; u < len; u++)
+	    for (size_t u = 0; u < len; u++)
 	    {
-		c = ((unsigned *)se->string)[u];
+		unsigned c = ((unsigned *)se->string)[u];
 		if (!utf_isValidDchar(c))
 		    error("invalid UCS-32 char \\U%08x", c);
 		else
@@ -835,9 +868,9 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	    goto L1;
 
 	case X(Tdchar,Twchar):
-	    for (u = 0; u < len; u++)
+	    for (size_t u = 0; u < len; u++)
 	    {
-		c = ((unsigned *)se->string)[u];
+		unsigned c = ((unsigned *)se->string)[u];
 		if (!utf_isValidDchar(c))
 		    error("invalid UCS-32 char \\U%08x", c);
 		else
@@ -849,22 +882,23 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	    goto L1;
 
 	L1:
-	    if (!unique)
-		se = new StringExp(loc, NULL, 0);
+	    if (!copied)
+	    {   se = (StringExp *)copy();
+		copied = 1;
+	    }
 	    se->string = buffer.extractData();
 	    se->len = newlen;
 	    se->sz = tb->nextOf()->size();
 	    break;
 
 	default:
-	    if (se->type->nextOf()->size() == tb->nextOf()->size())
-	    {	se->type = t;
-		return se;
-	    }
+	    assert(typeb->nextOf()->size() != tb->nextOf()->size());
 	    goto Lcast;
     }
     }
 #undef X
+L2:
+    assert(copied);
 
     // See if need to truncate or extend the literal
     if (tb->ty == Tsarray)
@@ -876,28 +910,18 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	// Changing dimensions
 	if (dim2 != se->len)
 	{
+	    // Copy when changing the string literal
 	    unsigned newsz = se->sz;
+	    void *s;
+	    int d;
 
-	    if (unique && dim2 < se->len)
-	    {   se->len = dim2;
-		// Add terminating 0
-		memset((unsigned char *)se->string + dim2 * newsz, 0, newsz);
-	    }
-	    else
-	    {
-		// Copy when changing the string literal
-		void *s;
-		int d;
-
-		d = (dim2 < se->len) ? dim2 : se->len;
-		s = (unsigned char *)mem.malloc((dim2 + 1) * newsz);
-		memcpy(s, se->string, d * newsz);
-		// Extend with 0, add terminating 0
-		memset((char *)s + d * newsz, 0, (dim2 + 1 - d) * newsz);
-		se = new StringExp(loc, s, dim2);
-		se->committed = 1;	// it now has a firm type
-		se->sz = newsz;
-	    }
+	    d = (dim2 < se->len) ? dim2 : se->len;
+	    s = (unsigned char *)mem.malloc((dim2 + 1) * newsz);
+	    memcpy(s, se->string, d * newsz);
+	    // Extend with 0, add terminating 0
+	    memset((char *)s + d * newsz, 0, (dim2 + 1 - d) * newsz);
+	    se->string = s;
+	    se->len = dim2;
 	}
     }
     se->type = t;
@@ -905,7 +929,7 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 
 Lcast:
     Expression *e = new CastExp(loc, se, t);
-    e->type = t;
+    e->type = t;	// so semantic() won't be run on e
     return e;
 }
 
@@ -924,17 +948,44 @@ Expression *AddrExp::castTo(Scope *sc, Type *t)
     if (tb != type)
     {
 	// Look for pointers to functions where the functions are overloaded.
-	VarExp *ve;
-	FuncDeclaration *f;
+
+	if (e1->op == TOKoverloadset &&
+	    (t->ty == Tpointer || t->ty == Tdelegate) && t->nextOf()->ty == Tfunction)
+	{   OverExp *eo = (OverExp *)e1;
+	    FuncDeclaration *f = NULL;
+	    for (int i = 0; i < eo->vars->a.dim; i++)
+	    {   Dsymbol *s = (Dsymbol *)eo->vars->a.data[i];
+		FuncDeclaration *f2 = s->isFuncDeclaration();
+		assert(f2);
+		if (f2->overloadExactMatch(t->nextOf()))
+		{   if (f)
+			/* Error if match in more than one overload set,
+			 * even if one is a 'better' match than the other.
+			 */
+			ScopeDsymbol::multiplyDefined(loc, f, f2);
+		    else
+			f = f2;
+		}
+	    }
+	    if (f)
+	    {	f->tookAddressOf = 1;
+		SymOffExp *se = new SymOffExp(loc, f, 0, 0);
+		se->semantic(sc);
+		// Let SymOffExp::castTo() do the heavy lifting
+		return se->castTo(sc, t);
+	    }
+	}
+
 
 	if (type->ty == Tpointer && type->nextOf()->ty == Tfunction &&
 	    tb->ty == Tpointer && tb->nextOf()->ty == Tfunction &&
 	    e1->op == TOKvar)
 	{
-	    ve = (VarExp *)e1;
-	    f = ve->var->isFuncDeclaration();
+	    VarExp *ve = (VarExp *)e1;
+	    FuncDeclaration *f = ve->var->isFuncDeclaration();
 	    if (f)
 	    {
+		assert(0);	// should be SymOffExp instead
 		f = f->overloadExactMatch(tb->nextOf());
 		if (f)
 		{
@@ -966,6 +1017,12 @@ Expression *TupleExp::castTo(Scope *sc, Type *t)
 
 Expression *ArrayLiteralExp::castTo(Scope *sc, Type *t)
 {
+#if 0
+    printf("ArrayLiteralExp::castTo(this=%s, type=%s, t=%s)\n",
+	toChars(), type->toChars(), t->toChars());
+#endif
+    if (type == t)
+	return this;
     Type *typeb = type->toBasetype();
     Type *tb = t->toBasetype();
     if ((tb->ty == Tarray || tb->ty == Tsarray) &&
@@ -1060,6 +1117,7 @@ Expression *SymOffExp::castTo(Scope *sc, Type *t)
 			e = new SymOffExp(loc, f, 0);
 			e->type = t;
 		    }
+		    f->tookAddressOf = 1;
 		    return e;
 		}
 	    }
@@ -1101,6 +1159,7 @@ Expression *DelegateExp::castTo(Scope *sc, Type *t)
 		{   int offset;
 		    if (f->tintro && f->tintro->nextOf()->isBaseOf(f->type->nextOf(), &offset) && offset)
 			error("%s", msg);
+		    f->tookAddressOf = 1;
 		    e = new DelegateExp(loc, e1, f);
 		    e->type = t;
 		    return e;
@@ -1114,6 +1173,7 @@ Expression *DelegateExp::castTo(Scope *sc, Type *t)
     else
     {	int offset;
 
+	func->tookAddressOf = 1;
 	if (func->tintro && func->tintro->nextOf()->isBaseOf(func->type->nextOf(), &offset) && offset)
 	    error("%s", msg);
     }
@@ -1153,7 +1213,7 @@ Expression *BinExp::scaleFactor(Scope *sc)
 	// Replace (ptr + int) with (ptr + (int * stride))
 	Type *t = Type::tptrdiff_t;
 
-	stride = t1b->nextOf()->size();
+	stride = t1b->nextOf()->size(loc);
 	if (!t->equals(t2b))
 	    e2 = e2->castTo(sc, t);
 	e2 = new MulExp(loc, e2, new IntegerExp(0, stride, t));
@@ -1166,7 +1226,7 @@ Expression *BinExp::scaleFactor(Scope *sc)
 	Type *t = Type::tptrdiff_t;
 	Expression *e;
 
-	stride = t2b->nextOf()->size();
+	stride = t2b->nextOf()->size(loc);
 	if (!t->equals(t1b))
 	    e = e1->castTo(sc, t);
 	else
@@ -1191,7 +1251,7 @@ Expression *BinExp::typeCombine(Scope *sc)
     Type *t;
     TY ty;
 
-    //printf("BinExp::typeCombine()\n");
+    //printf("BinExp::typeCombine() %s\n", toChars());
     //dump(0);
 
     e1 = e1->integralPromotions(sc);
@@ -1261,10 +1321,17 @@ Expression *BinExp::typeCombine(Scope *sc)
     {
 	if ((t1->ty == Tsarray || t1->ty == Tarray) &&
 	    (t2->ty == Tsarray || t2->ty == Tarray) &&
-	    (t1->nextOf()->mod || t2->nextOf()->mod))
+	    (t1->nextOf()->mod || t2->nextOf()->mod) &&
+	    (t1->nextOf()->mod != t2->nextOf()->mod)
+	   )
 	{
-	    t1 = t1->constOf();
-	    t2 = t2->constOf();
+	    t1 = t1->nextOf()->mutableOf()->constOf()->arrayOf();
+	    t2 = t2->nextOf()->mutableOf()->constOf()->arrayOf();
+//t1 = t1->constOf();
+//t2 = t2->constOf();
+	    e1 = e1->castTo(sc, t1);
+	    e2 = e2->castTo(sc, t2);
+	    goto Lagain;
 	}
     }
 
@@ -1290,8 +1357,8 @@ Lagain:
 	    ;
 	else if (t1n->mod != t2n->mod)
 	{
-	    t1 = t1->constOf();
-	    t2 = t2->constOf();
+	    t1 = t1n->mutableOf()->constOf()->pointerTo();
+	    t2 = t2n->mutableOf()->constOf()->pointerTo();
 	    goto Lagain;
 	}
 	else if (t1n->ty == Tclass && t2n->ty == Tclass)
@@ -1346,8 +1413,15 @@ Lagain:
 	     t1->nextOf()->mod != t2->nextOf()->mod
 	    )
     {
-	t1 = t1->constOf();
-	t2 = t2->constOf();
+	if (t1->ty == Tpointer)
+	    t1 = t1->nextOf()->mutableOf()->constOf()->pointerTo();
+	else
+	    t1 = t1->nextOf()->mutableOf()->constOf()->arrayOf();
+
+	if (t2->ty == Tpointer)
+	    t2 = t2->nextOf()->mutableOf()->constOf()->pointerTo();
+	else
+	    t2 = t2->nextOf()->mutableOf()->constOf()->arrayOf();
 	goto Lagain;
     }
     else if (t1->ty == Tclass || t2->ty == Tclass)
@@ -1419,6 +1493,12 @@ Lagain:
 Lret:
     if (!type)
 	type = t;
+#if 0
+    printf("-BinExp::typeCombine() %s\n", toChars());
+    if (e1->type) printf("\tt1 = %s\n", e1->type->toChars());
+    if (e2->type) printf("\tt2 = %s\n", e2->type->toChars());
+    printf("\ttype = %s\n", type->toChars());
+#endif
     //dump(0);
     return this;
 

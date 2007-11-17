@@ -64,9 +64,9 @@ Global::Global()
 
     obj_ext  = "o";
 
-    copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards,";
+    copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards";
     written = "written by Walter Bright and Gregor Richards";
-    version = "version 0.73 (based on DMD 2.003)";
+    version = "version 0.73 (based on DMD 2.007)";
     global.structalign = 8;
     cmodules = NULL;
 
@@ -182,6 +182,8 @@ Usage:\n\
                  runtime)\n\
   -dylib-support exit failure or success for whether dynamic libraries are\n\
                  supported\n\
+  -debuglib=name    set symbolic debug library to name\n\
+  -defaultlib=name  set default library to name\n\
   -g             add symbolic debug info\n\
   -gc            add symbolic debug info, pretend to be C\n\
   -files         list files which would be compiled (but don't compile)\n\
@@ -319,6 +321,13 @@ int main(int argc, char *argv[])
         global.params.runargs_length = argc - 2;
         rerun = true;
     }
+
+#if _WIN32
+    global.params.defaultlibname = "phobos";
+#elif linux
+    global.params.defaultlibname = "phobos2";
+#endif
+    global.params.debuglibname = global.params.defaultlibname;
 
     // Predefine version identifiers
     VersionCondition::addPredefinedGlobalIdent("build");
@@ -743,15 +752,7 @@ int main(int argc, char *argv[])
 		else
 		    goto Lerror;
 	    }
-            else if (memcmp(p + 1, "debuglib", 8) == 0)
-            {
-                if (p[9] == '=') {
-                    goto Lpassthrough;
-                } else {
-                    goto Lerror;
-                }
-            }
-	    else if (memcmp(p + 1, "debug", 5) == 0)
+	    else if (memcmp(p + 1, "debug", 5) == 0 && p[6] != 'l')
 	    {
 		// Parse:
 		//	-debug

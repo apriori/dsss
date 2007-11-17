@@ -40,19 +40,66 @@ static real_t zero;	// work around DMC bug for now
  * return that initializer.
  */
 
-Expression *fromConstInitializer(Expression *e1)
+Expression *fromConstInitializer(int result, Expression *e1)
 {
-    //printf("fromConstInitializer(%s)\n", e1->toChars());
+    //printf("fromConstInitializer(result = %x, %s)\n", result, e1->toChars());
+    Expression *e = e1;
     if (e1->op == TOKvar)
     {	VarExp *ve = (VarExp *)e1;
 	VarDeclaration *v = ve->var->isVarDeclaration();
-	if (v && v->isConst() && v->init)
-	{   Expression *ei = v->init->toExpression();
-	    if (ei && ei->type)
-		e1 = ei;
+	if (v && (v->isConst() || v->isInvariant()))
+	{
+	    Type *tb = v->type->toBasetype();
+	    if (result & WANTinterpret ||
+		(tb->ty != Tsarray && tb->ty != Tstruct)
+	       )
+	    {
+		if (v->init)
+		{
+		    if (v->inuse)
+			goto L1;
+		    Expression *ei = v->init->toExpression();
+		    if (!ei)
+			goto L1;
+		    if (v->scope)
+		    {
+			v->inuse++;
+			e = ei->syntaxCopy();
+			e = e->semantic(v->scope);
+			e = e->implicitCastTo(v->scope, v->type);
+			v->scope = NULL;
+			v->inuse--;
+		    }
+		    else if (!ei->type)
+		    {
+			goto L1;
+		    }
+		    else
+			// Should remove the copy() operation by
+			// making all mods to expressions copy-on-write
+			e = ei->copy();
+		}
+		else
+		{
+		    e = v->type->defaultInit();
+		    e->loc = e1->loc;
+		}
+		if (e->type != v->type)
+		{
+		    e = e->castTo(NULL, v->type);
+		}
+		if (e->type != e1->type)
+		{   // Type 'paint' operation
+		    e = e->copy();
+		    e->type = e1->type;
+		}
+		e = e->optimize(result);
+		//printf("e = %s, e1->type = %s, v->type = %s, e->type = %s\n", e->toChars(), e1->type->toChars(), v->type->toChars(), e->type->toChars());
+	    }
 	}
     }
-    return e1;
+L1:
+    return e;
 }
 
 
@@ -64,11 +111,7 @@ Expression *Expression::optimize(int result)
 
 Expression *VarExp::optimize(int result)
 {
-    if (result & WANTinterpret)
-    {
-	return fromConstInitializer(this);
-    }
-    return this;
+    return fromConstInitializer(result, this);
 }
 
 Expression *TupleExp::optimize(int result)
@@ -275,19 +318,32 @@ Expression *PtrExp::optimize(int result)
 }
 
 Expression *CallExp::optimize(int result)
-{   Expression *e = this;
+{
+    //printf("CallExp::optimize(result = %d) %s\n", result, toChars());
+    Expression *e = this;
 
     e1 = e1->optimize(result);
-    if (e1->op == TOKvar && result & WANTinterpret)
+    if (e1->op == TOKvar)
     {
 	FuncDeclaration *fd = ((VarExp *)e1)->var->isFuncDeclaration();
 	if (fd)
 	{
-	    Expression *eresult = fd->interpret(NULL, arguments);
-	    if (eresult)
-		e = eresult;
-	    /*else if (result & WANTinterpret)
-		error("cannot evaluate %s at compile time", toChars()); */
+	    //enum BUILTIN b = fd->isBuiltin();
+	    //if (b)
+            if (0)
+	    {
+		//e = eval_builtin(b, arguments);
+		//if (!e)			// failed
+		    e = this;		// evaluate at runtime
+	    }
+	    /* else if (result & WANTinterpret)
+	    {
+		Expression *eresult = fd->interpret(NULL, arguments);
+		if (eresult && eresult != EXP_VOID_INTERPRET)
+		    e = eresult;
+		else
+		    error("cannot evaluate %s at compile time", toChars());
+	    } */
 	}
     }
     return e;
@@ -304,15 +360,15 @@ Expression *CastExp::optimize(int result)
     enum TOK op1 = e1->op;
 
     e1 = e1->optimize(result);
-    if (result & WANTinterpret)
-	e1 = fromConstInitializer(e1);
+    e1 = fromConstInitializer(result, e1);
 
     if ((e1->op == TOKstring || e1->op == TOKarrayliteral) &&
 	(type->ty == Tpointer || type->ty == Tarray) &&
-	e1->type->nextOf()->constConv(type->nextOf()) >= MATCHconst
+	e1->type->nextOf()->size() == type->nextOf()->size()
        )
     {
-	e1->type = type;
+	e1 = e1->castTo(NULL, type);
+	//printf(" returning1 %s\n", e1->toChars());
 	return e1;
     }
 
@@ -320,6 +376,7 @@ Expression *CastExp::optimize(int result)
 	e1->type->implicitConvTo(type) >= MATCHconst)
     {
 	e1->type = type;
+	//printf(" returning2 %s\n", e1->toChars());
 	return e1;
     }
 
@@ -350,6 +407,13 @@ Expression *CastExp::optimize(int result)
 	}
     }
 
+    // We can convert 'head const' to mutable
+    if (to->constConv(e1->type) >= MATCHconst)
+    {
+	e1->type = type;
+	return e1;
+    }
+
     Expression *e;
 
     if (e1->isConst())
@@ -371,6 +435,7 @@ Expression *CastExp::optimize(int result)
     }
     else
 	e = this;
+    //printf(" returning3 %s\n", e->toChars());
     return e;
 }
 
@@ -379,6 +444,18 @@ Expression *BinExp::optimize(int result)
     //printf("BinExp::optimize(result = %d) %s\n", result, toChars());
     e1 = e1->optimize(result);
     e2 = e2->optimize(result);
+    if (op == TOKshlass || op == TOKshrass || op == TOKushrass)
+    {
+	if (e2->isConst() == 1)
+	{
+	    integer_t i2 = e2->toInteger();
+	    d_uns64 sz = e1->type->size() * 8;
+	    if (i2 < 0 || i2 > sz)
+	    {   error("shift assign by %jd is outside the range 0.." ZU, i2, sz);
+		e2 = new IntegerExp(0);
+	    }
+	}
+    }
     return this;
 }
 
@@ -459,55 +536,41 @@ Expression *ModExp::optimize(int result)
     return e;
 }
 
-Expression *ShlExp::optimize(int result)
-{   Expression *e;
+Expression *shift_optimize(int result, BinExp *e, Expression *(*shift)(Type *, Expression *, Expression *))
+{   Expression *ex = e;
 
-    //printf("ShlExp::optimize(result = %d) %s\n", result, toChars());
-    e1 = e1->optimize(result);
-    e2 = e2->optimize(result);
-    e = this;
-    if (e2->isConst() == 1)
+    e->e1 = e->e1->optimize(result);
+    e->e2 = e->e2->optimize(result);
+    if (e->e2->isConst() == 1)
     {
-	integer_t i2 = e2->toInteger();
-	if (i2 < 0 || i2 > e1->type->size() * 8)
-	{   //error("shift left by %jd exceeds " ZU, i2, e2->type->size() * 8);
-	    e2 = new IntegerExp(0);
+	integer_t i2 = e->e2->toInteger();
+	d_uns64 sz = e->e1->type->size() * 8;
+	if (i2 < 0 || i2 > sz)
+	{   // error("shift by %jd is outside the range 0.." ZU, i2, sz);
+	    e->e2 = new IntegerExp(0);
 	}
-	if (e1->isConst() == 1)
-	    e = new IntegerExp(loc, e1->toInteger() << e2->toInteger(), type);
+	if (e->e1->isConst() == 1)
+	    ex = (*shift)(e->type, e->e1, e->e2);
     }
-    return e;
+    return ex;
+}
+
+Expression *ShlExp::optimize(int result)
+{
+    //printf("ShlExp::optimize(result = %d) %s\n", result, toChars());
+    return shift_optimize(result, this, Shl);
 }
 
 Expression *ShrExp::optimize(int result)
-{   Expression *e;
-
-    e1 = e1->optimize(result);
-    e2 = e2->optimize(result);
-
-    if (e1->isConst() == 1 && e2->isConst() == 1)
-    {
-	e = Shr(type, e1, e2);
-    }
-    else
-	e = this;
-    return e;
+{
+    //printf("ShrExp::optimize(result = %d) %s\n", result, toChars());
+    return shift_optimize(result, this, Shr);
 }
 
 Expression *UshrExp::optimize(int result)
-{   Expression *e;
-
-    //printf("UshrExp::optimize() %s\n", toChars());
-    e1 = e1->optimize(result);
-    e2 = e2->optimize(result);
-
-    if (e1->isConst() == 1 && e2->isConst() == 1)
-    {
-	e = Ushr(type, e1, e2);
-    }
-    else
-	e = this;
-    return e;
+{
+    //printf("UshrExp::optimize(result = %d) %s\n", result, toChars());
+    return shift_optimize(result, this, Ushr);
 }
 
 Expression *AndExp::optimize(int result)
@@ -585,8 +648,8 @@ Expression *EqualExp::optimize(int result)
     e2 = e2->optimize(WANTvalue | (result & WANTinterpret));
     e = this;
 
-    Expression *e1 = fromConstInitializer(this->e1);
-    Expression *e2 = fromConstInitializer(this->e2);
+    Expression *e1 = fromConstInitializer(result, this->e1);
+    Expression *e2 = fromConstInitializer(result, this->e2);
 
     e = Equal(op, type, e1, e2);
     if (e == EXP_CANT_INTERPRET)
@@ -614,8 +677,7 @@ Expression *IndexExp::optimize(int result)
 
     //printf("IndexExp::optimize(result = %d) %s\n", result, toChars());
     Expression *e1 = this->e1->optimize(WANTvalue | (result & WANTinterpret));
-    if (result & WANTinterpret)
-	e1 = fromConstInitializer(e1);
+    e1 = fromConstInitializer(result, e1);
     e2 = e2->optimize(WANTvalue | (result & WANTinterpret));
     e = Index(type, e1, e2);
     if (e == EXP_CANT_INTERPRET)
@@ -638,13 +700,13 @@ Expression *SliceExp::optimize(int result)
 	}
 	return e;
     }
-    if (result & WANTinterpret)
-	e1 = fromConstInitializer(e1);
+    e1 = fromConstInitializer(result, e1);
     lwr = lwr->optimize(WANTvalue | (result & WANTinterpret));
     upr = upr->optimize(WANTvalue | (result & WANTinterpret));
     e = Slice(type, e1, lwr, upr);
     if (e == EXP_CANT_INTERPRET)
 	e = this;
+    //printf("-SliceExp::optimize() %s\n", e->toChars());
     return e;
 }
 

@@ -362,9 +362,10 @@ Type *Type::mutableOf()
 	t->rto = NULL;
 	t->cto = NULL;
 	t->ito = NULL;
+	t->vtinfo = NULL;
 	if (ty == Tsarray)
 	{   TypeSArray *ta = (TypeSArray *)t;
-	    ta->next = ta->next->mutableOf();
+	    //ta->next = ta->next->mutableOf();
 	}
 	t = t->merge();
 	if (isConst())
@@ -398,6 +399,7 @@ Type *Type::makeConst()
     t->rto = NULL;
     t->cto = NULL;
     t->ito = NULL;
+    t->vtinfo = NULL;
     //printf("-Type::makeConst() %p, %s\n", t, toChars());
     return t;
 }
@@ -416,6 +418,7 @@ Type *Type::makeInvariant()
     t->rto = NULL;
     t->cto = NULL;
     t->ito = NULL;
+    t->vtinfo = NULL;
     return t;
 }
 
@@ -662,7 +665,7 @@ void Type::checkDeprecated(Loc loc, Scope *sc)
 }
 
 
-Expression *Type::defaultInit()
+Expression *Type::defaultInit(Loc loc)
 {
 #if LOGDEFAULTINIT
     printf("Type::defaultInit() '%s'\n", toChars());
@@ -724,8 +727,9 @@ Expression *Type::getProperty(Loc loc, Identifier *ident)
     }
     else if (ident == Id::init)
     {
-	e = defaultInit();
-	e->loc = loc;
+	if (ty == Tvoid)
+	    error(loc, "void does not have an initializer");
+	e = defaultInit(loc);
     }
     else if (ident == Id::mangleof)
     {
@@ -802,7 +806,7 @@ Expression *Type::dotExp(Scope *sc, Expression *e, Identifier *ident)
 			    e->isBool(0) &&
 			    v->type->toBasetype()->ty == Tstruct)
 			{
-			    e = v->type->defaultInit();
+			    e = v->type->defaultInit(e->loc);
 			}
 		    }
 		    e = e->optimize(WANTvalue | WANTinterpret);
@@ -812,7 +816,8 @@ Expression *Type::dotExp(Scope *sc, Expression *e, Identifier *ident)
 		return e;
 	    }
 #endif
-	    return defaultInit();
+	    Expression *ex = defaultInit(e->loc);
+	    return ex;
 	}
     }
     if (ident == Id::typeinfo)
@@ -966,7 +971,8 @@ Type *TypeNext::makeConst()
     if (cto)
 	return cto;
     TypeNext *t = (TypeNext *)Type::makeConst();
-    if (ty != Tfunction && ty != Tdelegate && next->deco)
+    if (ty != Tfunction && ty != Tdelegate && next->deco &&
+        !next->isInvariant())
 	t->next = next->constOf();
     return t;
 }
@@ -1514,6 +1520,7 @@ Expression *TypeBasic::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	    case Timaginary64:	t = tfloat64;	goto L4;
 	    case Timaginary80:	t = tfloat80;	goto L4;
 	    L4:
+		e = e->copy();
 		e->type = t;
 		break;
 
@@ -1534,7 +1541,7 @@ Expression *TypeBasic::dotExp(Scope *sc, Expression *e, Identifier *ident)
     return e;
 }
 
-Expression *TypeBasic::defaultInit()
+Expression *TypeBasic::defaultInit(Loc loc)
 {   integer_t value = 0;
 
 #if LOGDEFAULTINIT
@@ -1560,9 +1567,12 @@ Expression *TypeBasic::defaultInit()
 	case Tcomplex32:
 	case Tcomplex64:
 	case Tcomplex80:
-	    return getProperty(0, Id::nan);
+	    return getProperty(loc, Id::nan);
+
+	case Tvoid:
+	    error(loc, "void does not have a default initializer");
     }
-    return new IntegerExp(0, value, this);
+    return new IntegerExp(loc, value, this);
 }
 
 int TypeBasic::isZeroInit()
@@ -1845,7 +1855,7 @@ unsigned TypeSArray::alignsize()
 Expression *semanticLength(Scope *sc, Type *t, Expression *exp)
 {
     if (t->ty == Ttuple)
-    {	ScopeDsymbol *sym = new ArrayScopeSymbol((TypeTuple *)t);
+    {	ScopeDsymbol *sym = new ArrayScopeSymbol(sc, (TypeTuple *)t);
 	sym->parent = sc->scopesym;
 	sc = sc->push(sym);
 
@@ -1860,7 +1870,7 @@ Expression *semanticLength(Scope *sc, Type *t, Expression *exp)
 
 Expression *semanticLength(Scope *sc, TupleDeclaration *s, Expression *exp)
 {
-    ScopeDsymbol *sym = new ArrayScopeSymbol(s);
+    ScopeDsymbol *sym = new ArrayScopeSymbol(sc, s);
     sym->parent = sc->scopesym;
     sc = sc->push(sym);
 
@@ -1886,7 +1896,7 @@ void TypeSArray::resolve(Loc loc, Scope *sc, Expression **pe, Type **pt, Dsymbol
 	TupleDeclaration *td = s->isTupleDeclaration();
 	if (td)
 	{
-	    ScopeDsymbol *sym = new ArrayScopeSymbol(td);
+	    ScopeDsymbol *sym = new ArrayScopeSymbol(sc, td);
 	    sym->parent = sc->scopesym;
 	    sc = sc->push(sym);
 
@@ -1977,6 +1987,14 @@ Type *TypeSArray::semantic(Loc loc, Scope *sc)
 	dim = semanticLength(sc, tbn, dim);
 
 	dim = dim->optimize(WANTvalue | WANTinterpret);
+	if (sc->parameterSpecialization && dim->op == TOKvar &&
+	    ((VarExp *)dim)->var->storage_class & STCtemplateparameter)
+	{
+	    /* It could be a template parameter N which has no value yet:
+	     *   template Foo(T : T[N], size_t N);
+	     */
+	    return this;
+	}
 	integer_t d1 = dim->toInteger();
 	dim = dim->castTo(sc, tsize_t);
 	dim = dim->optimize(WANTvalue);
@@ -2158,12 +2176,12 @@ MATCH TypeSArray::implicitConvTo(Type *to)
     return MATCHnomatch;
 }
 
-Expression *TypeSArray::defaultInit()
+Expression *TypeSArray::defaultInit(Loc loc)
 {
 #if LOGDEFAULTINIT
     printf("TypeSArray::defaultInit() '%s'\n", toChars());
 #endif
-    return next->defaultInit();
+    return next->defaultInit(loc);
 }
 
 int TypeSArray::isZeroInit()
@@ -2346,13 +2364,13 @@ MATCH TypeDArray::implicitConvTo(Type *to)
     return Type::implicitConvTo(to);
 }
 
-Expression *TypeDArray::defaultInit()
+Expression *TypeDArray::defaultInit(Loc loc)
 {
 #if LOGDEFAULTINIT
     printf("TypeDArray::defaultInit() '%s'\n", toChars());
 #endif
     Expression *e;
-    e = new NullExp(0);
+    e = new NullExp(loc);
     e->type = this;
     return e;
 }
@@ -2428,7 +2446,10 @@ Type *TypeAArray::semantic(Loc loc, Scope *sc)
     else
 	index = index->semantic(loc,sc);
 
-    index = index->constOf()->mutableOf();
+    if (index->nextOf() && !index->nextOf()->isInvariant())
+    {
+	index = index->constOf()->mutableOf();
+    }
 
     switch (index->toBasetype()->ty)
     {
@@ -2548,13 +2569,13 @@ void TypeAArray::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
     buf->writeByte(']');
 }
 
-Expression *TypeAArray::defaultInit()
+Expression *TypeAArray::defaultInit(Loc loc)
 {
 #if LOGDEFAULTINIT
     printf("TypeAArray::defaultInit() '%s'\n", toChars());
 #endif
     Expression *e;
-    e = new NullExp(0);
+    e = new NullExp(loc);
     e->type = this;
     return e;
 }
@@ -2664,13 +2685,13 @@ int TypePointer::isscalar()
     return TRUE;
 }
 
-Expression *TypePointer::defaultInit()
+Expression *TypePointer::defaultInit(Loc loc)
 {
 #if LOGDEFAULTINIT
     printf("TypePointer::defaultInit() '%s'\n", toChars());
 #endif
     Expression *e;
-    e = new NullExp(0);
+    e = new NullExp(loc);
     e->type = this;
     return e;
 }
@@ -2746,13 +2767,13 @@ Expression *TypeReference::dotExp(Scope *sc, Expression *e, Identifier *ident)
     return next->dotExp(sc, e, ident);
 }
 
-Expression *TypeReference::defaultInit()
+Expression *TypeReference::defaultInit(Loc loc)
 {
 #if LOGDEFAULTINIT
     printf("TypeReference::defaultInit() '%s'\n", toChars());
 #endif
     Expression *e;
-    e = new NullExp(0);
+    e = new NullExp(loc);
     e->type = this;
     return e;
 }
@@ -3039,7 +3060,11 @@ Type *TypeFunction::semantic(Loc loc, Scope *sc)
 	    if (inuse == 1) inuse--;
 
 	    if (arg->storageClass & STCconst)
-		arg->type = arg->type->constOf();
+	    {	if (arg->type->nextOf() && arg->type->nextOf()->isInvariant())
+		    arg->storageClass &= ~STCconst;
+		else
+		    arg->type = arg->type->constOf();
+	    }
 	    else if (arg->storageClass & STCinvariant)
 		arg->type = arg->type->invariantOf();
 
@@ -3275,13 +3300,13 @@ void TypeDelegate::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
     Argument::argsToCBuffer(buf, hgs, tf->parameters, tf->varargs);
 }
 
-Expression *TypeDelegate::defaultInit()
+Expression *TypeDelegate::defaultInit(Loc loc)
 {
 #if LOGDEFAULTINIT
     printf("TypeDelegate::defaultInit() '%s'\n", toChars());
 #endif
     Expression *e;
-    e = new NullExp(0);
+    e = new NullExp(loc);
     e->type = this;
     return e;
 }
@@ -3479,6 +3504,7 @@ void TypeQualified::resolveHelper(Loc loc, Scope *sc,
 	v = s->isVarDeclaration();
 	if (v)
 	{
+#if 0
 	    // It's not a type, it's an expression
 	    if (v->isConst() && v->getExpInitializer())
 	    {
@@ -3488,6 +3514,7 @@ void TypeQualified::resolveHelper(Loc loc, Scope *sc,
 		(*pe)->loc = loc;
 	    }
 	    else
+#endif
 	    {
 #if 0
 		WithScopeSymbol *withsym;
@@ -3682,6 +3709,7 @@ Type *TypeIdentifier::semantic(Loc loc, Scope *sc)
 	/*if (s)
 	{
 	    s->error(loc, "is used as a type");
+	    //halt();
 	}
 	else
 	    error(loc, "%s is used as a type", toChars()); */
@@ -4075,7 +4103,7 @@ Expression *TypeEnum::getProperty(Loc loc, Identifier *ident)
     {
 	if (!sym->symtab)
 	    goto Lfwd;
-	e = defaultInit();
+	e = defaultInit(loc);
     }
     else
     {
@@ -4135,14 +4163,14 @@ MATCH TypeEnum::constConv(Type *to)
 }
 
 
-Expression *TypeEnum::defaultInit()
+Expression *TypeEnum::defaultInit(Loc loc)
 {
 #if LOGDEFAULTINIT
     printf("TypeEnum::defaultInit() '%s'\n", toChars());
 #endif
     // Initialize to first member of enum
     Expression *e;
-    e = new IntegerExp(0, sym->defaultval, this);
+    e = new IntegerExp(loc, sym->defaultval, this);
     return e;
 }
 
@@ -4329,7 +4357,7 @@ MATCH TypeTypedef::constConv(Type *to)
 }
 
 
-Expression *TypeTypedef::defaultInit()
+Expression *TypeTypedef::defaultInit(Loc loc)
 {   Expression *e;
     Type *bt;
 
@@ -4342,7 +4370,7 @@ Expression *TypeTypedef::defaultInit()
 	return sym->init->toExpression();
     }
     bt = sym->basetype;
-    e = bt->defaultInit();
+    e = bt->defaultInit(loc);
     e->type = this;
     while (bt->ty == Tsarray)
     {	TypeSArray *tsa = (TypeSArray *)bt;
@@ -4451,7 +4479,11 @@ void TypeStruct::toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod)
     {	toCBuffer3(buf, hgs, mod);
 	return;
     }
-    buf->writestring(sym->toChars());
+    TemplateInstance *ti = sym->parent->isTemplateInstance();
+    if (ti && ti->toAlias() == sym)
+	buf->writestring(ti->toChars());
+    else
+	buf->writestring(sym->toChars());
 }
 
 Expression *TypeStruct::dotExp(Scope *sc, Expression *e, Identifier *ident)
@@ -4618,7 +4650,7 @@ unsigned TypeStruct::memalign(unsigned salign)
     return sym->structalign;
 }
 
-Expression *TypeStruct::defaultInit()
+Expression *TypeStruct::defaultInit(Loc loc)
 {   Symbol *s;
     Declaration *d;
 
@@ -4811,6 +4843,9 @@ L1:
 	    t = ClassDeclaration::classinfo->type;
 	    if (e->op == TOKtype || e->op == TOKdottype)
 	    {
+		/* For type.classinfo, we know the classinfo
+		 * at compile time.
+		 */
 		if (!sym->vclassinfo)
 		    sym->vclassinfo = new ClassInfoDeclaration(sym);
 		e = new VarExp(e->loc, sym->vclassinfo);
@@ -4818,13 +4853,26 @@ L1:
 		e->type = t;	// do this so we don't get redundant dereference
 	    }
 	    else
-	    {
+	    {	/* For class objects, the classinfo reference is the first
+		 * entry in the vtbl[]
+		 */
 		e = new PtrExp(e->loc, e);
 		e->type = t->pointerTo();
 		if (sym->isInterfaceDeclaration())
 		{
-		    /*if (sym->isCOMclass())
-			error(e->loc, "no .classinfo for COM interface objects"); */
+		    /* if (sym->isCPPinterface())
+		    {	/ * C++ interface vtbl[]s are different in that the
+			 * first entry is always pointer to the first virtual
+			 * function, not classinfo.
+			 * We can't get a .classinfo for it.
+			 * /
+			error(e->loc, "no .classinfo for C++ interface objects");
+		    } */
+		    /* For an interface, the first entry in the vtbl[]
+		     * is actually a pointer to an instance of struct Interface.
+		     * The first member of Interface is the .classinfo,
+		     * so add an extra pointer indirection.
+		     */
 		    e->type = e->type->pointerTo();
 		    e = new PtrExp(e->loc, e);
 		    e->type = t->pointerTo();
@@ -5017,18 +5065,28 @@ MATCH TypeClass::implicitConvTo(Type *to)
     return MATCHnomatch;
 }
 
+MATCH TypeClass::constConv(Type *to)
+{
+    if (equals(to))
+	return MATCHexact;
+    if (ty == to->ty && sym == ((TypeClass *)to)->sym &&
+	to->mod == MODconst)
+	return MATCHconst;
+    return MATCHnomatch;
+}
+
 Type *TypeClass::toCanonConst()
 {
     return this;
 }
 
-Expression *TypeClass::defaultInit()
+Expression *TypeClass::defaultInit(Loc loc)
 {
 #if LOGDEFAULTINIT
     printf("TypeClass::defaultInit() '%s'\n", toChars());
 #endif
     Expression *e;
-    e = new NullExp(0);
+    e = new NullExp(loc);
     e->type = this;
     return e;
 }
@@ -5280,7 +5338,7 @@ void TypeSlice::resolve(Loc loc, Scope *sc, Expression **pe, Type **pt, Dsymbol 
 	{
 	    /* It's a slice of a TupleDeclaration
 	     */
-	    ScopeDsymbol *sym = new ArrayScopeSymbol(td);
+	    ScopeDsymbol *sym = new ArrayScopeSymbol(sc, td);
 	    sym->parent = sc->scopesym;
 	    sc = sc->push(sym);
 
@@ -5427,8 +5485,14 @@ void Argument::argsToCBuffer(OutBuffer *buf, HdrGenState *hgs, Arguments *argume
 	    else if (arg->storageClass & STCref)
 		buf->writestring((global.params.Dversion == 1)
 			? (char *)"inout " : (char *)"ref ");
+	    else if (arg->storageClass & STCin)
+		buf->writestring("in ");
 	    else if (arg->storageClass & STClazy)
 		buf->writestring("lazy ");
+	    if (arg->storageClass & STCconst)
+		buf->writestring("const ");
+	    if (arg->storageClass & STCinvariant)
+		buf->writestring("invariant ");
 	    argbuf.reset();
 	    arg->type->toCBuffer(&argbuf, arg->ident, hgs);
 	    if (arg->defaultArg)

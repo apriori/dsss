@@ -253,7 +253,7 @@ Expression *resolveProperties(Scope *sc, Expression *e)
     {
 	Type *t = e->type->toBasetype();
 
-	if (t->ty == Tfunction)
+	if (t->ty == Tfunction || e->op == TOKoverloadset)
 	{
 	    e = new CallExp(e->loc, e);
 	    e = e->semantic(sc);
@@ -275,6 +275,7 @@ Expression *resolveProperties(Scope *sc, Expression *e)
 	{
 	    e->error("expression has no value");
 	} */
+	
     }
     return e;
 }
@@ -634,10 +635,11 @@ void argsToCBuffer(OutBuffer *buf, Expressions *arguments, HdrGenState *hgs)
 	for (size_t i = 0; i < arguments->dim; i++)
 	{   Expression *arg = (Expression *)arguments->data[i];
 
-	    if (i)
-		buf->writeByte(',');
 	    if (arg)
+	    {	if (i)
+		    buf->writeByte(',');
 		expToCBuffer(buf, hgs, arg, PREC_assign);
+	    }
 	}
     }
 }
@@ -709,7 +711,7 @@ Expression *Expression::copy()
 Expression *Expression::semantic(Scope *sc)
 {
 #if LOGSEMANTIC
-    printf("Expression::semantic()\n");
+    printf("Expression::semantic() %s\n", toChars());
 #endif
     if (type)
 	type = type->semantic(loc, sc);
@@ -869,10 +871,13 @@ Expression *Expression::checkIntegral()
     return this;
 }
 
-void Expression::checkArithmetic()
+Expression *Expression::checkArithmetic()
 {
-    /*if (!type->isintegral() && !type->isfloating())
-	error("'%s' is not an arithmetic type", toChars()); */
+    if (!type->isintegral() && !type->isfloating())
+    {	// error("'%s' is not of arithmetic type, it is a %s", toChars(), type->toChars());
+	return new IntegerExp(0);
+    }
+    return this;
 }
 
 void Expression::checkDeprecated(Scope *sc, Dsymbol *s)
@@ -1024,7 +1029,8 @@ IntegerExp::IntegerExp(Loc loc, integer_t value, Type *type)
     //printf("IntegerExp(value = %lld, type = '%s')\n", value, type ? type->toChars() : "");
     if (type && !type->isscalar())
     {
-	//error("integral constant must be scalar type, not %s", type->toChars());
+	//printf("%s, loc = %d\n", toChars(), loc.linnum);
+	// error("integral constant must be scalar type, not %s", type->toChars());
 	type = Type::terror;
     }
     this->type = type;
@@ -1099,7 +1105,6 @@ integer_t IntegerExp::toInteger()
 	    }
 
 	    default:
-		print();
 		type->print();
 		//assert(0);
                 return 0;
@@ -1629,7 +1634,8 @@ Expression *IdentifierExp::semantic(Scope *sc)
     {	Expression *e;
 	WithScopeSymbol *withsym;
 
-	// See if it was a with class
+	/* See if the symbol was a member of an enclosing 'with'
+	 */
 	withsym = scopesym->isWithScopeSymbol();
 	if (withsym)
 	{
@@ -1650,13 +1656,9 @@ Expression *IdentifierExp::semantic(Scope *sc)
 	}
 	else
 	{
-	    if (!s->parent && scopesym->isArrayScopeSymbol())
-	    {	// Kludge to run semantic() here because
-		// ArrayScopeSymbol::search() doesn't have access to sc.
-		s->semantic(sc);
-	    }
-	    // Look to see if f is really a function template
-	    //FuncDeclaration *f = s->toAlias()->isFuncDeclaration();
+	    /* If f is really a function template,
+	     * then replace f with the function template declaration.
+	     */
 	    FuncDeclaration *f = s->isFuncDeclaration();
 	    if (f && f->parent)
 	    {   TemplateInstance *ti = f->parent->isTemplateInstance();
@@ -1676,16 +1678,8 @@ Expression *IdentifierExp::semantic(Scope *sc)
 		    return e;
 		}
 	    }
-	    f = s->toAlias()->isFuncDeclaration();
-	    if (f && !f->isFuncLiteralDeclaration())
-	    {
-		e = new VarExp(loc, f, 1);
-	    }
-	    else
-	    {
-		//printf("test1 %s\n", s->toChars());
-		e = new DsymbolExp(loc, s);
-	    }
+	    // Haven't done overload resolution yet, so pass 1
+	    e = new DsymbolExp(loc, s, 1);
 	}
 	return e->semantic(sc);
     }
@@ -1728,10 +1722,11 @@ DollarExp::DollarExp(Loc loc)
 
 /******************************** DsymbolExp **************************/
 
-DsymbolExp::DsymbolExp(Loc loc, Dsymbol *s)
+DsymbolExp::DsymbolExp(Loc loc, Dsymbol *s, int hasOverloads)
 	: Expression(loc, TOKdsymbol, sizeof(DsymbolExp))
 {
     this->s = s;
+    this->hasOverloads = hasOverloads;
 }
 
 Expression *DsymbolExp::semantic(Scope *sc)
@@ -1746,6 +1741,7 @@ Lagain:
     VarDeclaration *v;
     FuncDeclaration *f;
     FuncLiteralDeclaration *fld;
+    OverloadSet *o;
     Declaration *d;
     ClassDeclaration *cd;
     ClassDeclaration *thiscd = NULL;
@@ -1800,34 +1796,6 @@ Lagain:
 		type = Type::terror;
 	    }
 	}
-	if ((v->isConst() || v->isInvariant()) && type->toBasetype()->ty != Tsarray)
-	{   // Replace v with its initializer
-	    if (v->init)
-	    {
-		if (v->inuse)
-		{
-		    //error("circular reference to '%s'", v->toChars());
-		    type = Type::tint32;
-		    return this;
-		}
-		ExpInitializer *ei = v->init->isExpInitializer();
-		if (ei)
-		{
-		    e = ei->exp->copy();	// make copy so we can change loc
-		    if (e->op == TOKstring || !e->type)
-			e = e->semantic(sc);
-		    e = e->implicitCastTo(sc, type);
-		    e->loc = loc;
-		    return e;
-		}
-	    }
-	    else
-	    {
-		e = type->defaultInit();
-		e->loc = loc;
-		return e;
-	    }
-	}
 	e = new VarExp(loc, v);
 	e->type = type;
 	e = e->semantic(sc);
@@ -1842,7 +1810,12 @@ Lagain:
     f = s->isFuncDeclaration();
     if (f)
     {	//printf("'%s' is a function\n", f->toChars());
-	return new VarExp(loc, f);
+	return new VarExp(loc, f, hasOverloads);
+    }
+    o = s->isOverloadSet();
+    if (o)
+    {	//printf("'%s' is an overload set\n", o->toChars());
+	return new OverExp(o);
     }
     cd = s->isClassDeclaration();
     if (cd && thiscd && cd->isBaseOf(thiscd, NULL) && sc->func->needThis())
@@ -2002,14 +1975,6 @@ Expression *ThisExp::semantic(Scope *sc)
     assert(var->parent);
     type = var->type;
     var->isVarDeclaration()->checkNestedReference(sc, loc);
-#if 0
-    if (fd != fdthis)		// if nested
-    {
-	fdthis->getLevel(loc, fd);
-	fd->vthis->nestedref = 1;
-	fd->nestedFrameRef = 1;
-    }
-#endif
     sc->callSuper |= CSXthis;
     return this;
 
@@ -2110,14 +2075,6 @@ Expression *SuperExp::semantic(Scope *sc)
     }
 
     var->isVarDeclaration()->checkNestedReference(sc, loc);
-#if 0
-    if (fd != fdthis)
-    {
-	fdthis->getLevel(loc, fd);
-	fd->vthis->nestedref = 1;
-	fd->nestedFrameRef = 1;
-    }
-#endif
 
     sc->callSuper |= CSXsuper;
     return this;
@@ -2386,26 +2343,36 @@ int StringExp::isBool(int result)
     return result ? TRUE : FALSE;
 }
 
+unsigned StringExp::charAt(size_t i)
+{   unsigned value;
+
+    switch (sz)
+    {
+	case 1:
+	    value = ((unsigned char *)string)[i];
+	    break;
+
+	case 2:
+	    value = ((unsigned short *)string)[i];
+	    break;
+
+	case 4:
+	    value = ((unsigned int *)string)[i];
+	    break;
+
+	default:
+	    assert(0);
+	    break;
+    }
+    return value;
+}
+
 void StringExp::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 {
     buf->writeByte('"');
     for (size_t i = 0; i < len; i++)
-    {	unsigned c;
+    {	unsigned c = charAt(i);
 
-	switch (sz)
-	{
-	    case 1:
-		c = ((unsigned char *)string)[i];
-		break;
-	    case 2:
-		c = ((unsigned short *)string)[i];
-		break;
-	    case 4:
-		c = ((unsigned *)string)[i];
-		break;
-	    default:
-		assert(0);
-	}
 	switch (c)
 	{
 	    case '"':
@@ -3460,15 +3427,22 @@ void NewAnonClassExp::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
     }
 }
 
-/********************** SymOffExp **************************************/
+/********************** SymbolExp **************************************/
 
-SymOffExp::SymOffExp(Loc loc, Declaration *var, unsigned offset, int hasOverloads)
-    : Expression(loc, TOKsymoff, sizeof(SymOffExp))
+SymbolExp::SymbolExp(Loc loc, enum TOK op, int size, Declaration *var, int hasOverloads)
+    : Expression(loc, op, size)
 {
     assert(var);
     this->var = var;
-    this->offset = offset;
     this->hasOverloads = hasOverloads;
+}
+
+/********************** SymOffExp **************************************/
+
+SymOffExp::SymOffExp(Loc loc, Declaration *var, unsigned offset, int hasOverloads)
+    : SymbolExp(loc, TOKsymoff, sizeof(SymOffExp), var, hasOverloads)
+{
+    this->offset = offset;
 
     VarDeclaration *v = var->isVarDeclaration();
     /*if (v && v->needThis())
@@ -3515,13 +3489,11 @@ void SymOffExp::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 /******************************** VarExp **************************/
 
 VarExp::VarExp(Loc loc, Declaration *var, int hasOverloads)
-	: Expression(loc, TOKvar, sizeof(VarExp))
+    : SymbolExp(loc, TOKvar, sizeof(VarExp), var, hasOverloads)
 {
-    //printf("VarExp(this = %p, '%s')\n", this, var->toChars());
+    //printf("VarExp(this = %p, '%s', loc = %s)\n", this, var->toChars(), loc.toChars());
     //if (strcmp(var->ident->toChars(), "func") == 0) halt();
-    this->var = var;
     this->type = var->type;
-    this->hasOverloads = hasOverloads;
 }
 
 int VarExp::equals(Object *o)
@@ -3556,6 +3528,7 @@ Expression *VarExp::semantic(Scope *sc)
     VarDeclaration *v = var->isVarDeclaration();
     if (v)
     {
+#if 0
 	if ((v->isConst() || v->isInvariant()) &&
 	    type->toBasetype()->ty != Tsarray && v->init)
 	{
@@ -3566,6 +3539,7 @@ Expression *VarExp::semantic(Scope *sc)
 		return ei->exp->implicitCastTo(sc, type);
 	    }
 	}
+#endif
 	v->checkNestedReference(sc, loc);
     }
 #if 0
@@ -3629,6 +3603,22 @@ Expression *VarExp::modifiableLvalue(Scope *sc, Expression *e)
 
     // See if this expression is a modifiable lvalue (i.e. not const)
     return toLvalue(sc, e);
+}
+
+
+/******************************** OverExp **************************/
+
+OverExp::OverExp(OverloadSet *s)
+	: Expression(loc, TOKoverloadset, sizeof(OverExp))
+{
+    //printf("OverExp(this = %p, '%s')\n", this, var->toChars());
+    vars = s;
+    type = Type::tvoid;
+}
+
+Expression *OverExp::toLvalue(Scope *sc, Expression *e)
+{
+    return this;
 }
 
 
@@ -3809,6 +3799,7 @@ Expression *FuncExp::semantic(Scope *sc)
 	{
 	    type = fd->type->pointerTo();
 	}
+	fd->tookAddressOf++;
     }
     return this;
 }
@@ -4028,31 +4019,49 @@ void HaltExp::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 
 /************************************************************/
 
-IftypeExp::IftypeExp(Loc loc, Type *targ, Identifier *id, enum TOK tok,
-	Type *tspec, enum TOK tok2)
-	: Expression(loc, TOKis, sizeof(IftypeExp))
+IsExp::IsExp(Loc loc, Type *targ, Identifier *id, enum TOK tok,
+	Type *tspec, enum TOK tok2, TemplateParameters *parameters)
+	: Expression(loc, TOKis, sizeof(IsExp))
 {
     this->targ = targ;
     this->id = id;
     this->tok = tok;
     this->tspec = tspec;
     this->tok2 = tok2;
+    this->parameters = parameters;
 }
 
-Expression *IftypeExp::syntaxCopy()
+Expression *IsExp::syntaxCopy()
 {
-    return new IftypeExp(loc,
+    // This section is identical to that in TemplateDeclaration::syntaxCopy()
+    TemplateParameters *p = NULL;
+    if (parameters)
+    {
+	p = new TemplateParameters();
+	p->setDim(parameters->dim);
+	for (int i = 0; i < p->dim; i++)
+	{   TemplateParameter *tp = (TemplateParameter *)parameters->data[i];
+	    p->data[i] = (void *)tp->syntaxCopy();
+	}
+    }
+
+    return new IsExp(loc,
 	targ->syntaxCopy(),
 	id,
 	tok,
 	tspec ? tspec->syntaxCopy() : NULL,
-	tok2);
+	tok2,
+	p);
 }
 
-Expression *IftypeExp::semantic(Scope *sc)
+Expression *IsExp::semantic(Scope *sc)
 {   Type *tded;
 
-    //printf("IftypeExp::semantic()\n");
+    /* is(targ id tok tspec)
+     * is(targ id == tok2)
+     */
+
+    //printf("IsExp::semantic(%s)\n", toChars());
     /*if (id && !(sc->flags & SCOPEstaticif))
 	error("can only declare type aliases within static if conditionals"); */
 
@@ -4139,7 +4148,8 @@ Expression *IftypeExp::semantic(Scope *sc)
 		break;
 
 	    case TOKfunction:
-	    {	if (targ->ty != Tfunction)
+	    {
+		if (targ->ty != Tfunction)
 		    goto Lno;
 		tded = targ;
 
@@ -4189,26 +4199,44 @@ Expression *IftypeExp::semantic(Scope *sc)
 	 */
 
 	MATCH m;
-	TemplateTypeParameter tp(loc, id, NULL, NULL);
-
-	TemplateParameters parameters;
-	parameters.setDim(1);
-	parameters.data[0] = (void *)&tp;
+	assert(parameters && parameters->dim);
 
 	Objects dedtypes;
-	dedtypes.setDim(1);
-	dedtypes.data[0] = NULL;
+	dedtypes.setDim(parameters->dim);
+	dedtypes.zero();
 
-	m = targ->deduceType(NULL, tspec, &parameters, &dedtypes);
+	m = targ->deduceType(NULL, tspec, parameters, &dedtypes);
 	if (m == MATCHnomatch ||
 	    (m != MATCHexact && tok == TOKequal))
 	    goto Lno;
 	else
 	{
-	    assert(dedtypes.dim == 1);
 	    tded = (Type *)dedtypes.data[0];
 	    if (!tded)
 		tded = targ;
+
+	    Objects tiargs;
+	    tiargs.setDim(1);
+	    tiargs.data[0] = (void *)targ;
+
+	    for (int i = 1; i < parameters->dim; i++)
+	    {	TemplateParameter *tp = (TemplateParameter *)parameters->data[i];
+		Declaration *s;
+
+		m = tp->matchArg(sc, &tiargs, i, parameters, &dedtypes, &s);
+		if (m == MATCHnomatch)
+		    goto Lno;
+		s->semantic(sc);
+		if (!sc->insert(s))
+		    error("declaration %s is already defined", s->toChars());
+#if 0
+		Object *o = (Object *)dedtypes.data[i];
+		Dsymbol *s = TemplateDeclaration::declareParameter(loc, sc, tp, o);
+#endif
+		if (sc->sd)
+		    s->addMember(sc, sc->sd, 1);
+	    }
+
 	    goto Lyes;
 	}
     }
@@ -4245,27 +4273,41 @@ Lyes:
     {
 	Dsymbol *s = new AliasDeclaration(loc, id, tded);
 	s->semantic(sc);
-	sc->insert(s);
+	if (!sc->insert(s))
+	    error("declaration %s is already defined", s->toChars());
 	if (sc->sd)
 	    s->addMember(sc, sc->sd, 1);
     }
-    return new IntegerExp(1);
+    return new IntegerExp(loc, 1, Type::tbool);
 
 Lno:
-    return new IntegerExp(0);
+    return new IntegerExp(loc, 0, Type::tbool);
 }
 
-void IftypeExp::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
+void IsExp::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 {
     buf->writestring("is(");
     targ->toCBuffer(buf, id, hgs);
-    if (tspec)
+    if (tok2 != TOKreserved)
+    {
+	buf->printf(" %s %s", Token::toChars(tok), Token::toChars(tok2));
+    }
+    else if (tspec)
     {
 	if (tok == TOKcolon)
 	    buf->writestring(" : ");
 	else
 	    buf->writestring(" == ");
 	tspec->toCBuffer(buf, NULL, hgs);
+    }
+    if (parameters)
+    {	// First parameter is already output, so start with second
+	for (int i = 1; i < parameters->dim; i++)
+	{
+	    buf->writeByte(',');
+	    TemplateParameter *tp = (TemplateParameter *)parameters->data[i];
+	    tp->toCBuffer(buf, hgs);
+	}
     }
     buf->writeByte(')');
 }
@@ -4757,6 +4799,7 @@ Expression *DotIdExp::semantic(Scope *sc)
 		    return this;
 		}
 		type = v->type;
+#if 0
 		if (v->isConst() || v->isInvariant())
 		{
 		    if (v->init)
@@ -4781,6 +4824,7 @@ Expression *DotIdExp::semantic(Scope *sc)
 			return e;
 		    }
 		}
+#endif
 		if (v->needThis())
 		{
 		    if (!eleft)
@@ -4981,7 +5025,7 @@ Expression *DotVarExp::semantic(Scope *sc)
 
 	    AggregateDeclaration *ad = var->toParent()->isAggregateDeclaration();
 	L1:
-	    Type *t = e1->type;
+	    Type *t = e1->type->toBasetype();
 
 	    if (ad &&
 		!(t->ty == Tpointer &&
@@ -5021,7 +5065,7 @@ Expression *DotVarExp::semantic(Scope *sc)
 			goto L1;
 		    }
 #ifdef DEBUG
-		    //printf("2: ");
+		    printf("2: ");
 #endif
 		    /*error("this for %s needs to be type %s not type %s",
 			var->toChars(), ad->toChars(), t->toChars()); */
@@ -5521,10 +5565,14 @@ Lagain:
 	    ad = ((TypeStruct *)t1)->sym;
 	    if (search_function(ad, Id::call))
 		goto L1;	// overload of opCall, therefore it's a call
+
+	    if (e1->op != TOKtype)
+		error("%s %s does not overload ()", ad->kind(), ad->toChars());
 	    /* It's a struct literal
 	     */
 	    Expression *e = new StructLiteralExp(loc, (StructDeclaration *)ad, arguments);
 	    e = e->semantic(sc);
+	    e->type = e1->type;		// in case e1->type was a typedef
 	    return e;
 	}
 	else if (t1->ty == Tclass)
@@ -5752,6 +5800,41 @@ Lagain:
 		error("cyclic constructor call"); */
 	}
     }
+    else if (e1->op == TOKoverloadset)
+    {
+	OverExp *eo = (OverExp *)e1;
+	FuncDeclaration *f = NULL;
+	for (int i = 0; i < eo->vars->a.dim; i++)
+	{   Dsymbol *s = (Dsymbol *)eo->vars->a.data[i];
+	    FuncDeclaration *f2 = s->isFuncDeclaration();
+	    if (f2)
+	    {
+		f2 = f2->overloadResolve(loc, arguments, 1);
+	    }
+	    else
+	    {	TemplateDeclaration *td = s->isTemplateDeclaration();
+		assert(td);
+		f2 = td->deduce(sc, loc, NULL, arguments, 1);
+	    }
+	    if (f2)
+	    {	if (f)
+		    /* Error if match in more than one overload set,
+		     * even if one is a 'better' match than the other.
+		     */
+		    ScopeDsymbol::multiplyDefined(loc, f, f2);
+		else
+		    f = f2;
+	    }
+	}
+	if (!f)
+	{   /* No overload matches, just set f and rely on error
+	     * message being generated later.
+	     */
+	    f = (FuncDeclaration *)eo->vars->a.data[0];
+	}
+	e1 = new VarExp(loc, f);
+	goto Lagain;
+    }
     else if (!t1)
     {
 	//error("function expected before (), not '%s'", e1->toChars());
@@ -5807,29 +5890,6 @@ Lagain:
 
 	f = ve->var->isFuncDeclaration();
 	assert(f);
-
-	// Look to see if f is really a function template
-	if (0 && !istemp && f->parent)
-	{   TemplateInstance *ti = f->parent->isTemplateInstance();
-
-	    if (ti &&
-		(ti->name == f->ident ||
-		 ti->toAlias()->ident == f->ident)
-		&&
-		ti->tempdecl)
-	    {
-		/* This is so that one can refer to the enclosing
-		 * template, even if it has the same name as a member
-		 * of the template, if it has a !(arguments)
-		 */
-		TemplateDeclaration *tempdecl = ti->tempdecl;
-		if (tempdecl->overroot)         // if not start of overloaded list of TemplateDeclaration's
-		    tempdecl = tempdecl->overroot; // then get the start
-		e1 = new TemplateExp(loc, tempdecl);
-		istemp = 1;
-		goto Lagain;
-	    }
-	}
 
 	if (ve->hasOverloads)
 	    f = f->overloadResolve(loc, arguments);
@@ -5938,6 +5998,8 @@ Expression *AddrExp::semantic(Scope *sc)
 
 	    if (f)
 	    {
+		if (!dve->hasOverloads)
+		    f->tookAddressOf = 1;
 		Expression *e = new DelegateExp(loc, dve->e1, f, dve->hasOverloads);
 		e = e->semantic(sc);
 		return e;
@@ -5953,6 +6015,8 @@ Expression *AddrExp::semantic(Scope *sc)
 
 	    if (f)
 	    {
+		if (!ve->hasOverloads)
+		    f->tookAddressOf = 1;
 		if (f->isNested())
 		{
 		    Expression *e = new DelegateExp(loc, e1, f, ve->hasOverloads);
@@ -5987,31 +6051,35 @@ Expression *PtrExp::semantic(Scope *sc)
 #if LOGSEMANTIC
     printf("PtrExp::semantic('%s')\n", toChars());
 #endif
-    UnaExp::semantic(sc);
-    e1 = resolveProperties(sc, e1);
-    if (type)
-	return this;
-    if (!e1->type)
-	printf("PtrExp::semantic('%s')\n", toChars());
-    tb = e1->type->toBasetype();
-    switch (tb->ty)
+    if (!type)
     {
-	case Tpointer:
-	    type = ((TypePointer *)tb)->next;
-	    break;
+	UnaExp::semantic(sc);
+	e1 = resolveProperties(sc, e1);
+	if (!e1->type)
+	    printf("PtrExp::semantic('%s')\n", toChars());
+	Expression *e = op_overload(sc);
+	if (e)
+	    return e;
+	tb = e1->type->toBasetype();
+	switch (tb->ty)
+	{
+	    case Tpointer:
+		type = ((TypePointer *)tb)->next;
+		break;
 
-	case Tsarray:
-	case Tarray:
-	    type = ((TypeArray *)tb)->next;
-	    e1 = e1->castTo(sc, type->pointerTo());
-	    break;
+	    case Tsarray:
+	    case Tarray:
+		type = ((TypeArray *)tb)->next;
+		e1 = e1->castTo(sc, type->pointerTo());
+		break;
 
-	default:
-	    //error("can only * a pointer, not a '%s'", e1->type->toChars());
-	    type = Type::tint32;
-	    break;
+	    default:
+		// error("can only * a pointer, not a '%s'", e1->type->toChars());
+		type = Type::tint32;
+		break;
+	}
+	rvalue();
     }
-    rvalue();
     return this;
 }
 
@@ -6191,8 +6259,11 @@ Expression *DeleteExp::semantic(Scope *sc)
 	{   TypeClass *tc = (TypeClass *)tb;
 	    ClassDeclaration *cd = tc->sym;
 
-	    /*if (cd->isInterfaceDeclaration() && cd->isCOMclass())
-		error("cannot delete instance of COM interface %s", cd->toChars()); */
+	    if (cd->isCOMinterface())
+	    {	/* Because COM classes are deleted by IUnknown.Release()
+		 */
+		// error("cannot delete instance of COM interface %s", cd->toChars());
+	    }
 	    break;
 	}
 	case Tpointer:
@@ -6483,7 +6554,7 @@ Expression *SliceExp::semantic(Scope *sc)
 
     if (t->ty == Tsarray || t->ty == Tarray || t->ty == Ttuple)
     {
-	sym = new ArrayScopeSymbol(this);
+	sym = new ArrayScopeSymbol(sc, this);
 	sym->loc = loc;
 	sym->parent = sc->scopesym;
 	sc = sc->push(sym);
@@ -6557,7 +6628,7 @@ Expression *SliceExp::semantic(Scope *sc)
 	return e;
     }
 
-    type = ((TypeNext *)t)->next->arrayOf();
+    type = t->nextOf()->arrayOf();
     return e;
 
 Lerror:
@@ -6823,7 +6894,7 @@ Expression *IndexExp::semantic(Scope *sc)
 
     if (t1->ty == Tsarray || t1->ty == Tarray || t1->ty == Ttuple)
     {	// Create scope for 'length' variable
-	sym = new ArrayScopeSymbol(this);
+	sym = new ArrayScopeSymbol(sc, this);
 	sym->loc = loc;
 	sym->parent = sc->scopesym;
 	sc = sc->push(sym);
@@ -6881,7 +6952,7 @@ Expression *IndexExp::semantic(Scope *sc)
 	case Ttuple:
 	{
 	    e2 = e2->implicitCastTo(sc, Type::tsize_t);
-	    e2 = e2->optimize(WANTvalue);
+	    e2 = e2->optimize(WANTvalue | WANTinterpret);
 	    uinteger_t index = e2->toUInteger();
 	    size_t length;
 	    TupleExp *te;
@@ -7008,9 +7079,10 @@ Expression *AssignExp::semantic(Scope *sc)
     Expression *e1old = e1;
 
 #if LOGSEMANTIC
-    printf("AssignExp::semantic('%s')\n", toChars());
+    //printf("AssignExp::semantic('%s')\n", toChars());
 #endif
     //printf("e1->op = %d, '%s'\n", e1->op, Token::toChars(e1->op));
+    //printf("e2->op = %d, '%s'\n", e2->op, Token::toChars(e2->op));
 
     /* Look for operator overloading of a[i]=value.
      * Do it before semantic() otherwise the a[i] will have been
@@ -7104,6 +7176,31 @@ Expression *AssignExp::semantic(Scope *sc)
     BinExp::semantic(sc);
     e2 = resolveProperties(sc, e2);
     assert(e1->type);
+
+    /* Rewrite tuple assignment as a tuple of assignments.
+     */
+    if (e1->op == TOKtuple && e2->op == TOKtuple)
+    {	TupleExp *tup1 = (TupleExp *)e1;
+	TupleExp *tup2 = (TupleExp *)e2;
+	size_t dim = tup1->exps->dim;
+	if (dim != tup2->exps->dim)
+	{
+	    error("mismatched tuple lengths, %d and %d", (int)dim, (int)tup2->exps->dim);
+	}
+	else
+	{   Expressions *exps = new Expressions;
+	    exps->setDim(dim);
+
+	    for (int i = 0; i < dim; i++)
+	    {	Expression *ex1 = (Expression *)tup1->exps->data[i];
+		Expression *ex2 = (Expression *)tup2->exps->data[i];
+		exps->data[i] = (void *) new AssignExp(loc, ex1, ex2);
+	    }
+	    Expression *e = new TupleExp(loc, exps);
+	    e = e->semantic(sc);
+	    return e;
+	}
+    }
 
     t1 = e1->type->toBasetype();
 
@@ -7314,10 +7411,10 @@ Expression *MinAssignExp::semantic(Scope *sc)
 	e = scaleFactor(sc);
     else
     {
+	e1 = e1->checkArithmetic();
+	e2 = e2->checkArithmetic();
 	type = e1->type;
 	typeCombine(sc);
-	e1->checkArithmetic();
-	e2->checkArithmetic();
 	if (type->isreal() || type->isimaginary())
 	{
 	    assert(e2->type->isfloating());
@@ -7850,13 +7947,20 @@ Expression *CatExp::semantic(Scope *sc)
 	}
 
 	typeCombine(sc);
+//type->print();
 	type = type->mutableOf();
+//printf("test1\n");
+//type->print();
 
 	Type *tb = type->toBasetype();
 	if (tb->ty == Tsarray)
 	    type = tb->nextOf()->arrayOf();
-	if (type->ty == Tarray)
+//printf("test2\n");
+//type->print();
+	if (type->ty == Tarray && tb1->nextOf()->mod != tb2->nextOf()->mod)
 	    type = type->nextOf()->toCanonConst()->arrayOf();
+//printf("test3\n");
+//type->print();
 #if 0
 	e1->type->print();
 	e2->type->print();

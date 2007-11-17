@@ -689,7 +689,35 @@ Expression *Equal(enum TOK op, Type *type, Expression *e1, Expression *e2)
 
     assert(op == TOKequal || op == TOKnotequal);
 
-    if (e1->op == TOKstring && e2->op == TOKstring)
+    if (e1->op == TOKnull)
+    {
+	if (e2->op == TOKnull)
+	    cmp = 1;
+	else if (e2->op == TOKstring)
+	{   StringExp *es2 = (StringExp *)e2;
+	    cmp = (0 == es2->len);
+	}
+	else if (e2->op == TOKarrayliteral)
+	{   ArrayLiteralExp *es2 = (ArrayLiteralExp *)e2;
+	    cmp = !es2->elements || (0 == es2->elements->dim);
+	}
+	else
+	    return EXP_CANT_INTERPRET;
+    }
+    else if (e2->op == TOKnull)
+    {
+	if (e1->op == TOKstring)
+	{   StringExp *es1 = (StringExp *)e1;
+	    cmp = (0 == es1->len);
+	}
+	else if (e1->op == TOKarrayliteral)
+	{   ArrayLiteralExp *es1 = (ArrayLiteralExp *)e1;
+	    cmp = !es1->elements || (0 == es1->elements->dim);
+	}
+	else
+	    return EXP_CANT_INTERPRET;
+    }
+    else if (e1->op == TOKstring && e2->op == TOKstring)
     {	StringExp *es1 = (StringExp *)e1;
 	StringExp *es2 = (StringExp *)e2;
 
@@ -721,6 +749,36 @@ Expression *Equal(enum TOK op, Type *type, Expression *e1, Expression *e2)
 		if (v == EXP_CANT_INTERPRET)
 		    return EXP_CANT_INTERPRET;
 		cmp = v->toInteger();
+		if (cmp == 0)
+		    break;
+	    }
+	}
+    }
+    else if (e1->op == TOKarrayliteral && e2->op == TOKstring)
+    {	// Swap operands and use common code
+	Expression *e = e1;
+	e1 = e2;
+	e2 = e;
+	goto Lsa;
+    }
+    else if (e1->op == TOKstring && e2->op == TOKarrayliteral)
+    {
+     Lsa:
+	StringExp *es1 = (StringExp *)e1;
+	ArrayLiteralExp *es2 = (ArrayLiteralExp *)e2;
+	size_t dim1 = es1->len;
+	size_t dim2 = es2->elements ? es2->elements->dim : 0;
+	if (dim1 != dim2)
+	    cmp = 0;
+	else
+	{
+	    for (size_t i = 0; i < dim1; i++)
+	    {
+		uinteger_t c = es1->charAt(i);
+		Expression *ee2 = (Expression *)es2->elements->data[i];
+		if (ee2->isConst() != 1)
+		    return EXP_CANT_INTERPRET;
+		cmp = (c == ee2->toInteger());
 		if (cmp == 0)
 		    break;
 	    }
@@ -813,7 +871,11 @@ Expression *Identity(enum TOK op, Type *type, Expression *e1, Expression *e2)
     Loc loc = e1->loc;
     int cmp;
 
-    if (e1->op == TOKsymoff && e2->op == TOKsymoff)
+    if (e1->op == TOKnull && e2->op == TOKnull)
+    {
+	cmp = 1;
+    }
+    else if (e1->op == TOKsymoff && e2->op == TOKsymoff)
     {
 	SymOffExp *es1 = (SymOffExp *)e1;
 	SymOffExp *es2 = (SymOffExp *)e2;
@@ -1075,7 +1137,7 @@ Expression *Cast(Type *type, Type *to, Expression *e1)
     }
     else
     {
-	// error("cannot cast %s to %s", e1->type->toChars(), type->toChars());
+	// error(loc, "cannot cast %s to %s", e1->type->toChars(), type->toChars());
 	e = new IntegerExp(loc, 0, type);
     }
     return e;
@@ -1122,28 +1184,9 @@ Expression *Index(Type *type, Expression *e1, Expression *e2)
 	uinteger_t i = e2->toInteger();
 
 	if (i >= es1->len) {}
-	    // e1->error("string index %ju is out of bounds [0 .. %zu]", i, es1->len);
+	    // e1->error("string index %ju is out of bounds [0 .. " ZU "]", i, es1->len);
 	else
-	{   integer_t value;
-
-	    switch (es1->sz)
-	    {
-		case 1:
-		    value = ((unsigned char *)es1->string)[i];
-		    break;
-
-		case 2:
-		    value = ((unsigned short *)es1->string)[i];
-		    break;
-
-		case 4:
-		    value = ((unsigned int *)es1->string)[i];
-		    break;
-
-		default:
-		    assert(0);
-		    break;
-	    }
+	{   unsigned value = es1->charAt(i);
 	    e = new IntegerExp(loc, value, type);
 	}
     }
@@ -1272,11 +1315,11 @@ Expression *Cat(Type *type, Expression *e1, Expression *e2)
     //printf("Cat(e1 = %s, e2 = %s)\n", e1->toChars(), e2->toChars());
     //printf("\tt1 = %s, t2 = %s\n", t1->toChars(), t2->toChars());
 
-    if (e1->op == TOKnull && e2->op == TOKint64)
+    if (e1->op == TOKnull && (e2->op == TOKint64 || e2->op == TOKstructliteral))
     {	e = e2;
 	goto L2;
     }
-    else if (e1->op == TOKint64 && e2->op == TOKnull)
+    else if ((e1->op == TOKint64 || e1->op == TOKstructliteral) && e2->op == TOKnull)
     {	e = e1;
      L2:
 	Type *tn = e->type->toBasetype();

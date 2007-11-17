@@ -32,6 +32,7 @@ struct TypedefDeclaration;
 struct TypeInfoDeclaration;
 struct Dsymbol;
 struct TemplateInstance;
+struct CppMangleState;
 enum LINK;
 
 struct TypeBasic;
@@ -206,6 +207,9 @@ struct Type : Object
     virtual void toCBuffer(OutBuffer *buf, Identifier *ident, HdrGenState *hgs);
     virtual void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     void toCBuffer3(OutBuffer *buf, HdrGenState *hgs, int mod);
+#if TARGET_LINUX
+    virtual void toCppMangle(OutBuffer *buf, CppMangleState *cms);
+#endif
     virtual int isintegral();
     virtual int isfloating();	// real, imaginary, or complex
     virtual int isreal();
@@ -238,7 +242,7 @@ struct Type : Object
     virtual Expression *getProperty(Loc loc, Identifier *ident);
     virtual Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     virtual unsigned memalign(unsigned salign);
-    virtual Expression *defaultInit();
+    virtual Expression *defaultInit(Loc loc = 0);
     virtual int isZeroInit();		// if initializer is 0
     Identifier *getTypeInfoIdent(int internal);
     virtual MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
@@ -283,6 +287,9 @@ struct TypeBasic : Type
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     char *toChars();
     void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
+#if TARGET_LINUX
+    void toCppMangle(OutBuffer *buf, CppMangleState *cms);
+#endif
     int isintegral();
     int isbit();
     int isfloating();
@@ -292,7 +299,7 @@ struct TypeBasic : Type
     int isscalar();
     int isunsigned();
     MATCH implicitConvTo(Type *to);
-    Expression *defaultInit();
+    Expression *defaultInit(Loc loc);
     int isZeroInit();
 
     // For eliminating dynamic_cast
@@ -324,10 +331,13 @@ struct TypeSArray : TypeArray
     unsigned memalign(unsigned salign);
     MATCH constConv(Type *to);
     MATCH implicitConvTo(Type *to);
-    Expression *defaultInit();
+    Expression *defaultInit(Loc loc);
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
     Expression *toExpression();
     int hasPointers();
+#if TARGET_LINUX
+    void toCppMangle(OutBuffer *buf, CppMangleState *cms);
+#endif
 };
 
 // Dynamic array, no dimension
@@ -345,8 +355,12 @@ struct TypeDArray : TypeArray
     int isZeroInit();
     int checkBoolean();
     MATCH implicitConvTo(Type *to);
-    Expression *defaultInit();
+    Expression *defaultInit(Loc loc);
+    int builtinTypeInfo();
     int hasPointers();
+#if TARGET_LINUX
+    void toCppMangle(OutBuffer *buf, CppMangleState *cms);
+#endif
 };
 
 struct TypeAArray : TypeArray
@@ -360,10 +374,13 @@ struct TypeAArray : TypeArray
     void toDecoBuffer(OutBuffer *buf, int flag);
     void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
-    Expression *defaultInit();
+    Expression *defaultInit(Loc loc);
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
     int checkBoolean();
     int hasPointers();
+#if TARGET_LINUX
+    void toCppMangle(OutBuffer *buf, CppMangleState *cms);
+#endif
 
     // Back end
     Symbol *aaGetSymbol(char *func, int flags);
@@ -378,9 +395,12 @@ struct TypePointer : TypeNext
     void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     MATCH implicitConvTo(Type *to);
     int isscalar();
-    Expression *defaultInit();
+    Expression *defaultInit(Loc loc);
     int isZeroInit();
     int hasPointers();
+#if TARGET_LINUX
+    void toCppMangle(OutBuffer *buf, CppMangleState *cms);
+#endif
 };
 
 struct TypeReference : TypeNext
@@ -391,8 +411,11 @@ struct TypeReference : TypeNext
     d_uns64 size(Loc loc);
     void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
-    Expression *defaultInit();
+    Expression *defaultInit(Loc loc);
     int isZeroInit();
+#if TARGET_LINUX
+    void toCppMangle(OutBuffer *buf, CppMangleState *cms);
+#endif
 };
 
 enum RET
@@ -420,6 +443,9 @@ struct TypeFunction : TypeNext
     void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
     Type *reliesOnTident();
+#if TARGET_LINUX
+    void toCppMangle(OutBuffer *buf, CppMangleState *cms);
+#endif
 
     int callMatch(Expressions *toargs);
 };
@@ -433,11 +459,14 @@ struct TypeDelegate : TypeNext
     Type *semantic(Loc loc, Scope *sc);
     d_uns64 size(Loc loc);
     void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
-    Expression *defaultInit();
+    Expression *defaultInit(Loc loc);
     int isZeroInit();
     int checkBoolean();
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     int hasPointers();
+#if TARGET_LINUX
+    void toCppMangle(OutBuffer *buf, CppMangleState *cms);
+#endif
 };
 
 struct TypeQualified : Type
@@ -514,7 +543,7 @@ struct TypeStruct : Type
     void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
     unsigned memalign(unsigned salign);
-    Expression *defaultInit();
+    Expression *defaultInit(Loc loc);
     int isZeroInit();
     int checkBoolean();
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
@@ -522,6 +551,9 @@ struct TypeStruct : Type
     MATCH implicitConvTo(Type *to);
     MATCH constConv(Type *to);
     Type *toCanonConst();
+#if TARGET_LINUX
+    void toCppMangle(OutBuffer *buf, CppMangleState *cms);
+#endif
 };
 
 struct TypeEnum : Type
@@ -545,10 +577,13 @@ struct TypeEnum : Type
     MATCH implicitConvTo(Type *to);
     MATCH constConv(Type *to);
     Type *toBasetype();
-    Expression *defaultInit();
+    Expression *defaultInit(Loc loc);
     int isZeroInit();
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
     int hasPointers();
+#if TARGET_LINUX
+    void toCppMangle(OutBuffer *buf, CppMangleState *cms);
+#endif
 };
 
 struct TypeTypedef : Type
@@ -577,13 +612,14 @@ struct TypeTypedef : Type
     Type *toBasetype();
     MATCH implicitConvTo(Type *to);
     MATCH constConv(Type *to);
-    Expression *defaultInit();
+    Expression *defaultInit(Loc loc);
     int isZeroInit();
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
     int hasPointers();
     Type *toCanonConst();
-
-    type *toCParamtype();
+#if TARGET_LINUX
+    void toCppMangle(OutBuffer *buf, CppMangleState *cms);
+#endif
 };
 
 struct TypeClass : Type
@@ -602,13 +638,17 @@ struct TypeClass : Type
     ClassDeclaration *isClassHandle();
     int isBaseOf(Type *t, int *poffset);
     MATCH implicitConvTo(Type *to);
-    Expression *defaultInit();
+    Expression *defaultInit(Loc loc);
     int isZeroInit();
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
     int isauto();
     int checkBoolean();
     int hasPointers();
     Type *toCanonConst();
+    MATCH constConv(Type *to);
+#if TARGET_LINUX
+    void toCppMangle(OutBuffer *buf, CppMangleState *cms);
+#endif
 
     Symbol *toSymbol();
 };
@@ -658,6 +698,7 @@ struct Argument : Object
     void toDecoBuffer(OutBuffer *buf);
     static Arguments *arraySyntaxCopy(Arguments *args);
     static char *argsTypesToChars(Arguments *args, int varargs);
+    static void argsCppMangle(OutBuffer *buf, CppMangleState *cms, Arguments *arguments, int varargs);
     static void argsToCBuffer(OutBuffer *buf, HdrGenState *hgs, Arguments *arguments, int varargs);
     static void argsToDecoBuffer(OutBuffer *buf, Arguments *arguments);
     static size_t dim(Arguments *arguments);

@@ -152,7 +152,7 @@ int CmpExp::isCommutative()  { return TRUE; }
 Identifier *CmpExp::opId()   { return Id::cmp; }
 
 Identifier *ArrayExp::opId()	{ return Id::index; }
-
+Identifier *PtrExp::opId()	{ return Id::opStar; }
 
 /************************************
  * Operator overload.
@@ -457,7 +457,7 @@ static Expression *build_overload(Loc loc, Scope *sc, Expression *ethis, Express
  * Search for function funcid in aggregate ad.
  */
 
-Dsymbol *search_function(AggregateDeclaration *ad, Identifier *funcid)
+Dsymbol *search_function(ScopeDsymbol *ad, Identifier *funcid)
 {
     Dsymbol *s;
     FuncDeclaration *fd;

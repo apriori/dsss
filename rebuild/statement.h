@@ -44,6 +44,7 @@ struct AsmStatement;
 struct GotoStatement;
 struct ScopeStatement;
 struct TryCatchStatement;
+struct TryFinallyStatement;
 struct HdrGenState;
 struct InterState;
 
@@ -391,8 +392,9 @@ struct SwitchStatement : Statement
 {
     Expression *condition;
     Statement *body;
-    DefaultStatement *sdefault;
 
+    DefaultStatement *sdefault;
+    TryFinallyStatement *tf;
     Array gotoCases;		// array of unresolved GotoCaseStatement's
     Array *cases;		// array of CaseStatement's
     int hasNoDefault;		// !=0 if no default statement
