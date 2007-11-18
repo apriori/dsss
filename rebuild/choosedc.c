@@ -110,6 +110,9 @@ int main(int argc, char **argv)
     if (inSourceDir) {
         defaultfname = (char *) malloc(strlen(dir) + 22);
         sprintf(defaultfname, "%s/rebuild.conf/default", dir);
+    } else if (strcmp(dir, "/usr/bin") == 0) {
+        defaultfname = (char *) malloc(21);
+        sprintf(defaultfname, "/etc/rebuild/default");
     } else {
         defaultfname = (char *) malloc(strlen(dir) + 24);
         sprintf(defaultfname, "%s/../etc/rebuild/default", dir);

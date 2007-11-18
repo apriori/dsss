@@ -5,6 +5,8 @@ SVN from 0.73:
         - DSSS no longer builds libraries or performs incremental compilation
           with DMD, as neither of these build strategies is supportable.
         - Rebuild: Merged DMD 2.007.
+        - Rebuild: rebuild_choosedc now works when installed to /usr/bin (see
+          ticket #143).
 
 0.73 from 0.72:
         - Rebuild: Merged DMD 2.003.
