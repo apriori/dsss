@@ -1,6 +1,12 @@
+module bin;
+
 import lib.foo;
 
 int main()
 {
-    return lib.foo.bar();
+    version (stupid) {
+        return 0;
+    } else {
+        return lib.foo.bar();
+    }
 }

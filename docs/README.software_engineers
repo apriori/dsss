@@ -122,6 +122,13 @@ of the .d file, or can be set explicitly with a 'target' line, such as:
 [example.d]
 target=example_binary
 
+A single source file can be used to build multiple binaries, but they must be
+given different section names. To allow this, section names may have a '+'
+character, then any descriptive name appended. For example:
+[example.d+withfeature]
+target=example_binary_withfeature
+buildflags=-version=withfeature
+
 Windows users: Be careful not to set the target of a binary build to the name of
 a directory. This will work on Windows because it gains the .exe suffix, but
 will fail on other operating systems.

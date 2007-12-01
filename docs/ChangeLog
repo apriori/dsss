@@ -9,6 +9,8 @@ SVN from 0.73:
         - Rebuild now supports the -debuglib and -defaultlib flags.
         - DSSS will no longer try to build if no config file is specified and
           no file are specified on the command line.
+        - Auxiliary builds of binaries are now allowed with names e.g.
+          [main.d+feature] (see ticket #153).
 
 0.73 from 0.72:
         - Rebuild: Merged DMD 2.003.

@@ -325,8 +325,13 @@ version (build) {
         char[][char[]] settings = conf.settings[build];
         
         // basic info
+        char[] bfile = build;
         char[] type = settings["type"];
         char[] target = settings["target"];
+        int bfileplus = std.string.find(bfile, '+');
+        if (bfileplus != -1) {
+            bfile = bfile[0..bfileplus];
+        }
         
         if (type == "binary") {
             // our binary build line
@@ -349,7 +354,7 @@ version (build) {
             char[] bbl = bl ~ bflags ~ " ";
             
             // output what we're building
-            writefln("%s => %s", build, target);
+            writefln("%s => %s", bfile, target);
 
             // prepare for documentation
             prepareDocs(build, doDocs && doDocBinaries);
@@ -361,11 +366,11 @@ version (build) {
             }
             
             // build a build line
-            char[] ext = std.string.tolower(getExt(build));
+            char[] ext = std.string.tolower(getExt(bfile));
             if (ext == "d") {
-                bbl ~= build ~ " -of" ~ target ~ " ";
+                bbl ~= bfile ~ " -of" ~ target ~ " ";
             } else if (ext == "brf") {
-                bbl ~= "@" ~ getName(build) ~ " ";
+                bbl ~= "@" ~ getName(bfile) ~ " ";
             } else {
                 writefln("ERROR: I don't know how to build something with extension %s", ext);
                 return 1;

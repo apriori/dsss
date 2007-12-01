@@ -587,6 +587,13 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
                 conf.sections ~= section;
                 conf.settings[section]["type"] = "special";
                 conf.settings[section]["target"] = section[1..$];
+
+            } else if (find(section, '+') != -1) {
+                int ploc = find(section, '+'); // FIXME
+                // auxiliary section
+                conf.sections ~= section;
+                conf.settings[section]["type"] = "binary";
+                conf.settings[section]["target"] = section[1..$];
                 
             } else if (!exists(section)) {
                 writefln("WARNING: Section for nonexistant file %s.", section);
