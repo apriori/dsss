@@ -7,6 +7,8 @@ SVN from 0.73:
           ticket #143).
         - Added an RPM specfile (see ticket #144).
         - Rebuild now supports the -debuglib and -defaultlib flags.
+        - DSSS will no longer try to build if no config file is specified and
+          no file are specified on the command line.
 
 0.73 from 0.72:
         - Rebuild: Merged DMD 2.003.

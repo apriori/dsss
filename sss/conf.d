@@ -460,6 +460,12 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
         // Read the config file
         confFile = cast(char[]) std.file.read(configFName);
     } else {
+        if (!genconfig && buildElems.length == 0) {
+            // this makes no sense
+            writefln("No config file found and no targets explicitly specified.");
+            exit(1);
+        }
+
         // Generate the config file
         if (buildElems.length == 0) {
             // from nothing - just make every directory into a library
