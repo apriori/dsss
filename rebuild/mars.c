@@ -785,6 +785,18 @@ int main(int argc, char *argv[])
 		    global.params.debuglevel = 1;
                 }
             }
+            else if (strncmp(p + 1, "debuglib", 8) == 0)
+            {
+                addFlag(linkFlags, "link", "debuglib", "-debuglib=$i", p + 10);
+                addFlag(liblinkFlags, "link", "debuglib", "", p + 10);
+                addFlag(shliblinkFlags, "link", "debuglib", "-debuglib=$i", p + 10);
+            }
+            else if (strncmp(p + 1, "defaultlib", 8) == 0)
+            {
+                addFlag(linkFlags, "link", "defaultlib", "-defaultlib=$i", p + 12);
+                addFlag(liblinkFlags, "link", "defaultlib", "", p + 12);
+                addFlag(shliblinkFlags, "link", "defaultlib", "-defaultlib=$i", p + 12);
+            }
             else if (strcmp(p + 1, "clean") == 0 ||
                      strcmp(p + 1, "cleanup") == 0)
                 global.params.clean = 1;

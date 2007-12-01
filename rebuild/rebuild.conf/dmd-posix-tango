@@ -5,7 +5,6 @@ inifile=dmd.conf
 
 exeext=
 objext=o
-flags=-full
 
 
 version=DigitalMars
@@ -47,7 +46,6 @@ flag=-L$i
 
 
 [liblink]
-safe=no
 cmd=ar rc $o $i
 
 libdir=

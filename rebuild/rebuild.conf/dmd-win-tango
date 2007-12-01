@@ -6,7 +6,6 @@ inifile=sc.ini
 exeext=.exe
 objext=obj
 objmodsep=-
-flags=-full
 
 
 version=DigitalMars
@@ -51,7 +50,6 @@ gui=-L/subsystem:windows
 
 
 [liblink]
-safe=no
 cmd=lib -c -p512 $o $i
 response=@
 

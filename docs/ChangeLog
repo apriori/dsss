@@ -2,12 +2,11 @@ SVN from 0.73:
         - Made `dsss net fetch` fall back on copying where renaming is
           impossible (see ticket #138).
         - rebuild now ignores -v1
-        - DSSS no longer builds libraries or performs incremental compilation
-          with DMD, as neither of these build strategies is supportable.
         - Rebuild: Merged DMD 2.007.
         - Rebuild: rebuild_choosedc now works when installed to /usr/bin (see
           ticket #143).
         - Added an RPM specfile (see ticket #144).
+        - Rebuild now supports the -debuglib and -defaultlib flags.
 
 0.73 from 0.72:
         - Rebuild: Merged DMD 2.003.
