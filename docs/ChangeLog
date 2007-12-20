@@ -1,4 +1,4 @@
-SVN from 0.73:
+0.74 from 0.73:
         - Made `dsss net fetch` fall back on copying where renaming is
           impossible (see ticket #138).
         - rebuild now ignores -v1

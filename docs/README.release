@@ -4,6 +4,7 @@ instructions on how to make a release of the current version of DSSS.
 
 1) sss/main.d, docs/ChangeLog, docs/NEWS, rebuild/mars.c, rebuild/rebuild.exe,
    rebuild/rebuild_choosedc.exe and scripts/dsss.spec all need to be updated.
+   $ vim sss/main.d docs/ChangeLog docs/NEWS rebuild/mars.c scripts/dsss.spec
 
 2) svn export to dsss-<version>
 
