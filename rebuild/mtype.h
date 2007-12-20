@@ -95,6 +95,7 @@ enum ENUMTY
     Ttypeof,
     Ttuple,
     Tslice,
+    Treturn,
     TMAX
 };
 typedef unsigned char TY;	// ENUMTY
@@ -234,7 +235,7 @@ struct Type : Object
     virtual Type *makeInvariant();
     virtual Dsymbol *toDsymbol(Scope *sc);
     virtual Type *toBasetype();
-    virtual Type *toCanonConst();
+    virtual Type *toHeadMutable();
     virtual int isBaseOf(Type *t, int *poffset);
     virtual MATCH constConv(Type *to);
     virtual MATCH implicitConvTo(Type *to);
@@ -447,7 +448,7 @@ struct TypeFunction : TypeNext
     void toCppMangle(OutBuffer *buf, CppMangleState *cms);
 #endif
 
-    int callMatch(Expressions *toargs);
+    int callMatch(Expression *ethis, Expressions *toargs);
 };
 
 struct TypeDelegate : TypeNext
@@ -528,6 +529,15 @@ struct TypeTypeof : TypeQualified
     d_uns64 size(Loc loc);
 };
 
+struct TypeReturn : TypeQualified
+{
+    TypeReturn(Loc loc);
+    Type *syntaxCopy();
+    Dsymbol *toDsymbol(Scope *sc);
+    Type *semantic(Loc loc, Scope *sc);
+    void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
+};
+
 struct TypeStruct : Type
 {
     StructDeclaration *sym;
@@ -550,7 +560,7 @@ struct TypeStruct : Type
     int hasPointers();
     MATCH implicitConvTo(Type *to);
     MATCH constConv(Type *to);
-    Type *toCanonConst();
+    Type *toHeadMutable();
 #if TARGET_LINUX
     void toCppMangle(OutBuffer *buf, CppMangleState *cms);
 #endif
@@ -614,9 +624,10 @@ struct TypeTypedef : Type
     MATCH constConv(Type *to);
     Expression *defaultInit(Loc loc);
     int isZeroInit();
+    dt_t **toDt(dt_t **pdt);
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
     int hasPointers();
-    Type *toCanonConst();
+    Type *toHeadMutable();
 #if TARGET_LINUX
     void toCppMangle(OutBuffer *buf, CppMangleState *cms);
 #endif
@@ -644,7 +655,7 @@ struct TypeClass : Type
     int isauto();
     int checkBoolean();
     int hasPointers();
-    Type *toCanonConst();
+    Type *toHeadMutable();
     MATCH constConv(Type *to);
 #if TARGET_LINUX
     void toCppMangle(OutBuffer *buf, CppMangleState *cms);

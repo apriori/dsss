@@ -309,6 +309,8 @@ void StorageClassDeclaration::semantic(Scope *sc)
 
 	if (stc & (STCauto | STCscope | STCstatic | STCextern))
 	    sc->stc &= ~(STCauto | STCscope | STCstatic | STCextern);
+	if (stc & (STCconst | STCinvariant))
+	    sc->stc &= ~(STCconst | STCinvariant);
 	sc->stc |= stc;
 	for (unsigned i = 0; i < decl->dim; i++)
 	{
@@ -337,6 +339,7 @@ void StorageClassDeclaration::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 	{ STCstatic,       TOKstatic },
 	{ STCextern,       TOKextern },
 	{ STCconst,        TOKconst },
+	{ STCinvariant,    TOKinvariant },
 	{ STCfinal,        TOKfinal },
 	{ STCabstract,     TOKabstract },
 	{ STCsynchronized, TOKsynchronized },
