@@ -8,7 +8,7 @@
 
 Summary: D Shared Software System
 Name: dsss
-Version: 0.74
+Version: 0.75
 Release: 0%{?dist}
 Group: Development/Tools
 License: MIT

@@ -1,3 +1,6 @@
+0.75 from 0.74:
+        - Rebuild: Fixed DMD issues.
+
 0.74 from 0.73:
         - Made `dsss net fetch` fall back on copying where renaming is
           impossible (see ticket #138).
