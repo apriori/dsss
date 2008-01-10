@@ -40,6 +40,7 @@ version=-version=$i
 
 
 [link]
+oneatatime=yes
 cmd=dmd $i -of$o
 response=@
 
@@ -50,6 +51,8 @@ gui=-L/subsystem:windows
 
 
 [liblink]
+safe=yes
+oneatatime=yes
 cmd=lib -c -p512 $o $i
 response=@
 
