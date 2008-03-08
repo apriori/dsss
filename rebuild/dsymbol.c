@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2007 by Digital Mars
+// Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -28,6 +28,7 @@
 #include "init.h"
 #include "import.h"
 #include "template.h"
+#include "attrib.h"
 
 /****************************** Dsymbol ******************************/
 
@@ -394,7 +395,9 @@ LabelDsymbol *Dsymbol::isLabel()		// is this a LabelDsymbol()?
 
 AggregateDeclaration *Dsymbol::isMember()	// is this a member of an AggregateDeclaration?
 {
+    //printf("Dsymbol::isMember() %s\n", toChars());
     Dsymbol *parent = toParent();
+    //printf("parent is %s %s\n", parent->kind(), parent->toChars());
     return parent ? parent->isAggregateDeclaration() : NULL;
 }
 
@@ -808,6 +811,7 @@ void ScopeDsymbol::multiplyDefined(Loc loc, Dsymbol *s1, Dsymbol *s2)
 	    s2->toPrettyChars(),
 	    s2->locToChars());
     } */
+halt();
 }
 
 Dsymbol *ScopeDsymbol::nameCollision(Dsymbol *s)
@@ -837,6 +841,65 @@ char *ScopeDsymbol::kind()
     return "ScopeDsymbol";
 }
 
+
+/***************************************
+ * Determine number of Dsymbols, folding in AttribDeclaration members.
+ */
+
+size_t ScopeDsymbol::dim(Array *members)
+{
+    size_t n = 0;
+    if (members)
+    {
+	for (size_t i = 0; i < members->dim; i++)
+	{   Dsymbol *s = (Dsymbol *)members->data[i];
+	    AttribDeclaration *a = s->isAttribDeclaration();
+
+	    if (a)
+	    {
+		n += dim(a->decl);
+	    }
+	    else
+		n++;
+	}
+    }
+    return n;
+}
+
+/***************************************
+ * Get nth Dsymbol, folding in AttribDeclaration members.
+ * Returns:
+ *	Dsymbol*	nth Dsymbol
+ *	NULL		not found, *pn gets incremented by the number
+ *			of Dsymbols
+ */
+
+Dsymbol *ScopeDsymbol::getNth(Array *members, size_t nth, size_t *pn)
+{
+    if (!members)
+	return NULL;
+
+    size_t n = 0;
+    for (size_t i = 0; i < members->dim; i++)
+    {   Dsymbol *s = (Dsymbol *)members->data[i];
+	AttribDeclaration *a = s->isAttribDeclaration();
+
+	if (a)
+	{
+	    s = getNth(a->decl, nth - n, &n);
+	    if (s)
+		return s;
+	}
+	else if (n == nth)
+	    return s;
+	else
+	    n++;
+    }
+
+    if (pn)
+	*pn += n;
+    return NULL;
+}
 
 /*******************************************
  * Look for member of the form:

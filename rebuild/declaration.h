@@ -64,6 +64,9 @@ enum STC
     STCinvariant    = 0x100000,
     STCref	    = 0x200000,
     STCinit	    = 0x400000,		// has explicit initializer
+    STCmanifest	    = 0x800000,		// manifest constant
+    STCnodtor	    = 0x1000000,	// don't run destructor
+    STCnothrow	    = 0x2000000,	// never throws exceptions
 };
 
 struct Match
@@ -95,7 +98,7 @@ struct Declaration : Dsymbol
     void semantic(Scope *sc);
     char *kind();
     unsigned size(Loc loc);
-    void checkModify(Loc loc, Scope *sc);
+    void checkModify(Loc loc, Scope *sc, Type *t);
 
     void emitComment(Scope *sc);
     void toDocBuffer(OutBuffer *buf);
@@ -240,7 +243,8 @@ struct VarDeclaration : Declaration
     int isDataseg();
     int hasPointers();
     int canTakeAddressOf();
-    Expression *callAutoDtor();
+    int needsAutoDtor();
+    Expression *callAutoDtor(Scope *sc);
     ExpInitializer *getExpInitializer();
     Expression *getConstInitializer();
     void checkCtorConstInit();
@@ -250,6 +254,7 @@ struct VarDeclaration : Declaration
     // Eliminate need for dynamic_cast
     VarDeclaration *isVarDeclaration() { return (VarDeclaration *)this; }
 };
+
 
 /**************************************************************/
 
@@ -562,9 +567,26 @@ struct CtorDeclaration : FuncDeclaration
     CtorDeclaration *isCtorDeclaration() { return this; }
 };
 
+struct PostBlitDeclaration : FuncDeclaration
+{
+    PostBlitDeclaration(Loc loc, Loc endloc);
+    PostBlitDeclaration(Loc loc, Loc endloc, Identifier *id);
+    Dsymbol *syntaxCopy(Dsymbol *);
+    void semantic(Scope *sc);
+    void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
+    int isVirtual();
+    int addPreInvariant();
+    int addPostInvariant();
+    int overloadInsert(Dsymbol *s);
+    void emitComment(Scope *sc);
+
+    PostBlitDeclaration *isPostBlitDeclaration() { return this; }
+};
+
 struct DtorDeclaration : FuncDeclaration
 {
     DtorDeclaration(Loc loc, Loc endloc);
+    DtorDeclaration(Loc loc, Loc endloc, Identifier *id);
     Dsymbol *syntaxCopy(Dsymbol *);
     void semantic(Scope *sc);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);

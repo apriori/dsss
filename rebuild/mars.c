@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2007 by Digital Mars
+// Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // Parts Copyright (C) 2007 by Alexander Panek
@@ -64,9 +64,9 @@ Global::Global()
 
     obj_ext  = "o";
 
-    copyright = "Copyright (c) 1999-2007 by Digital Mars and Gregor Richards";
+    copyright = "Copyright (c) 1999-2008 by Digital Mars and Gregor Richards";
     written = "written by Walter Bright and Gregor Richards";
-    version = "version 0.75 (based on DMD 2.008)";
+    version = "version 0.75 (based on DMD 2.012)";
     global.structalign = 8;
     cmodules = NULL;
 
@@ -295,6 +295,7 @@ int main(int argc, char *argv[])
     global.params.Dversion = 2;
     global.params.listonly = 0;
     global.params.run = 0;
+    global.params.quiet = 1;
     
     // set true if we're running as rerun
     bool rerun = false;
@@ -987,7 +988,9 @@ int main(int argc, char *argv[])
     }
     if (global.params.cov)
 	VersionCondition::addPredefinedGlobalIdent("D_Coverage");
-    
+    if (global.params.useUnitTests)
+	VersionCondition::addPredefinedGlobalIdent("unittest");
+
     // Initialization
     Type::init();
     Id::initialize();

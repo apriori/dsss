@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2007 by Digital Mars
+// Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -34,6 +34,7 @@
 #include "version.h"
 
 extern void obj_includelib(char *name);
+void obj_startaddress(Symbol *s);
 
 
 /********************************* AttribDeclaration ****************************/
@@ -307,10 +308,13 @@ void StorageClassDeclaration::semantic(Scope *sc)
     if (decl)
     {	unsigned stc_save = sc->stc;
 
-	if (stc & (STCauto | STCscope | STCstatic | STCextern))
-	    sc->stc &= ~(STCauto | STCscope | STCstatic | STCextern);
-	if (stc & (STCconst | STCinvariant))
-	    sc->stc &= ~(STCconst | STCinvariant);
+	/* These sets of storage classes are mutually exclusive,
+	 * so choose the innermost or most recent one.
+	 */
+	if (stc & (STCauto | STCscope | STCstatic | STCextern | STCmanifest))
+	    sc->stc &= ~(STCauto | STCscope | STCstatic | STCextern | STCmanifest);
+	if (stc & (STCconst | STCinvariant | STCmanifest))
+	    sc->stc &= ~(STCconst | STCinvariant | STCmanifest);
 	sc->stc |= stc;
 	for (unsigned i = 0; i < decl->dim; i++)
 	{
@@ -823,6 +827,22 @@ void PragmaDeclaration::semantic(Scope *sc)
 	goto Lnodecl;
     }
 #endif
+    else if (ident == Id::startaddress)
+    {
+	if (!args || args->dim != 1)
+	    error("function name expected for start address");
+	else
+	{
+	    Expression *e = (Expression *)args->data[0];
+	    e = e->semantic(sc);
+	    e = e->optimize(WANTvalue | WANTinterpret);
+	    args->data[0] = (void *)e;
+	    Dsymbol *sa = getDsymbol(e);
+	    if (!sa || !sa->isFuncDeclaration())
+		error("function name expected for start address, not '%s'", e->toChars());
+	}
+	goto Lnodecl;
+    }
     else
 	error("unrecognized pragma(%s)", ident->toChars()); */
     

@@ -152,9 +152,13 @@ char *FuncDeclaration::mangle()
 	if (isMain())
 	    return "_Dmain";
 
+	if (isWinMain() || isDllMain())
+	    return ident->toChars();
+
 	assert(this);
 	return Declaration::mangle();
     }
+
 
 char *StructDeclaration::mangle()
 {

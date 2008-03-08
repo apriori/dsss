@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2007 by Digital Mars
+// Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -38,6 +38,7 @@ struct FuncDeclaration;
 struct FuncAliasDeclaration;
 struct FuncLiteralDeclaration;
 struct CtorDeclaration;
+struct PostBlitDeclaration;
 struct DtorDeclaration;
 struct StaticCtorDeclaration;
 struct StaticDtorDeclaration;
@@ -184,6 +185,7 @@ struct Dsymbol : Object
     virtual FuncAliasDeclaration *isFuncAliasDeclaration() { return NULL; }
     virtual FuncLiteralDeclaration *isFuncLiteralDeclaration() { return NULL; }
     virtual CtorDeclaration *isCtorDeclaration() { return NULL; }
+    virtual PostBlitDeclaration *isPostBlitDeclaration() { return NULL; }
     virtual DtorDeclaration *isDtorDeclaration() { return NULL; }
     virtual StaticCtorDeclaration *isStaticCtorDeclaration() { return NULL; }
     virtual StaticDtorDeclaration *isStaticDtorDeclaration() { return NULL; }
@@ -235,6 +237,9 @@ struct ScopeDsymbol : Dsymbol
     FuncDeclaration *findGetMembers();
 
     void emitMemberComments(Scope *sc);
+
+    static size_t dim(Array *members);
+    static Dsymbol *getNth(Array *members, size_t nth, size_t *pn = NULL);
 
     ScopeDsymbol *isScopeDsymbol() { return this; }
 };

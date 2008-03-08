@@ -220,6 +220,7 @@ struct Type : Object
     virtual int isunsigned();
     virtual int isauto();
     virtual int isString();
+    virtual int isAssignable();
     virtual int checkBoolean();	// if can be converted to boolean value
     virtual void checkDeprecated(Loc loc, Scope *sc);
     int isConst()	{ return mod == MODconst; }
@@ -379,6 +380,8 @@ struct TypeAArray : TypeArray
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
     int checkBoolean();
     int hasPointers();
+    MATCH implicitConvTo(Type *to);
+    MATCH constConv(Type *to);
 #if TARGET_LINUX
     void toCppMangle(OutBuffer *buf, CppMangleState *cms);
 #endif
@@ -432,6 +435,7 @@ struct TypeFunction : TypeNext
     Arguments *parameters;	// function parameters
     int varargs;	// 1: T t, ...) style for variable number of arguments
 			// 2: T t ...) style for variable number of arguments
+    bool isnothrow;	// true: nothrow
     enum LINK linkage;	// calling convention
 
     int inuse;
@@ -555,6 +559,7 @@ struct TypeStruct : Type
     unsigned memalign(unsigned salign);
     Expression *defaultInit(Loc loc);
     int isZeroInit();
+    int isAssignable();
     int checkBoolean();
     MATCH deduceType(Scope *sc, Type *tparam, TemplateParameters *parameters, Objects *dedtypes);
     int hasPointers();
@@ -610,6 +615,7 @@ struct TypeTypedef : Type
     void toDecoBuffer(OutBuffer *buf, int flag);
     void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
+    Expression *getProperty(Loc loc, Identifier *ident);
     int isbit();
     int isintegral();
     int isfloating();
@@ -619,6 +625,7 @@ struct TypeTypedef : Type
     int isscalar();
     int isunsigned();
     int checkBoolean();
+    int isAssignable();
     Type *toBasetype();
     MATCH implicitConvTo(Type *to);
     MATCH constConv(Type *to);

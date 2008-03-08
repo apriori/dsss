@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2006 by Digital Mars
+// Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -44,6 +44,7 @@ AggregateDeclaration::AggregateDeclaration(Loc loc, Identifier *id)
     stag = NULL;
     sinit = NULL;
     scope = NULL;
+    dtor = NULL;
 }
 
 enum PROT AggregateDeclaration::prot()
@@ -170,6 +171,11 @@ void AggregateDeclaration::addField(Scope *sc, VarDeclaration *v)
     if (t->ty == Tstruct /*&& isStructDeclaration()*/)
     {	TypeStruct *ts = (TypeStruct *)t;
 
+	if (ts->sym == this)
+	{
+	    error("cannot have field %s with same struct type", v->toChars());
+	}
+
 	if (ts->sym->sizeok != 1)
 	{
 	    sizeok = 2;		// cannot finish; flag as forward referenced
@@ -208,6 +214,9 @@ StructDeclaration::StructDeclaration(Loc loc, Identifier *id)
     : AggregateDeclaration(loc, id)
 {
     zeroInit = 0;	// assume false until we do semantic processing
+    hasIdentityAssign = 0;
+    cpctor = NULL;
+    postblit = NULL;
 
     // For forward references
     type = new TypeStruct(this);
@@ -356,6 +365,10 @@ void StructDeclaration::semantic(Scope *sc)
 	id = Id::cmp;
     }
 
+    dtor = buildDtor(sc2);
+    postblit = buildPostBlit(sc2);
+    cpctor = buildCpCtor(sc2);
+    buildOpAssign(sc2);
 
     sc2->pop();
 

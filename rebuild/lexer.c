@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2007 by Digital Mars
+// Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -595,8 +595,20 @@ void Lexer::scan(Token *t)
 		do
 		{
 		    p++;
-		    c = escapeSequence();
-		    stringbuffer.writeUTF8(c);
+		    switch (*p)
+		    {
+			case 'u':
+			case 'U':
+			case '&':
+			    c = escapeSequence();
+			    stringbuffer.writeUTF8(c);
+			    break;
+
+			default:
+			    c = escapeSequence();
+			    stringbuffer.writeByte(c);
+			    break;
+		    }
 		} while (*p == '\\');
 		t->len = stringbuffer.offset;
 		stringbuffer.writeByte(0);
@@ -1297,7 +1309,7 @@ unsigned Lexer::escapeSequence()
 
 	default:
 		if (isoctal(c))
-		{   unsigned char v;
+		{   unsigned v;
 
 		    n = 0;
 		    v = 0;
@@ -1307,6 +1319,8 @@ unsigned Lexer::escapeSequence()
 			c = *++p;
 		    } while (++n < 3 && isoctal(c));
 		    c = v;
+		    if (c > 0xFF)
+			error("0%03o is larger than a byte", c);
 		}
 		/* else
 		    error("undefined escape sequence \\%c\n",c); */
@@ -2167,7 +2181,7 @@ done:
 		break;
 	    if (d >= r)
 		break;
-	    if (n * r + d < n)
+	    if (n && n * r + d <= n)
 	    {
 		// error ("integer overflow");
 		break;
@@ -2747,19 +2761,35 @@ unsigned char *Lexer::combineComments(unsigned char *c1, unsigned char *c2)
  */
 
 Identifier *Lexer::idPool(const char *s)
-{   unsigned len;
-    Identifier *id;
-    StringValue *sv;
-
-    len = strlen(s);
-    sv = stringtable.update(s, len);
-    id = (Identifier *) sv->ptrvalue;
+{
+    size_t len = strlen(s);
+    StringValue *sv = stringtable.update(s, len);
+    Identifier *id = (Identifier *) sv->ptrvalue;
     if (!id)
     {
 	id = new Identifier(sv->lstring.string, TOKidentifier);
 	sv->ptrvalue = id;
     }
     return id;
+}
+
+/*********************************************
+ * Create a unique identifier using the prefix s.
+ */
+
+Identifier *Lexer::uniqueId(const char *s, int num)
+{   char buffer[32];
+    size_t slen = strlen(s);
+
+    assert(slen + sizeof(num) * 3 + 1 <= sizeof(buffer));
+    sprintf(buffer, "%s%d", s, num);
+    return idPool(buffer);
+}
+
+Identifier *Lexer::uniqueId(const char *s)
+{
+    static int num;
+    return uniqueId(s, ++num);
 }
 
 /****************************************
@@ -2880,11 +2910,14 @@ static Keyword keywords[] =
     {	"invariant",	TOKinvariant	},
     {	"unittest",	TOKunittest	},
     {	"version",	TOKversion	},
+    //{	"manifest",	TOKmanifest	},
 
     // Added after 1.0
     {	"ref",		TOKref		},
     {	"macro",	TOKmacro	},
 #if V2
+    {	"pure",		TOKpure		},
+    {	"nothrow",	TOKnothrow	},
     {	"__traits",	TOKtraits	},
     {	"__overloadset", TOKoverloadset	},
 #endif
@@ -2939,6 +2972,9 @@ void Lexer::initKeywords()
     Token::tochars[TOKxorass]		= "^=";
     Token::tochars[TOKassign]		= "=";
     Token::tochars[TOKconstruct]	= "=";
+#if V2
+    Token::tochars[TOKblit]		= "=";
+#endif
     Token::tochars[TOKlt]		= "<";
     Token::tochars[TOKgt]		= ">";
     Token::tochars[TOKle]		= "<=";

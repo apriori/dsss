@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2007 by Digital Mars
+// Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -209,8 +209,8 @@ void FuncDeclaration::semantic(Scope *sc)
     if (sd)
     {
 	// Verify no constructors, destructors, etc.
-	if (isCtorDeclaration() ||
-	    isDtorDeclaration()
+	if (isCtorDeclaration()
+	    //||isDtorDeclaration()
 	    //|| isInvariantDeclaration()
 	    //|| isUnitTestDeclaration()
 	   )
@@ -240,6 +240,7 @@ void FuncDeclaration::semantic(Scope *sc)
 	storage_class |= STCabstract;
 
 	/*if (isCtorDeclaration() ||
+	    isPostBlitDeclaration() ||
 	    isDtorDeclaration() ||
 	    isInvariantDeclaration() ||
 	    isUnitTestDeclaration() || isNewDeclaration() || isDelete())
@@ -344,6 +345,7 @@ void FuncDeclaration::semantic(Scope *sc)
 #if !BREAKABI
 				&& !isDtorDeclaration()
 #endif
+				&& !isPostBlitDeclaration()
 				)
 				error("multiple overrides of same function"); */
 			}
@@ -584,8 +586,12 @@ Ldone:
     return;
 
 Lassignerr:
-    0;
-    //error("identity assignment operator overload is illegal");
+    if (sd)
+    {
+	sd->hasIdentityAssign = 1;	// don't need to generate it
+	goto Ldone;
+    }
+    // error("identity assignment operator overload is illegal");
 }
 
 void FuncDeclaration::semantic2(Scope *sc)
@@ -604,7 +610,7 @@ void FuncDeclaration::semantic3(Scope *sc)
     {
 	if (global.errors)
 	    return;
-	printf("FuncDeclaration::semantic3(%s '%s', sc = %p)\n", kind(), toChars(), sc);
+	//printf("FuncDeclaration::semantic3(%s '%s', sc = %p)\n", kind(), toChars(), sc);
 	assert(0);
     }
     //printf("FuncDeclaration::semantic3('%s.%s', sc = %p, loc = %s)\n", parent->toChars(), toChars(), sc, loc.toChars());
@@ -620,7 +626,6 @@ void FuncDeclaration::semantic3(Scope *sc)
     if (!type || type->ty != Tfunction)
 	return;
     f = (TypeFunction *)(type);
-    size_t nparams = Argument::dim(f->parameters);
 
     // Check the 'throws' clause
     if (fthrows)
@@ -638,15 +643,15 @@ void FuncDeclaration::semantic3(Scope *sc)
 
     if (fbody || frequire)
     {
-	// Establish function scope
-	ScopeDsymbol *ss;
-	Scope *sc2;
-
+	/* Symbol table into which we place parameters and nested functions,
+	 * solely to diagnose name collisions.
+	 */
 	localsymtab = new DsymbolTable();
 
-	ss = new ScopeDsymbol();
+	// Establish function scope
+	ScopeDsymbol *ss = new ScopeDsymbol();
 	ss->parent = sc->scopesym;
-	sc2 = sc->push(ss);
+	Scope *sc2 = sc->push(ss);
 	sc2->func = this;
 	sc2->parent = this;
 	sc2->callSuper = 0;
@@ -707,9 +712,11 @@ void FuncDeclaration::semantic3(Scope *sc)
 	}
 	else if (isNested())
 	{
-	    VarDeclaration *v;
-
-	    v = new ThisDeclaration(Type::tvoid->pointerTo());
+	    /* The 'this' for a nested function is the link to the
+	     * enclosing function's stack frame.
+	     * Note that nested functions and member functions are disjoint.
+	     */
+	    VarDeclaration *v = new ThisDeclaration(Type::tvoid->pointerTo());
 	    v->storage_class |= STCparameter;
 	    v->semantic(sc2);
 	    if (!sc2->insert(v))
@@ -760,7 +767,7 @@ void FuncDeclaration::semantic3(Scope *sc)
 	    }
 	}
 
-	// Propagate storage class from tuple arguments to their sub-arguments.
+	// Propagate storage class from tuple parameters to their element-parameters.
 	if (f->parameters)
 	{
 	    for (size_t i = 0; i < f->parameters->dim; i++)
@@ -777,10 +784,14 @@ void FuncDeclaration::semantic3(Scope *sc)
 	    }
 	}
 
-	// Declare all the function parameters as variables
+	/* Declare all the function parameters as variables
+	 * and install them in parameters[]
+	 */
+	size_t nparams = Argument::dim(f->parameters);
 	if (nparams)
-	{   // parameters[] has all the tuples removed, as the back end
-	    // doesn't know about tuples
+	{   /* parameters[] has all the tuples removed, as the back end
+	     * doesn't know about tuples
+	     */
 	    parameters = new Dsymbols();
 	    parameters->reserve(nparams);
 	    for (size_t i = 0; i < nparams; i++)
@@ -789,7 +800,9 @@ void FuncDeclaration::semantic3(Scope *sc)
 		Identifier *id = arg->ident;
 		if (!id)
 		{
-		    //error("no identifier for parameter %d of %s", i + 1, toChars());
+		    /* Generate identifier for un-named parameter,
+		     * because we need it later on.
+		     */
 		    OutBuffer buf;
 		    buf.printf("_param_" ZU, i);
 		    char *name = (char *)buf.extractData();
@@ -801,9 +814,7 @@ void FuncDeclaration::semantic3(Scope *sc)
 		v->storage_class |= STCparameter;
 		if (f->varargs == 2 && i + 1 == nparams)
 		    v->storage_class |= STCvariadic;
-		v->storage_class |= arg->storageClass & (STCin | STCout | STCref | STClazy | STCfinal | STCconst | STCinvariant);
-		if (v->storage_class & STClazy)
-		    v->storage_class |= STCin;
+		v->storage_class |= arg->storageClass & (STCin | STCout | STCref | STClazy | STCfinal | STCconst | STCinvariant | STCnodtor);
 		v->semantic(sc2);
 		if (!sc2->insert(v)) {}
 		    //error("parameter %s.%s is already defined", toChars(), v->toChars());
@@ -848,10 +859,14 @@ void FuncDeclaration::semantic3(Scope *sc)
 	    }
 	}
 
+	/* Do the semantic analysis on the [in] preconditions and
+	 * [out] postconditions.
+	 */
 	sc2->incontract++;
 
 	if (frequire)
-	{
+	{   /* frequire is composed of the [in] contracts
+	     */
 	    // BUG: need to error if accessing out parameters
 	    // BUG: need to treat parameters as const
 	    // BUG: need to disallow returns and throws
@@ -861,10 +876,9 @@ void FuncDeclaration::semantic3(Scope *sc)
 	}
 
 	if (fensure || addPostInvariant())
-	{
-	    ScopeDsymbol *sym;
-
-	    sym = new ScopeDsymbol();
+	{   /* fensure is composed of the [out] contracts
+	     */
+	    ScopeDsymbol *sym = new ScopeDsymbol();
 	    sym->parent = sc2->scopesym;
 	    sc2 = sc2->push(sym);
 
@@ -968,6 +982,8 @@ void FuncDeclaration::semantic3(Scope *sc)
 	if (fbody)
 	{   ClassDeclaration *cd = isClassMember();
 
+	    /* If this is a class constructor
+	     */
 	    if (isCtorDeclaration() && cd)
 	    {
 		for (int i = 0; i < cd->fields.dim; i++)
@@ -991,8 +1007,6 @@ void FuncDeclaration::semantic3(Scope *sc)
 		}
 		f = (TypeFunction *)type;
 	    }
-
-	    int offend = fbody ? fbody->fallOffEnd() : TRUE;
 
 	    if (isStaticCtorDeclaration())
 	    {	/* It's a static constructor. Ensure that all
@@ -1061,6 +1075,9 @@ void FuncDeclaration::semantic3(Scope *sc)
 		// error("expected to return a value of type %s", type->nextOf()->toChars());
 	    else if (!inlineAsm)
 	    {
+		int offend = fbody ? fbody->blockExit() & BEfallthru : TRUE;
+		//int offend = fbody ? fbody->fallOffEnd() : TRUE;
+
 		if (type->nextOf()->ty == Tvoid)
 		{
 		    if (offend && isMain())
@@ -1107,9 +1124,8 @@ void FuncDeclaration::semantic3(Scope *sc)
 	    // Merge in initialization of 'out' parameters
 	    if (parameters)
 	    {	for (size_t i = 0; i < parameters->dim; i++)
-		{   VarDeclaration *v;
-
-		    v = (VarDeclaration *)parameters->data[i];
+		{
+		    VarDeclaration *v = (VarDeclaration *)parameters->data[i];
 		    if (v->storage_class & STCout)
 		    {
 			assert(v->init);
@@ -1235,6 +1251,35 @@ void FuncDeclaration::semantic3(Scope *sc)
 	    }
 
 	    fbody = new CompoundStatement(0, a);
+
+	    /* Append destructor calls for parameters as finally blocks.
+	     */
+	    if (parameters)
+	    {	for (size_t i = 0; i < parameters->dim; i++)
+		{
+		    VarDeclaration *v = (VarDeclaration *)parameters->data[i];
+
+		    if (v->storage_class & (STCref | STCout))
+			continue;
+
+		    /* Don't do this for static arrays, since static
+		     * arrays are called by reference. Remove this
+		     * when we change them to call by value.
+		     */
+		    if (v->type->toBasetype()->ty == Tsarray)
+			continue;
+
+		    Expression *e = v->callAutoDtor(sc);
+		    if (e)
+		    {	Statement *s = new ExpStatement(0, e);
+			s = s->semantic(sc);
+			if (fbody->blockExit() == BEfallthru)
+			    fbody = new CompoundStatement(0, fbody, s);
+			else
+			    fbody = new TryFinallyStatement(0, fbody, s);
+		    }
+		}
+	    }
 	}
 
 	sc2->callSuper = 0;
@@ -1346,6 +1391,16 @@ int FuncDeclaration::overloadInsert(Dsymbol *s)
     if (!f)
 	return FALSE;
 
+#if 0
+    /* Disable this check because:
+     *	const void foo();
+     * semantic() isn't run yet on foo(), so the const hasn't been
+     * applied yet.
+     */
+    if (type)
+    {   printf("type = %s\n", type->toChars());
+	printf("f->type = %s\n", f->type->toChars());
+    }
     if (type && f->type &&	// can be NULL for overloaded constructors
 	f->type->covariant(type) &&
 	f->type->mod == type->mod &&
@@ -1354,6 +1409,7 @@ int FuncDeclaration::overloadInsert(Dsymbol *s)
 	//printf("\tfalse: conflict %s\n", kind());
 	return FALSE;
     }
+#endif
 
     if (overnext)
 	return overnext->overloadInsert(f);
@@ -1772,8 +1828,16 @@ int FuncDeclaration::isMain()
 
 int FuncDeclaration::isWinMain()
 {
+    //printf("FuncDeclaration::isWinMain() %s\n", toChars());
+#if 0
+    int x = ident == Id::WinMain &&
+	linkage != LINKc && !isMember();
+    printf("%s\n", x ? "yes" : "no");
+    return x;
+#else
     return ident == Id::WinMain &&
 	linkage != LINKc && !isMember();
+#endif
 }
 
 int FuncDeclaration::isDllMain()
@@ -1849,7 +1913,7 @@ int FuncDeclaration::isNested()
 {
     //if (!toParent())
 	//printf("FuncDeclaration::isNested('%s') parent=%p\n", toChars(), parent);
-    //printf("\ttoParent() = '%s'\n", toParent()->toChars());
+    //printf("\ttoParent2() = '%s'\n", toParent2()->toChars());
     return ((storage_class & STCstatic) == 0) &&
 	   (toParent2()->isFuncDeclaration() != NULL);
 }
@@ -1871,7 +1935,8 @@ int FuncDeclaration::addPreInvariant()
 	    //ad->isClassDeclaration() &&
 	    global.params.useInvariants &&
 	    (protection == PROTpublic || protection == PROTexport) &&
-	    !naked);
+	    !naked &&
+	    ident != Id::cpctor);
 }
 
 int FuncDeclaration::addPostInvariant()
@@ -1882,7 +1947,8 @@ int FuncDeclaration::addPostInvariant()
 	    //ad->isClassDeclaration() &&
 	    global.params.useInvariants &&
 	    (protection == PROTpublic || protection == PROTexport) &&
-	    !naked);
+	    !naked &&
+	    ident != Id::cpctor);
 }
 
 /**********************************
@@ -2092,6 +2158,8 @@ void CtorDeclaration::semantic(Scope *sc)
     Type *tret;
 
     //printf("CtorDeclaration::semantic()\n");
+    if (type)
+	return;
 
     sc = sc->push();
     sc->stc &= ~STCstatic;		// not a static constructor
@@ -2101,7 +2169,7 @@ void CtorDeclaration::semantic(Scope *sc)
     cd = parent->isClassDeclaration();
     if (!cd)
     {
-	//error("constructors only are for class definitions");
+	// error("constructors are only for class definitions");
 	tret = Type::tvoid;
     }
     else
@@ -2166,6 +2234,78 @@ void CtorDeclaration::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
     bodyToCBuffer(buf, hgs);
 }
 
+/********************************* PostBlitDeclaration ****************************/
+
+PostBlitDeclaration::PostBlitDeclaration(Loc loc, Loc endloc)
+    : FuncDeclaration(loc, endloc, Id::_postblit, STCundefined, NULL)
+{
+}
+
+PostBlitDeclaration::PostBlitDeclaration(Loc loc, Loc endloc, Identifier *id)
+    : FuncDeclaration(loc, endloc, id, STCundefined, NULL)
+{
+}
+
+Dsymbol *PostBlitDeclaration::syntaxCopy(Dsymbol *s)
+{
+    assert(!s);
+    PostBlitDeclaration *dd = new PostBlitDeclaration(loc, endloc, ident);
+    return FuncDeclaration::syntaxCopy(dd);
+}
+
+
+void PostBlitDeclaration::semantic(Scope *sc)
+{
+    //printf("PostBlitDeclaration::semantic() %s\n", toChars());
+    //printf("ident: %s, %s, %p, %p\n", ident->toChars(), Id::dtor->toChars(), ident, Id::dtor);
+    parent = sc->parent;
+    Dsymbol *parent = toParent();
+    StructDeclaration *ad = parent->isStructDeclaration();
+    if (!ad)
+    {
+	error("post blits are only for struct/union definitions, not %s %s", parent->kind(), parent->toChars());
+    }
+    else if (ident == Id::_postblit)
+	ad->postblits.push(this);
+    type = new TypeFunction(NULL, Type::tvoid, FALSE, LINKd);
+
+    sc = sc->push();
+    sc->stc &= ~STCstatic;		// not static
+    sc->linkage = LINKd;
+
+    FuncDeclaration::semantic(sc);
+
+    sc->pop();
+}
+
+int PostBlitDeclaration::overloadInsert(Dsymbol *s)
+{
+    return FALSE;	// cannot overload postblits
+}
+
+int PostBlitDeclaration::addPreInvariant()
+{
+    return FALSE;
+}
+
+int PostBlitDeclaration::addPostInvariant()
+{
+    return (vthis && global.params.useInvariants);
+}
+
+int PostBlitDeclaration::isVirtual()
+{
+    return FALSE;
+}
+
+void PostBlitDeclaration::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
+{
+    if (hgs->hdrgen)
+	return;
+    buf->writestring("=this()");
+    bodyToCBuffer(buf, hgs);
+}
+
 /********************************* DtorDeclaration ****************************/
 
 DtorDeclaration::DtorDeclaration(Loc loc, Loc endloc)
@@ -2173,29 +2313,32 @@ DtorDeclaration::DtorDeclaration(Loc loc, Loc endloc)
 {
 }
 
+DtorDeclaration::DtorDeclaration(Loc loc, Loc endloc, Identifier *id)
+    : FuncDeclaration(loc, endloc, id, STCundefined, NULL)
+{
+}
+
 Dsymbol *DtorDeclaration::syntaxCopy(Dsymbol *s)
 {
-    DtorDeclaration *dd;
-
     assert(!s);
-    dd = new DtorDeclaration(loc, endloc);
+    DtorDeclaration *dd = new DtorDeclaration(loc, endloc, ident);
     return FuncDeclaration::syntaxCopy(dd);
 }
 
 
 void DtorDeclaration::semantic(Scope *sc)
 {
-    ClassDeclaration *cd;
-
+    //printf("DtorDeclaration::semantic() %s\n", toChars());
+    //printf("ident: %s, %s, %p, %p\n", ident->toChars(), Id::dtor->toChars(), ident, Id::dtor);
     parent = sc->parent;
     Dsymbol *parent = toParent();
-    cd = parent->isClassDeclaration();
-    if (!cd)
+    AggregateDeclaration *ad = parent->isAggregateDeclaration();
+    if (!ad)
     {
-	//error("destructors only are for class definitions");
+	// error("destructors are only for class/struct/union definitions, not %s %s", parent->kind(), parent->toChars());
     }
-    else
-	cd->dtors.push(this);
+    else if (ident == Id::dtor)
+	ad->dtors.push(this);
     type = new TypeFunction(NULL, Type::tvoid, FALSE, LINKd);
 
     sc = sc->push();
@@ -2472,12 +2615,7 @@ void InvariantDeclaration::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 
 static Identifier *unitTestId()
 {
-    static int n;
-    char buffer[10 + sizeof(n)*3 + 1];
-
-    sprintf(buffer,"__unittest%d", n);
-    n++;
-    return Lexer::idPool(buffer);
+    return Lexer::uniqueId("__unittest");
 }
 
 UnitTestDeclaration::UnitTestDeclaration(Loc loc, Loc endloc)

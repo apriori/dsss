@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2007 by Digital Mars
+// Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -86,15 +86,10 @@ enum PROT Declaration::prot()
  * Issue error if not.
  */
 
-void Declaration::checkModify(Loc loc, Scope *sc)
+void Declaration::checkModify(Loc loc, Scope *sc, Type *t)
 {
     /* if (sc->incontract && isParameter())
 	error(loc, "cannot modify parameter '%s' in contract", toChars()); */
-
-    VarDeclaration *v = isVarDeclaration();
-    /* if (v && v->canassign == 0 &&
-        (isConst() || isInvariant()) && !isCtorinit())
-	error(loc, "cannot modify const/invariant variable '%s'", toChars()); */
 
     if (isCtorinit())
     {	// It's only modifiable if inside the right constructor
@@ -110,6 +105,7 @@ void Declaration::checkModify(Loc loc, Scope *sc)
 		fd->toParent() == toParent()
 	       )
 	    {
+		VarDeclaration *v = isVarDeclaration();
 		assert(v);
 		v->ctorinit = 1;
 		//printf("setting ctorinit\n");
@@ -128,6 +124,26 @@ void Declaration::checkModify(Loc loc, Scope *sc)
 		}
 	    }
 	    break;
+	}
+    }
+    else
+    {
+	VarDeclaration *v = isVarDeclaration();
+	if (v && v->canassign == 0)
+	{
+	    char *p = NULL;
+	    if (isConst())
+		p = "const";
+	    else if (isInvariant())
+		p = "invariant";
+	    else if (storage_class & STCmanifest)
+		p = "manifest constant";
+	    else if (!t->isAssignable())
+		p = "struct with immutable members";
+	    if (p)
+	    {	error(loc, "cannot modify %s", p);
+		halt();
+	    }
 	}
     }
 }
@@ -371,6 +387,7 @@ AliasDeclaration::AliasDeclaration(Loc loc, Identifier *id, Dsymbol *s)
 
 Dsymbol *AliasDeclaration::syntaxCopy(Dsymbol *s)
 {
+    //printf("AliasDeclaration::syntaxCopy()\n");
     assert(!s);
     AliasDeclaration *sa;
     if (type)
@@ -644,6 +661,7 @@ void VarDeclaration::semantic(Scope *sc)
     //printf("VarDeclaration::semantic('%s', parent = '%s')\n", toChars(), sc->parent->toChars());
     //printf(" type = %s\n", type ? type->toChars() : "null");
     //printf(" stc = x%x\n", sc->stc);
+    //printf(" storage_class = x%x\n", storage_class);
     //printf("linkage = %d\n", sc->linkage);
     //if (strcmp(toChars(), "mul") == 0) halt();
 
@@ -671,7 +689,7 @@ void VarDeclaration::semantic(Scope *sc)
 	    originalType = type;
 	type = type->semantic(loc, sc);
     }
-    //printf(" type = %s\n", type ? type->toChars() : "null");
+    //printf(" semantic type = %s\n", type ? type->toChars() : "null");
 
     type->checkDeprecated(loc, sc);
     linkage = sc->linkage;
@@ -712,6 +730,7 @@ void VarDeclaration::semantic(Scope *sc)
 	size_t nelems = Argument::dim(tt->arguments);
 	Objects *exps = new Objects();
 	exps->setDim(nelems);
+	Expression *ie = init ? init->toExpression() : NULL;
 
 	for (size_t i = 0; i < nelems; i++)
 	{   Argument *arg = Argument::getNth(tt->arguments, i);
@@ -722,7 +741,16 @@ void VarDeclaration::semantic(Scope *sc)
 	    char *name = (char *)buf.extractData();
 	    Identifier *id = new Identifier(name, TOKidentifier);
 
-	    VarDeclaration *v = new VarDeclaration(loc, arg->type, id, NULL);
+	    Expression *einit = ie;
+	    if (ie && ie->op == TOKtuple)
+	    {	einit = (Expression *)((TupleExp *)ie)->exps->data[i];
+	    }
+	    Initializer *ti = init;
+	    if (einit)
+	    {	ti = new ExpInitializer(einit->loc, einit);
+	    }
+
+	    VarDeclaration *v = new VarDeclaration(loc, arg->type, id, ti);
 	    //printf("declaring field %s of type %s\n", v->toChars(), v->type->toChars());
 	    v->semantic(sc);
 
@@ -751,11 +779,12 @@ Lagain:
 	if (!type->isInvariant())
 	    type = type->constOf();
     }
+    else if (type->isConst())
+	storage_class |= STCconst;
+    else if (type->isInvariant())
+	storage_class |= STCinvariant;
 
-    if (storage_class & (STCstatic | STCextern))
-    {
-    }
-    else if (isSynchronized())
+    if (isSynchronized())
     {
 	//error("variable %s cannot be synchronized", toChars());
     }
@@ -767,7 +796,12 @@ Lagain:
     {
 	//error("abstract cannot be applied to variable");
     }
-    else if (storage_class & STCtemplateparameter)
+    else if (storage_class & STCfinal)
+    {
+	error("final cannot be applied to variable");
+    }
+
+    if (storage_class & (STCstatic | STCextern | STCmanifest | STCtemplateparameter))
     {
     }
     else
@@ -818,9 +852,9 @@ Lagain:
 
     if (type->isauto() && !noauto)
     {
-	/* if (storage_class & (STCfield | STCout | STCref | STCstatic) || !fd)
+	/* if (storage_class & (STCfield | STCout | STCref | STCstatic | STCmanifest) || !fd)
 	{
-	    error("globals, statics, fields, ref and out parameters cannot be auto");
+	    error("globals, statics, fields, manifest constants, ref and out parameters cannot be auto");
 	} */
 
 	if (!(storage_class & (STCauto | STCscope)))
@@ -837,7 +871,10 @@ Lagain:
 
     if (init)
 	storage_class |= STCinit;     // remember we had an explicit initializer
+    else if (storage_class & STCmanifest)
+	error("manifest constants must have initializers");
 
+    enum TOK op = TOKconstruct;
     if (!init && !sc->inunion && !isStatic() && fd &&
 	(!(storage_class & (STCfield | STCin | STCforeach | STCparameter)) || (storage_class & STCout)) &&
 	type->size() != 0)
@@ -876,6 +913,8 @@ Lagain:
 	{
 	    init = getExpInitializer();
 	}
+	// Default initializer is always a blit
+	op = TOKblit;
     }
 
     if (init)
@@ -905,7 +944,7 @@ Lagain:
 	{
 	    // If local variable, use AssignExp to handle all the various
 	    // possibilities.
-	    if (fd && !isStatic() &&
+	    if (fd && !isStatic() && !(storage_class & STCmanifest) &&
 		!init->isVoidInitializer())
 	    {
 		Expression *e1;
@@ -957,7 +996,7 @@ Lagain:
 			ei->exp = new CastExp(loc, ei->exp, type);
 		}
 		ei->exp = new AssignExp(loc, e1, ei->exp);
-		ei->exp->op = TOKconstruct;
+		ei->exp->op = op;
 		canassign++;
 		ei->exp = ei->exp->semantic(sc);
 		canassign--;
@@ -968,7 +1007,7 @@ Lagain:
 		init = init->semantic(sc, type);
 	    }
 	}
-	else if (storage_class & (STCconst | STCinvariant) ||
+	else if (storage_class & (STCconst | STCinvariant | STCmanifest) ||
 		 type->isConst() || type->isInvariant())
 	{
 	    /* Because we may need the results of a const declaration in a
@@ -1068,6 +1107,8 @@ Dsymbol *VarDeclaration::toAlias()
 
 void VarDeclaration::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 {
+    if (storage_class & STCmanifest)
+	buf->writestring("manifest ");
     if (storage_class & STCstatic)
 	buf->writestring("static ");
     if (storage_class & STCconst)
@@ -1081,7 +1122,11 @@ void VarDeclaration::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 	buf->writestring(ident->toChars());
     if (init)
     {	buf->writestring(" = ");
-	init->toCBuffer(buf, hgs);
+	ExpInitializer *ie = init->isExpInitializer();
+	if (ie && (ie->exp->op == TOKconstruct || ie->exp->op == TOKblit))
+	    ((AssignExp *)ie->exp)->e2->toCBuffer(buf, hgs);
+	else
+	    init->toCBuffer(buf, hgs);
     }
     buf->writeByte(';');
     buf->writenl();
@@ -1114,7 +1159,8 @@ void VarDeclaration::checkCtorConstInit()
 
 void VarDeclaration::checkNestedReference(Scope *sc, Loc loc)
 {
-    if (parent && !isDataseg() && parent != sc->parent)
+    if (parent && !isDataseg() && parent != sc->parent &&
+	!(storage_class & STCmanifest))
     {
 	// The function that this variable is in
 	FuncDeclaration *fdv = toParent()->isFuncDeclaration();
@@ -1140,6 +1186,7 @@ void VarDeclaration::checkNestedReference(Scope *sc, Loc loc)
 		if (s == this)
 		    goto L2;
 	    }
+
 	    fdv->closureVars.push(this);
 	  L2: ;
 
@@ -1176,7 +1223,7 @@ ExpInitializer *VarDeclaration::getExpInitializer()
 
 Expression *VarDeclaration::getConstInitializer()
 {
-    if ((isConst() || isInvariant()) &&
+    if ((isConst() || isInvariant() || storage_class & STCmanifest) &&
 	storage_class & STCinit)
     {
 	ExpInitializer *ei = getExpInitializer();
@@ -1193,6 +1240,7 @@ Expression *VarDeclaration::getConstInitializer()
 
 int VarDeclaration::canTakeAddressOf()
 {
+#if 0
     /* Global variables and struct/class fields of the form:
      *	const int x = 3;
      * are not stored and hence cannot have their address taken.
@@ -1206,6 +1254,10 @@ int VarDeclaration::canTakeAddressOf()
     {
 	return 0;
     }
+#else
+    if (storage_class & STCmanifest)
+	return 0;
+#endif
     return 1;
 }
 
@@ -1221,6 +1273,8 @@ int VarDeclaration::isDataseg()
     printf("%x, %p, %p\n", storage_class & (STCstatic | STCconst), parent->isModule(), parent->isTemplateInstance());
     printf("parent = '%s'\n", parent->toChars());
 #endif
+    if (storage_class & STCmanifest)
+	return 0;
     Dsymbol *parent = this->toParent();
     if (!parent && !(storage_class & STCstatic))
     {	//error("forward referenced");
@@ -1235,18 +1289,95 @@ int VarDeclaration::isDataseg()
 
 int VarDeclaration::hasPointers()
 {
+    //printf("VarDeclaration::hasPointers() %s, ty = %d\n", toChars(), type->ty);
     return (!isDataseg() && type->hasPointers());
 }
+
+/******************************************
+ * Return TRUE if variable needs to call the destructor.
+ */
+
+int VarDeclaration::needsAutoDtor()
+{
+    //printf("VarDeclaration::needsAutoDtor() %s\n", toChars());
+
+    if (noauto || storage_class & STCnodtor)
+	return FALSE;
+
+    // Destructors for structs and arrays of structs
+    Type *tv = type->toBasetype();
+    while (tv->ty == Tsarray)
+    {   TypeSArray *ta = (TypeSArray *)tv;
+	tv = tv->nextOf()->toBasetype();
+    }
+    if (tv->ty == Tstruct)
+    {   TypeStruct *ts = (TypeStruct *)tv;
+	StructDeclaration *sd = ts->sym;
+	if (sd->dtor)
+	    return TRUE;
+    }
+
+    // Destructors for classes
+    if (storage_class & (STCauto | STCscope))
+    {
+	if (type->isClassHandle())
+	    return TRUE;
+    }
+    return FALSE;
+}
+
 
 /******************************************
  * If a variable has an auto destructor call, return call for it.
  * Otherwise, return NULL.
  */
 
-Expression *VarDeclaration::callAutoDtor()
+Expression *VarDeclaration::callAutoDtor(Scope *sc)
 {   Expression *e = NULL;
 
-    if (storage_class & (STCauto | STCscope) && !noauto)
+    //printf("VarDeclaration::callAutoDtor() %s\n", toChars());
+
+    if (noauto || storage_class & STCnodtor)
+	return NULL;
+
+    // Destructors for structs and arrays of structs
+    bool array = false;
+    Type *tv = type->toBasetype();
+    while (tv->ty == Tsarray)
+    {   TypeSArray *ta = (TypeSArray *)tv;
+	array = true;
+	tv = tv->nextOf()->toBasetype();
+    }
+    if (tv->ty == Tstruct)
+    {   TypeStruct *ts = (TypeStruct *)tv;
+	StructDeclaration *sd = ts->sym;
+	if (sd->dtor)
+	{
+	    if (array)
+	    {
+		// Typeinfo.destroy(cast(void*)&v);
+		Expression *ea = new SymOffExp(loc, this, 0, 0);
+		ea = new CastExp(loc, ea, Type::tvoid->pointerTo());
+		Expressions *args = new Expressions();
+		args->push(ea);
+
+		Expression *et = type->getTypeInfo(sc);
+		et = new DotIdExp(loc, et, Id::destroy);
+
+		e = new CallExp(loc, et, args);
+	    }
+	    else
+	    {
+		e = new VarExp(loc, this);
+		e = new DotVarExp(loc, e, sd->dtor, 0);
+		e = new CallExp(loc, e);
+	    }
+	    return e;
+	}
+    }
+
+    // Destructors for classes
+    if (storage_class & (STCauto | STCscope))
     {
 	for (ClassDeclaration *cd = type->isClassHandle();
 	     cd;
@@ -1256,6 +1387,8 @@ Expression *VarDeclaration::callAutoDtor()
 	     * classes to determine if there's no way the monitor
 	     * could be set.
 	     */
+	    //if (cd->isInterfaceDeclaration())
+		//error("interface %s cannot be scope", cd->toChars());
 	    if (1 || onstack || cd->dtors.dim)	// if any destructors
 	    {
 		// delete this;

@@ -20,6 +20,7 @@ OBJS=\
   attrib.o \
   cast.o \
   class.o \
+  clone.o \
   compile.o \
   cond.o \
   config.o \
