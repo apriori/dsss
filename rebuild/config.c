@@ -347,7 +347,7 @@ int readCommand(string cmd, char *buf, int len)
     buf[rd] = '\0';
     
     CloseHandle(ip[1]);
-    CloseHandle(ip[0]);
+    CloseHandle(op[0]);
 #endif
     
     return rd;
