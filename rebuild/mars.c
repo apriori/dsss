@@ -20,6 +20,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <pthread.h>
+#include "gc/gc.h"
+
 #if _WIN32
 #include <windows.h>
 long __cdecl __ehfilter(LPEXCEPTION_POINTERS ep);
@@ -40,6 +43,7 @@ long __cdecl __ehfilter(LPEXCEPTION_POINTERS ep);
 #include "mars.h"
 #include "module.h"
 #include "mtype.h"
+#include "nprocs.h"
 #include "response.h"
 #include "id.h"
 #include "cond.h"
@@ -94,6 +98,20 @@ Loc::Loc(Module *mod, unsigned linnum)
     this->linnum = linnum;
     this->filename = mod ? mod->srcfile->toChars() : NULL;
 }
+
+/*
+ * Support for grouped compilation
+ */
+class GroupedCompile {
+    public:
+    Array imodules, ofiles;
+    Array origonames, newonames;
+};
+Array GroupedCompiles;
+unsigned int curcompile = 0;
+pthread_mutex_t compilemutex;
+void *compileThread(void *);
+
 
 /**************************************
  * Print error message and exit.
@@ -249,6 +267,8 @@ int main(int argc, char *argv[])
     int status = EXIT_SUCCESS;
     int argcstart = argc;
 
+    mem.init();
+
     // Check for malformed input
     if (argc < 1 || !argv)
     {
@@ -280,6 +300,7 @@ int main(int argc, char *argv[])
     global.params.fullqdocs = 0;
     global.params.clean = 0;
     global.params.oneatatime = 0;
+    global.params.procs = 0;
     global.params.reflect = 0;
     global.params.candydoc = 0;
     global.params.objdir = ".";
@@ -899,6 +920,10 @@ int main(int argc, char *argv[])
             {
                 global.params.candydoc = 1;
             }
+            else if (p[1] == 'j')
+            {
+                global.params.procs = atoi(p + 2);
+            }
             else if (strncmp(p + 1, "dc=", 3) == 0) {}
             else if (strncmp(p + 1, "CFPATH", 6) == 0 ||
                      strncmp(p + 1, "BCFPATH", 7) == 0 ||
@@ -913,6 +938,10 @@ int main(int argc, char *argv[])
              Lpassthrough:
                 compileFlags += " ";
                 compileFlags += p;
+                linkFlags += " ";
+                linkFlags += p;
+                shliblinkFlags += " ";
+                shliblinkFlags += p;
                 continue;
                 
 	     Lerror:
@@ -1022,6 +1051,16 @@ int main(int argc, char *argv[])
     if (masterConfig.find(sect) != masterConfig.end() &&
         masterConfig[sect].find("oneatatime") != masterConfig[sect].end() &&
         masterConfig[sect]["oneatatime"] != "no") {
+        global.params.oneatatime = 1;
+    }
+
+    // and how many processes to use
+    if (global.params.procs == 0) {
+        global.params.procs = nprocs();
+        if (global.params.procs > 1)
+            global.params.procs *= 2;
+    }
+    if (global.params.procs > 1) {
         global.params.oneatatime = 1;
     }
 
@@ -1299,12 +1338,6 @@ int main(int argc, char *argv[])
     if (global.errors)
 	fatal();*/
     
-    class GroupedCompile {
-        public:
-        Array imodules, ofiles;
-        Array origonames, newonames;
-    };
-    Array GroupedCompiles;
     GroupedCompiles.push((void *) new GroupedCompile);
     
     // Generate compile commands
@@ -1626,42 +1659,19 @@ int main(int argc, char *argv[])
     
     mem.fullcollect();
     
-    // Now do the actual compilation
-    for (unsigned int j = 0; global.params.obj && j < GroupedCompiles.dim; j++) {
-        GroupedCompile *gc = (GroupedCompile *) GroupedCompiles.data[j];
-        
-        if (gc->imodules.dim == 0) continue;
-        
-        // make a string of the file names
-        std::string infiles;
-        for (unsigned int k = 0; k < gc->imodules.dim; k++) {
-            Module *m = (Module *) gc->imodules.data[k];
-            infiles += m->srcfile->name->str;
-            infiles += " ";
+    // Now do the actual compilation, across any number of processors
+    if (global.params.procs > 1) {
+        pthread_t threads[global.params.procs];
+        pthread_mutex_init(&compilemutex, NULL);
+
+        for (unsigned int j = 0; j < global.params.procs; j++) {
+            pthread_create(&(threads[j]), NULL, compileThread, NULL);
         }
-        
-        // then compile
-        runCompile(infiles);
-        
-        // and rename
-        for (unsigned int k = 0; k < gc->origonames.dim; k++) {
-            if (global.params.listonly) {
-                printf("mv -f %s %s\n",
-                       gc->origonames.data[k], gc->newonames.data[k]);
-                
-            } else {
-                if (access((char *) gc->origonames.data[k], F_OK) == 0) {
-                    if (global.params.verbose)
-                        printf("rename    %s to %s\n",
-                               (char *) gc->origonames.data[k],
-                               (char *) gc->newonames.data[k]);
-                    
-                    remove((char *) gc->newonames.data[k]); // ignore errors
-                    rename((char *) gc->origonames.data[k],
-                           (char *) gc->newonames.data[k]); // ignore errors
-                }
-            }
+        for (unsigned int j = 0; j < global.params.procs; j++) {
+            pthread_join(threads[j], NULL);
         }
+    } else {
+        compileThread(NULL);
     }
     
     mem.fullcollect();
@@ -1710,6 +1720,66 @@ int main(int argc, char *argv[])
     }
 
     return status;
+}
+
+/*
+ * The thread in which actual compilation is performed
+ */
+void *compileThread(void *ignore)
+{
+    pthread_mutex_lock(&compilemutex);
+    int tnum = rand();
+    while (curcompile < GroupedCompiles.dim) {
+        GroupedCompile *gc = (GroupedCompile *) GroupedCompiles.data[curcompile];
+        curcompile++;
+        pthread_mutex_unlock(&compilemutex);
+
+        if (gc->imodules.dim == 0) {
+            pthread_mutex_lock(&compilemutex);
+            continue;
+        }
+        
+        // make a string of the file names
+        std::string infiles;
+        for (unsigned int k = 0; k < gc->imodules.dim; k++) {
+            Module *m = (Module *) gc->imodules.data[k];
+            infiles += m->srcfile->name->str;
+            infiles += " ";
+        }
+        
+        // if we only have one file, just rename on the fly
+        if (gc->imodules.dim == 1) {
+            infiles += std::string("-of") + ((char *) gc->newonames.data[0]) + " ";
+        }
+        
+        // then compile
+        runCompile(infiles);
+        
+        // and rename
+        if (gc->imodules.dim > 1) {
+            for (unsigned int k = 0; k < gc->origonames.dim; k++) {
+                if (global.params.listonly) {
+                    printf("mv -f %s %s\n",
+                           gc->origonames.data[k], gc->newonames.data[k]);
+                
+                } else {
+                    if (access((char *) gc->origonames.data[k], F_OK) == 0) {
+                        if (global.params.verbose)
+                            printf("rename    %s to %s\n",
+                               (char *) gc->origonames.data[k],
+                               (char *) gc->newonames.data[k]);
+                    
+                        remove((char *) gc->newonames.data[k]); // ignore errors
+                        rename((char *) gc->origonames.data[k],
+                               (char *) gc->newonames.data[k]); // ignore errors
+                    }
+                }
+            }
+        }
+
+        pthread_mutex_lock(&compilemutex);
+    }
+    pthread_mutex_unlock(&compilemutex);
 }
 
 

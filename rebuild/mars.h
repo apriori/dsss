@@ -53,6 +53,7 @@ struct Param
     char fullqdocs;     // use fully-qualified document names
     char clean;         // clean after building
     char oneatatime;    // don't pass multiple files into the compiler
+    unsigned char procs;// number of processes to run concurrently
     char reflect;       // use drefgen
     char candydoc;      // generate modules.ddoc
     char trace;		// insert profiling hooks

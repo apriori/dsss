@@ -118,6 +118,7 @@ mtype.o: mtype.c mem.h dsymbol.h root.h dchar.h gnuc.h stringtable.h \
   identifier.h lexer.h scope.h init.h attrib.h declaration.h template.h \
   id.h enum.h import.h aggregate.h hdrgen.h
 choosedc.o: choosedc.c whereami.h
+nprocs.o: nprocs.c
 whereami.o: whereami.c
 opover.o: opover.c mem.h mtype.h root.h dchar.h gnuc.h stringtable.h \
   lstring.h arraytypes.h expression.h mars.h complex_t.h identifier.h \

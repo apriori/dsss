@@ -4,11 +4,12 @@ NATIVECXX=g++
 CXXFLAGS=-g
 
 GC=-Wl,-Bstatic,-lgc,-Bdynamic
+THREADS=-pthread
 
 EXEEXT=
 
 LDFLAGS=
-LIBS=$(GC)
+LIBS=$(GC) $(THREADS)
 
 PREFIX=/usr
 BINDIR=$(PREFIX)/bin
@@ -58,6 +59,7 @@ OBJS=\
   mem.o \
   module.o \
   mtype.o \
+  nprocs.o \
   opover.o \
   optimize.o \
   parse.o \
@@ -78,7 +80,7 @@ OBJS=\
 all: rebuild$(EXEEXT) rebuild_choosedc$(EXEEXT) rebuild.conf/default
 
 rebuild$(EXEEXT): id.c id.h impcnvtab.c $(OBJS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LIBS) $(OBJS) -o rebuild$(EXEEXT)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) -o rebuild$(EXEEXT)
 
 id.o: id.c
 
