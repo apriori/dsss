@@ -1,0 +1,167 @@
+access.o: access.c root.h dchar.h gnuc.h mem.h enum.h dsymbol.h \
+  stringtable.h lstring.h mars.h complex_t.h arraytypes.h aggregate.h \
+  init.h attrib.h scope.h id.h mtype.h expression.h identifier.h lexer.h \
+  declaration.h module.h
+array.o: array.c port.h root.h dchar.h gnuc.h mem.h
+attrib.o: attrib.c mem.h import.h dsymbol.h root.h dchar.h gnuc.h \
+  stringtable.h lstring.h mars.h complex_t.h arraytypes.h init.h \
+  declaration.h lexer.h mtype.h expression.h identifier.h attrib.h cond.h \
+  scope.h id.h aggregate.h module.h parse.h enum.h config.h version.h
+cast.o: cast.c mem.h expression.h mars.h complex_t.h identifier.h root.h \
+  dchar.h gnuc.h lexer.h arraytypes.h mtype.h stringtable.h lstring.h \
+  utf.h declaration.h dsymbol.h aggregate.h
+choosedc.o: choosedc.c whereami.h
+class.o: class.c root.h dchar.h gnuc.h mem.h enum.h dsymbol.h \
+  stringtable.h lstring.h mars.h complex_t.h arraytypes.h init.h attrib.h \
+  declaration.h lexer.h mtype.h expression.h identifier.h aggregate.h \
+  id.h scope.h module.h statement.h
+clone.o: clone.c root.h dchar.h gnuc.h aggregate.h dsymbol.h \
+  stringtable.h lstring.h mars.h complex_t.h arraytypes.h scope.h mtype.h \
+  expression.h identifier.h lexer.h declaration.h module.h id.h \
+  statement.h init.h
+compile.o: compile.c config.h mars.h complex_t.h module.h root.h dchar.h \
+  gnuc.h dsymbol.h stringtable.h lstring.h arraytypes.h response.h
+cond.o: cond.c compile.h config.h id.h init.h root.h dchar.h gnuc.h \
+  mars.h complex_t.h arraytypes.h declaration.h dsymbol.h stringtable.h \
+  lstring.h lexer.h mtype.h expression.h identifier.h cond.h module.h \
+  template.h scope.h
+config.o: config.c compile.h config.h mars.h complex_t.h mem.h root.h \
+  dchar.h gnuc.h whereami.h
+constfold.o: constfold.c mem.h root.h dchar.h gnuc.h mtype.h \
+  stringtable.h lstring.h arraytypes.h expression.h mars.h complex_t.h \
+  identifier.h lexer.h aggregate.h dsymbol.h declaration.h
+dchar.o: dchar.c dchar.h gnuc.h mem.h
+declaration.o: declaration.c init.h root.h dchar.h gnuc.h mars.h \
+  complex_t.h arraytypes.h declaration.h dsymbol.h stringtable.h \
+  lstring.h lexer.h mtype.h expression.h identifier.h attrib.h template.h \
+  scope.h aggregate.h module.h id.h hdrgen.h
+delegatize.o: delegatize.c mars.h complex_t.h expression.h identifier.h \
+  root.h dchar.h gnuc.h lexer.h arraytypes.h statement.h dsymbol.h \
+  stringtable.h lstring.h mtype.h utf.h declaration.h aggregate.h scope.h
+doc.o: doc.c mem.h root.h dchar.h gnuc.h mars.h complex_t.h dsymbol.h \
+  stringtable.h lstring.h arraytypes.h macro.h template.h mtype.h \
+  expression.h identifier.h lexer.h aggregate.h declaration.h enum.h id.h \
+  module.h scope.h hdrgen.h doc.h
+dsymbol.o: dsymbol.c mem.h mars.h complex_t.h dsymbol.h root.h dchar.h \
+  gnuc.h stringtable.h lstring.h arraytypes.h aggregate.h identifier.h \
+  module.h mtype.h expression.h lexer.h statement.h declaration.h id.h \
+  scope.h init.h import.h template.h attrib.h
+dump.o: dump.c mars.h complex_t.h mtype.h root.h dchar.h gnuc.h \
+  stringtable.h lstring.h arraytypes.h expression.h identifier.h lexer.h \
+  declaration.h dsymbol.h template.h
+entity.o: entity.c
+enum.o: enum.c root.h dchar.h gnuc.h enum.h dsymbol.h stringtable.h \
+  lstring.h mars.h complex_t.h arraytypes.h mtype.h expression.h \
+  identifier.h lexer.h scope.h id.h module.h
+expression.o: expression.c mem.h mtype.h root.h dchar.h gnuc.h \
+  stringtable.h lstring.h arraytypes.h expression.h mars.h complex_t.h \
+  identifier.h lexer.h init.h template.h dsymbol.h utf.h enum.h scope.h \
+  statement.h declaration.h aggregate.h import.h id.h module.h attrib.h \
+  hdrgen.h parse.h
+func.o: func.c mars.h complex_t.h init.h root.h dchar.h gnuc.h \
+  arraytypes.h declaration.h dsymbol.h stringtable.h lstring.h lexer.h \
+  mtype.h expression.h identifier.h attrib.h scope.h aggregate.h id.h \
+  module.h statement.h template.h hdrgen.h
+gnuc.o: gnuc.c gnuc.h
+hdrgen.o: hdrgen.c mem.h id.h init.h root.h dchar.h gnuc.h mars.h \
+  complex_t.h arraytypes.h attrib.h dsymbol.h stringtable.h lstring.h \
+  cond.h lexer.h enum.h import.h module.h mtype.h expression.h \
+  identifier.h scope.h staticassert.h template.h utf.h version.h \
+  declaration.h aggregate.h statement.h hdrgen.h
+html.o: html.c mars.h complex_t.h html.h root.h dchar.h gnuc.h
+identifier.o: identifier.c root.h dchar.h gnuc.h identifier.h mars.h \
+  complex_t.h lexer.h id.h
+id.o: id.c id.h identifier.h root.h dchar.h gnuc.h lexer.h mars.h \
+  complex_t.h
+impcnvtab.o: impcnvtab.c mtype.h root.h dchar.h gnuc.h stringtable.h \
+  lstring.h arraytypes.h expression.h mars.h complex_t.h identifier.h \
+  lexer.h
+import.o: import.c root.h dchar.h gnuc.h dsymbol.h stringtable.h \
+  lstring.h mars.h complex_t.h arraytypes.h import.h identifier.h \
+  module.h scope.h hdrgen.h mtype.h expression.h lexer.h declaration.h \
+  id.h
+inifile.o: inifile.c root.h dchar.h gnuc.h mem.h
+init.o: init.c mars.h complex_t.h init.h root.h dchar.h gnuc.h \
+  arraytypes.h expression.h identifier.h lexer.h statement.h dsymbol.h \
+  stringtable.h lstring.h declaration.h mtype.h aggregate.h scope.h \
+  hdrgen.h
+inline.o: inline.c id.h init.h root.h dchar.h gnuc.h mars.h complex_t.h \
+  arraytypes.h declaration.h dsymbol.h stringtable.h lstring.h lexer.h \
+  mtype.h expression.h identifier.h aggregate.h statement.h
+interpret.o: interpret.c mem.h statement.h root.h dchar.h gnuc.h \
+  arraytypes.h dsymbol.h stringtable.h lstring.h mars.h complex_t.h \
+  lexer.h expression.h identifier.h cond.h init.h staticassert.h mtype.h \
+  scope.h declaration.h aggregate.h id.h
+lexer.o: lexer.c mem.h stringtable.h root.h dchar.h gnuc.h lstring.h \
+  lexer.h mars.h complex_t.h utf.h identifier.h id.h module.h dsymbol.h \
+  arraytypes.h
+link.o: link.c mtype.h root.h dchar.h gnuc.h stringtable.h lstring.h \
+  arraytypes.h expression.h mars.h complex_t.h identifier.h lexer.h \
+  cond.h config.h mem.h module.h dsymbol.h response.h
+lstring.o: lstring.c dchar.h gnuc.h mem.h lstring.h
+macro.o: macro.c mem.h root.h dchar.h gnuc.h macro.h
+mangle.o: mangle.c root.h dchar.h gnuc.h init.h mars.h complex_t.h \
+  arraytypes.h declaration.h dsymbol.h stringtable.h lstring.h lexer.h \
+  mtype.h expression.h identifier.h aggregate.h attrib.h template.h id.h \
+  module.h
+mars.o: mars.c mem.h root.h dchar.h gnuc.h compile.h mars.h complex_t.h \
+  module.h dsymbol.h stringtable.h lstring.h arraytypes.h mtype.h \
+  expression.h identifier.h lexer.h response.h id.h cond.h whereami.h \
+  config.h
+mem.o: mem.c mem.h
+module.o: module.c mem.h attrib.h dsymbol.h root.h dchar.h gnuc.h \
+  stringtable.h lstring.h mars.h complex_t.h arraytypes.h module.h \
+  parse.h lexer.h enum.h scope.h identifier.h id.h import.h hdrgen.h \
+  version.h html.h
+mtype.o: mtype.c mem.h dsymbol.h root.h dchar.h gnuc.h stringtable.h \
+  lstring.h mars.h complex_t.h arraytypes.h mtype.h expression.h \
+  identifier.h lexer.h scope.h init.h attrib.h declaration.h template.h \
+  id.h enum.h import.h aggregate.h hdrgen.h
+choosedc.o: choosedc.c whereami.h
+whereami.o: whereami.c
+opover.o: opover.c mem.h mtype.h root.h dchar.h gnuc.h stringtable.h \
+  lstring.h arraytypes.h expression.h mars.h complex_t.h identifier.h \
+  lexer.h init.h id.h declaration.h dsymbol.h aggregate.h template.h
+optimize.o: optimize.c lexer.h root.h dchar.h gnuc.h mars.h complex_t.h \
+  mtype.h stringtable.h lstring.h arraytypes.h expression.h identifier.h \
+  declaration.h dsymbol.h aggregate.h init.h
+parse.o: parse.c mem.h lexer.h root.h dchar.h gnuc.h mars.h complex_t.h \
+  parse.h arraytypes.h enum.h dsymbol.h stringtable.h lstring.h init.h \
+  attrib.h cond.h mtype.h expression.h identifier.h template.h \
+  staticassert.h statement.h module.h import.h declaration.h aggregate.h \
+  id.h version.h
+response.o: response.c mem.h response.h
+root.o: root.c port.h root.h dchar.h gnuc.h mem.h
+scope.o: scope.c root.h dchar.h gnuc.h mars.h complex_t.h init.h \
+  arraytypes.h identifier.h scope.h dsymbol.h stringtable.h lstring.h \
+  attrib.h declaration.h lexer.h mtype.h expression.h aggregate.h \
+  module.h id.h
+statement.o: statement.c mem.h statement.h root.h dchar.h gnuc.h \
+  arraytypes.h dsymbol.h stringtable.h lstring.h mars.h complex_t.h \
+  lexer.h expression.h identifier.h cond.h init.h staticassert.h mtype.h \
+  scope.h declaration.h aggregate.h id.h hdrgen.h parse.h enum.h config.h \
+  module.h template.h
+staticassert.o: staticassert.c dsymbol.h root.h dchar.h gnuc.h \
+  stringtable.h lstring.h mars.h complex_t.h arraytypes.h staticassert.h \
+  expression.h identifier.h lexer.h id.h hdrgen.h
+stringtable.o: stringtable.c root.h dchar.h gnuc.h mem.h lstring.h \
+  stringtable.h
+struct.o: struct.c root.h dchar.h gnuc.h aggregate.h dsymbol.h \
+  stringtable.h lstring.h mars.h complex_t.h arraytypes.h scope.h mtype.h \
+  expression.h identifier.h lexer.h declaration.h module.h id.h \
+  statement.h
+template.o: template.c root.h dchar.h gnuc.h mem.h stringtable.h \
+  lstring.h mtype.h arraytypes.h expression.h mars.h complex_t.h \
+  identifier.h lexer.h template.h dsymbol.h init.h scope.h module.h \
+  aggregate.h declaration.h hdrgen.h
+traits.o: traits.c mem.h mtype.h root.h dchar.h gnuc.h stringtable.h \
+  lstring.h arraytypes.h expression.h mars.h complex_t.h identifier.h \
+  lexer.h init.h template.h dsymbol.h utf.h enum.h scope.h statement.h \
+  declaration.h aggregate.h import.h id.h module.h attrib.h hdrgen.h \
+  parse.h
+unialpha.o: unialpha.c
+utf.o: utf.c utf.h
+version.o: version.c root.h dchar.h gnuc.h identifier.h dsymbol.h \
+  stringtable.h lstring.h mars.h complex_t.h arraytypes.h cond.h lexer.h \
+  version.h module.h
+whereami.o: whereami.c

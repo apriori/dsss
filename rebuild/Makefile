@@ -3,9 +3,12 @@ CXX=$(CROSS)g++
 NATIVECXX=g++
 CXXFLAGS=-g
 
+GC=-Wl,-Bstatic,-lgc,-Bdynamic
+
 EXEEXT=
 
 LDFLAGS=
+LIBS=$(GC)
 
 PREFIX=/usr
 BINDIR=$(PREFIX)/bin
@@ -74,8 +77,12 @@ OBJS=\
 
 all: rebuild$(EXEEXT) rebuild_choosedc$(EXEEXT) rebuild.conf/default
 
-rebuild$(EXEEXT): id.c impcnvtab.c $(OBJS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(OBJS) -o rebuild$(EXEEXT)
+rebuild$(EXEEXT): id.c id.h impcnvtab.c $(OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LIBS) $(OBJS) -o rebuild$(EXEEXT)
+
+id.o: id.c
+
+id.h: id.c
 
 id.c: idgen$(EXEEXT)
 	./idgen$(EXEEXT)
@@ -85,6 +92,8 @@ idgen$(EXEEXT): idgen.o
 
 idgen.o: idgen.c
 	$(NATIVECXX) $(CXXFLAGS) -c idgen.c -o idgen.o
+
+impcnvtab.o: impcnvtab.c
 
 impcnvtab.c: impcnvgen$(EXEEXT)
 	./impcnvgen$(EXEEXT)
@@ -136,3 +145,15 @@ clean:
 	rm -f impcnvtab.c impcnvtab.h impcnvgen$(EXEEXT) impcnvgen.o
 	rm -f rebuild_choosedc$(EXEEXT) choosedc.o whereami.o
 	rm -f rebuild.conf/default choosedc$(EXEEXT) nchoosedc.o nwhereami.o
+
+deps:
+	touch deps
+	$(MAKE) clean
+	$(MAKE) idgen
+	$(MAKE) impcnvgen
+	-$(MAKE) CXXFLAGS=-MM
+	rm -f idgen.o impcnvgen.o
+	cat *.o > deps
+	$(MAKE) clean
+
+include deps
