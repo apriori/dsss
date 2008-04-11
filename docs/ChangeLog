@@ -1,4 +1,4 @@
-SVN from 0.75:
+0.76 from 0.75:
         - Rebuild: dmd-win-tango now correctly uses -ltango-base-dmd instead
           of -lphobos
         - Rebuild: Added support for multi-process builds, including automatic
