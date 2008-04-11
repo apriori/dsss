@@ -1,0 +1,10 @@
+rebuild requires libgc and pthreads. libgc is portable and available at:
+http://www.hpl.hp.com/personal/Hans_Boehm/gc/
+
+pthreads should be a component of all UNIX-alikes. A version of pthreads for
+Windows exists:
+http://sourceware.org/pthreads-win32/
+
+On Windows you will need to specify the library name of pthreads-win32, e.g.
+
+make THREADS=-lpthread
