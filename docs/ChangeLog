@@ -1,3 +1,11 @@
+SVN from 0.75:
+        - Rebuild: dmd-win-tango now correctly uses -ltango-base-dmd instead
+          of -lphobos
+        - Rebuild: Added support for multi-process builds, including automatic
+          detection of number of CPUs.
+        - Rebuild: Now uses libgc.
+        - Rebuild: Fixed a pipe left open in Windows.
+
 0.75 from 0.74:
         - Rebuild: Fixed DMD issues.
 
