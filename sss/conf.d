@@ -359,10 +359,10 @@ void getPrefix(char[] argvz)
         static assert(0);
     }
     
-    dsss_build ~= " -Idsss_imports" ~ std.path.sep ~
+    dsss_build ~= " " ~ dsss_buildOptions ~
+        " -Idsss_imports" ~ std.path.sep ~
         " -I. -S." ~ std.path.sep ~
-        " -I" ~ includePrefix ~ " -S" ~ libPrefix ~ std.path.sep ~ " " ~
-        dsss_buildOptions ~ " ";
+        " -I" ~ includePrefix ~ " -S" ~ libPrefix ~ std.path.sep ~ " ";
 }
 
 /** DSSS configuration information - simply a list of sections, then an array

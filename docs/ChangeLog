@@ -5,6 +5,8 @@
           detection of number of CPUs.
         - Rebuild: Now uses libgc.
         - Rebuild: Fixed a pipe left open in Windows.
+        - User -S and -I now come before system -S and -I options, so users can
+          override system defaults more easily.
 
 0.75 from 0.74:
         - Rebuild: Fixed DMD issues.
