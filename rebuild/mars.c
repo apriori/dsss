@@ -965,8 +965,6 @@ int main(int argc, char *argv[])
 	return EXIT_FAILURE;
     }
     
-    addFlag(compileFlags, "compile", "od", "-od$i", global.params.objdir);
-    
     if (global.params.release)
     {	global.params.useInvariants = 0;
 	global.params.useIn = 0;
@@ -1749,7 +1747,13 @@ void *compileThread(void *ignore)
         
         // if we only have one file, just rename on the fly
         if (gc->imodules.dim == 1) {
-            infiles += std::string("-of") + ((char *) gc->newonames.data[0]) + " ";
+            std::string fflag;
+            addFlag(fflag, "compile", "of", "-of$i", ((char *) gc->newonames.data[0]));
+            infiles += fflag + " ";
+        } else {
+            std::string dirflag;
+            addFlag(dirflag, "compile", "od", "-od$i", global.params.objdir);
+            infiles += dirflag + " ";
         }
         
         // then compile
