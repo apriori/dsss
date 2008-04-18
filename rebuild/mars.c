@@ -20,6 +20,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#if _WIN32
+#define PTW32_STATIC_LIB
+#endif
+
 #include <pthread.h>
 #include "gc/gc.h"
 
