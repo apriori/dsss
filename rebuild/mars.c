@@ -25,7 +25,6 @@
 #endif
 
 #include <pthread.h>
-#include "gc/gc.h"
 
 #if _WIN32
 #include <windows.h>

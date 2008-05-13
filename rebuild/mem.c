@@ -1,20 +1,20 @@
 
 /* Copyright (c) 2000 Digital Mars	*/
-/* Copyright (c) 2008 Gregor Richards   */
+/* All Rights Reserved 			*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "gc/gc.h"
-
 #include "mem.h"
+
+/* This implementation of the storage allocator uses the standard C allocation package.
+ */
 
 Mem mem;
 
 void Mem::init()
 {
-    GC_INIT();
 }
 
 char *Mem::strdup(const char *s)
@@ -23,7 +23,7 @@ char *Mem::strdup(const char *s)
 
     if (s)
     {
-	p = GC_strdup(s);
+	p = ::strdup(s);
 	if (p)
 	    return p;
 	error();
@@ -38,7 +38,7 @@ void *Mem::malloc(size_t size)
 	p = NULL;
     else
     {
-	p = GC_malloc(size);
+	p = ::malloc(size);
 	if (!p)
 	    error();
     }
@@ -52,9 +52,7 @@ void *Mem::calloc(size_t size, size_t n)
 	p = NULL;
     else
     {
-	//p = ::calloc(size, n);
-        p = GC_malloc(size*n);
-        memset(p, 0, size*n);
+	p = ::calloc(size, n);
 	if (!p)
 	    error();
     }
@@ -65,19 +63,19 @@ void *Mem::realloc(void *p, size_t size)
 {
     if (!size)
     {	if (p)
-	{   GC_free(p);
+	{   ::free(p);
 	    p = NULL;
 	}
     }
     else if (!p)
     {
-	p = GC_malloc(size);
+	p = ::malloc(size);
 	if (!p)
 	    error();
     }
     else
     {
-	p = GC_realloc(p, size);
+	p = ::realloc(p, size);
 	if (!p)
 	    error();
     }
@@ -87,7 +85,7 @@ void *Mem::realloc(void *p, size_t size)
 void Mem::free(void *p)
 {
     if (p)
-	GC_free(p);
+	::free(p);
 }
 
 void *Mem::mallocdup(void *o, size_t size)
@@ -97,7 +95,7 @@ void *Mem::mallocdup(void *o, size_t size)
 	p = NULL;
     else
     {
-	p = GC_malloc(size);
+	p = ::malloc(size);
 	if (!p)
 	    error();
 	else
@@ -114,7 +112,6 @@ void Mem::error()
 
 void Mem::fullcollect()
 {
-    GC_gcollect();
 }
 
 void Mem::mark(void *pointer)
@@ -126,7 +123,7 @@ void Mem::mark(void *pointer)
 
 void * operator new(size_t m_size)
 {   
-    void *p = GC_malloc(m_size);
+    void *p = malloc(m_size);
     if (p)
 	return p;
     printf("Error: out of memory\n");
@@ -136,7 +133,7 @@ void * operator new(size_t m_size)
 
 void operator delete(void *p)
 {
-    GC_free(p);
+    free(p);
 }
 
 

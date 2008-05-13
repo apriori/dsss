@@ -3,13 +3,12 @@ CXX=$(CROSS)g++
 NATIVECXX=g++
 CXXFLAGS=-g
 
-GC=-Wl,-Bstatic,-lgc,-Bdynamic
 THREADS=-pthread
 
 EXEEXT=
 
 LDFLAGS=
-LIBS=$(GC) $(THREADS)
+LIBS=$(THREADS)
 
 PREFIX=/usr
 BINDIR=$(PREFIX)/bin
