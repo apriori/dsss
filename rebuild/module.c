@@ -107,18 +107,23 @@ Module::Module(char *filename, Identifier *ident, int doDocComment, int doHdrGen
 
     macrotable = NULL;
     escapetable = NULL;
+    doppelganger = 0;
     cov = NULL;
     covb = NULL;
     
     pragmasparsed = 0;
 
     srcfilename = FileName::defaultExt(filename, global.mars_ext);
-    if (!srcfilename->equalsExt(global.mars_ext))
+    if (!srcfilename->equalsExt(global.mars_ext) &&
+        !srcfilename->equalsExt("dd"))
     {
 	if (srcfilename->equalsExt("html") ||
 	    srcfilename->equalsExt("htm")  ||
 	    srcfilename->equalsExt("xhtml"))
+	{   if (!global.params.useDeprecated)
+		error("html source files is deprecated %s", srcfilename->toChars());
 	    isHtml = 1;
+	}
 	else
 	{   error("source file name '%s' must have .%s extension", srcfilename->toChars(), global.mars_ext);
 	    fatal();
@@ -790,18 +795,15 @@ void Module::gensymfile()
 {
     OutBuffer buf;
     HdrGenState hgs;
-    int i;
 
     //printf("Module::gensymfile()\n");
 
     buf.printf("// Sym file generated from '%s'", srcfile->toChars());
     buf.writenl();
 
-    for (i = 0; i < members->dim; i++)
-    {
-	Dsymbol *s;
+    for (int i = 0; i < members->dim; i++)
+    {	Dsymbol *s = (Dsymbol *)members->data[i];
 
-	s = (Dsymbol *)members->data[i];
 	s->toCBuffer(&buf, &hgs);
     }
 

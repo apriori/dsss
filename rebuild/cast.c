@@ -1,5 +1,5 @@
 
-// Copyright (c) 1999-2007 by Digital Mars
+// Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -31,8 +31,7 @@
 
 Expression *Expression::implicitCastTo(Scope *sc, Type *t)
 {
-    //printf("Expression::implicitCastTo(%s) => %s\n", type->toChars(), t->toChars());
-    //printf("%s\n", toChars());
+    //printf("Expression::implicitCastTo(%s of type %s) => %s\n", toChars(), type->toChars(), t->toChars());
 
     MATCH match = implicitConvTo(t);
     if (match)
@@ -103,7 +102,7 @@ MATCH Expression::implicitConvTo(Type *t)
     printf("Expression::implicitConvTo(this=%s, type=%s, t=%s)\n",
 	toChars(), type->toChars(), t->toChars());
 #endif
-    //static int nest; if (++nest == 50) halt();
+    //static int nest; if (++nest == 10) halt();
     if (!type)
     {	//error("%s is not an expression", toChars());
 	type = Type::terror;
@@ -1086,7 +1085,7 @@ Expression *TupleExp::castTo(Scope *sc, Type *t)
 Expression *ArrayLiteralExp::castTo(Scope *sc, Type *t)
 {
 #if 0
-    printf("ArrayLiteralExp::castTo(this=%s, type=%s, t=%s)\n",
+    printf("ArrayLiteralExp::castTo(this=%s, type=%s, => %s)\n",
 	toChars(), type->toChars(), t->toChars());
 #endif
     if (type == t)
@@ -1096,7 +1095,8 @@ Expression *ArrayLiteralExp::castTo(Scope *sc, Type *t)
     Type *tb = t->toBasetype();
     if ((tb->ty == Tarray || tb->ty == Tsarray) &&
 	(typeb->ty == Tarray || typeb->ty == Tsarray) &&
-	tb->nextOf()->toBasetype()->ty != Tvoid)
+	// Not trying to convert non-void[] to void[]
+	!(tb->nextOf()->toBasetype()->ty == Tvoid && typeb->nextOf()->toBasetype()->ty != Tvoid))
     {
 	if (tb->ty == Tsarray)
 	{   TypeSArray *tsa = (TypeSArray *)tb;
@@ -1317,28 +1317,29 @@ Expression *BinExp::scaleFactor(Scope *sc)
     return this;
 }
 
-/************************************
- * Bring leaves to common type.
+/**************************************
+ * Combine types.
+ * Output:
+ *	*pt	merged type, if *pt is not NULL
+ *	*pe1	rewritten e1
+ *	*pe2	rewritten e2
+ * Returns:
+ *	!=0	success
+ *	0	failed
  */
 
-Expression *BinExp::typeCombine(Scope *sc)
+int typeMerge(Scope *sc, Type **pt, Expression **pe1, Expression **pe2)
 {
-    Type *t1;
-    Type *t2;
-    Type *t;
-    TY ty;
-
-    //printf("BinExp::typeCombine() %s\n", toChars());
+    //printf("typeMerge() %s\n", toChars());
     //dump(0);
 
-    e1 = e1->integralPromotions(sc);
-    e2 = e2->integralPromotions(sc);
+    Expression *e1 = (*pe1)->integralPromotions(sc);
+    Expression *e2 = (*pe2)->integralPromotions(sc);
 
-    // BUG: do toBasetype()
-    t1 = e1->type;
-    t2 = e2->type;
+    Type *t1 = e1->type;
+    Type *t2 = e2->type;
     assert(t1);
-    t = t1;
+    Type *t = t1;
 
     //if (t1) printf("\tt1 = %s\n", t1->toChars());
     //if (t2) printf("\tt2 = %s\n", t2->toChars());
@@ -1350,7 +1351,7 @@ Expression *BinExp::typeCombine(Scope *sc)
     Type *t1b = t1->toBasetype();
     Type *t2b = t2->toBasetype();
 
-    ty = (TY)Type::impcnvResult[t1b->ty][t2b->ty];
+    TY ty = (TY)Type::impcnvResult[t1b->ty][t2b->ty];
     if (ty != Terror)
     {	TY ty1;
 	TY ty2;
@@ -1362,73 +1363,35 @@ Expression *BinExp::typeCombine(Scope *sc)
 	{
 	    if (t1 == t2)
 	    {
-		if (!type)
-		    type = t1;
-		return this;
+		t = t1;
+		goto Lret;
 	    }
 
 	    if (t1b == t2b)
 	    {
-		if (!type)
-		    type = t1b;
-		return this;
+		t = t1b;
+		goto Lret;
 	    }
 	}
 
-	if (!type)
-	    type = Type::basic[ty];
+	t = Type::basic[ty];
 
 	t1 = Type::basic[ty1];
 	t2 = Type::basic[ty2];
 	e1 = e1->castTo(sc, t1);
 	e2 = e2->castTo(sc, t2);
-#if 0
-	if (type != Type::basic[ty])
-	{   t = type;
-	    type = Type::basic[ty];
-	    return castTo(sc, t);
-	}
-#endif
 	//printf("after typeCombine():\n");
 	//dump(0);
 	//printf("ty = %d, ty1 = %d, ty2 = %d\n", ty, ty1, ty2);
-	return this;
+	goto Lret;
     }
 
     t1 = t1b;
     t2 = t2b;
 
-    if (op == TOKcat)
-    {
-	if ((t1->ty == Tsarray || t1->ty == Tarray) &&
-	    (t2->ty == Tsarray || t2->ty == Tarray) &&
-	    (t1->nextOf()->mod || t2->nextOf()->mod) &&
-	    (t1->nextOf()->mod != t2->nextOf()->mod)
-	   )
-	{
-	    t1 = t1->nextOf()->mutableOf()->constOf()->arrayOf();
-	    t2 = t2->nextOf()->mutableOf()->constOf()->arrayOf();
-//t1 = t1->constOf();
-//t2 = t2->constOf();
-	    if (e1->op == TOKstring && !((StringExp *)e1)->committed)
-		e1->type = t1;
-	    else
-		e1 = e1->castTo(sc, t1);
-	    if (e2->op == TOKstring && !((StringExp *)e2)->committed)
-		e2->type = t2;
-	    else
-		e2 = e2->castTo(sc, t2);
-	    t = t1;
-	    goto Lagain;
-	}
-    }
-
 Lagain:
     if (t1 == t2)
     {
-	if ((t1->ty == Tstruct || t1->ty == Tclass) &&
-	    (op == TOKmin || op == TOKadd))
-	    goto Lincompatible;
     }
     else if (t1->ty == Tpointer && t2->ty == Tpointer)
     {
@@ -1514,31 +1477,52 @@ Lagain:
 	goto Lagain;
     }
     else if (t1->ty == Tclass || t2->ty == Tclass)
-    {	int i1;
-	int i2;
-
-	i1 = e2->implicitConvTo(t1);
-	i2 = e1->implicitConvTo(t2);
-
-	if (i1 && i2)
+    {
+	while (1)
 	{
-	    // We have the case of class vs. void*, so pick class
-	    if (t1->ty == Tpointer)
-		i1 = 0;
-	    else if (t2->ty == Tpointer)
-		i2 = 0;
-	}
+	    int i1 = e2->implicitConvTo(t1);
+	    int i2 = e1->implicitConvTo(t2);
 
-	if (i2)
-	{
-	    goto Lt2;
+	    if (i1 && i2)
+	    {
+		// We have the case of class vs. void*, so pick class
+		if (t1->ty == Tpointer)
+		    i1 = 0;
+		else if (t2->ty == Tpointer)
+		    i2 = 0;
+	    }
+
+	    if (i2)
+	    {
+		goto Lt2;
+	    }
+	    else if (i1)
+	    {
+		goto Lt1;
+	    }
+	    else if (t1->ty == Tclass && t2->ty == Tclass)
+	    {	TypeClass *tc1 = (TypeClass *)t1;
+		TypeClass *tc2 = (TypeClass *)t2;
+
+		/* Pick 'tightest' type
+		 */
+		ClassDeclaration *cd1 = tc1->sym->baseClass;
+		ClassDeclaration *cd2 = tc2->sym->baseClass;
+
+		if (cd1 && cd2)
+		{   t1 = cd1->type;
+		    t2 = cd2->type;
+		}
+		else if (cd1)
+		    t1 = cd1->type;
+		else if (cd2)
+		    t2 = cd2->type;
+		else
+		    goto Lincompatible;
+	    }
+	    else
+		goto Lincompatible;
 	}
-	else if (i1)
-	{
-	    goto Lt1;
-	}
-	else
-	    goto Lincompatible;
     }
     else if (t1->ty == Tstruct && t2->ty == Tstruct)
     {
@@ -1576,19 +1560,21 @@ Lagain:
     else
     {
      Lincompatible:
-	incompatibleTypes();
+	return 0;
     }
 Lret:
-    if (!type)
-	type = t;
+    if (!*pt)
+	*pt = t;
+    *pe1 = e1;
+    *pe2 = e2;
 #if 0
-    printf("-BinExp::typeCombine() %s\n", toChars());
+    printf("-typeMerge() %s\n", toChars());
     if (e1->type) printf("\tt1 = %s\n", e1->type->toChars());
     if (e2->type) printf("\tt2 = %s\n", e2->type->toChars());
     printf("\ttype = %s\n", type->toChars());
 #endif
     //dump(0);
-    return this;
+    return 1;
 
 
 Lt1:
@@ -1600,6 +1586,53 @@ Lt2:
     e1 = e1->castTo(sc, t2);
     t = t2;
     goto Lret;
+}
+
+/************************************
+ * Bring leaves to common type.
+ */
+
+Expression *BinExp::typeCombine(Scope *sc)
+{
+    Type *t1 = e1->type->toBasetype();
+    Type *t2 = e2->type->toBasetype();
+
+    if (op == TOKcat)
+    {
+	if ((t1->ty == Tsarray || t1->ty == Tarray) &&
+	    (t2->ty == Tsarray || t2->ty == Tarray) &&
+	    (t1->nextOf()->mod || t2->nextOf()->mod) &&
+	    (t1->nextOf()->mod != t2->nextOf()->mod)
+	   )
+	{
+	    t1 = t1->nextOf()->mutableOf()->constOf()->arrayOf();
+	    t2 = t2->nextOf()->mutableOf()->constOf()->arrayOf();
+//t1 = t1->constOf();
+//t2 = t2->constOf();
+	    if (e1->op == TOKstring && !((StringExp *)e1)->committed)
+		e1->type = t1;
+	    else
+		e1 = e1->castTo(sc, t1);
+	    if (e2->op == TOKstring && !((StringExp *)e2)->committed)
+		e2->type = t2;
+	    else
+		e2 = e2->castTo(sc, t2);
+	}
+    }
+    else if (op == TOKmin || op == TOKadd)
+    {
+	if (t1 == t2 && (t1->ty == Tstruct || t1->ty == Tclass))
+	    goto Lerror;
+    }
+
+    if (!typeMerge(sc, &type, &e1, &e2))
+	goto Lerror;
+    return this;
+
+Lerror:
+    incompatibleTypes();
+    type = Type::terror;
+    return this;
 }
 
 /***********************************

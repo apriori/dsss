@@ -86,6 +86,7 @@ enum PROT Declaration::prot()
  * Issue error if not.
  */
 
+#if V2
 void Declaration::checkModify(Loc loc, Scope *sc, Type *t)
 {
     /* if (sc->incontract && isParameter())
@@ -147,6 +148,7 @@ void Declaration::checkModify(Loc loc, Scope *sc, Type *t)
 	}
     }
 }
+#endif
 
 
 /********************************* TupleDeclaration ****************************/
@@ -658,12 +660,14 @@ Dsymbol *VarDeclaration::syntaxCopy(Dsymbol *s)
 
 void VarDeclaration::semantic(Scope *sc)
 {
-    //printf("VarDeclaration::semantic('%s', parent = '%s')\n", toChars(), sc->parent->toChars());
-    //printf(" type = %s\n", type ? type->toChars() : "null");
-    //printf(" stc = x%x\n", sc->stc);
-    //printf(" storage_class = x%x\n", storage_class);
-    //printf("linkage = %d\n", sc->linkage);
+#if 0
+    printf("VarDeclaration::semantic('%s', parent = '%s')\n", toChars(), sc->parent->toChars());
+    printf(" type = %s\n", type ? type->toChars() : "null");
+    printf(" stc = x%x\n", sc->stc);
+    printf(" storage_class = x%x\n", storage_class);
+    printf("linkage = %d\n", sc->linkage);
     //if (strcmp(toChars(), "mul") == 0) halt();
+#endif
 
     storage_class |= sc->stc;
     /*if (storage_class & STCextern && init)
@@ -801,7 +805,7 @@ Lagain:
 	error("final cannot be applied to variable");
     }
 
-    if (storage_class & (STCstatic | STCextern | STCmanifest | STCtemplateparameter))
+    if (storage_class & (STCstatic | STCextern | STCmanifest | STCtemplateparameter | STCtls))
     {
     }
     else
@@ -810,7 +814,7 @@ Lagain:
 	if (!aad)
 	    aad = parent->isAggregateDeclaration();
 	if (aad)
-	{   assert(!(storage_class & (STCextern | STCstatic)));
+	{   assert(!(storage_class & (STCextern | STCstatic | STCtls)));
 
 	    if (storage_class & (STCconst | STCinvariant) && init)
 	    {
@@ -852,7 +856,7 @@ Lagain:
 
     if (type->isauto() && !noauto)
     {
-	/* if (storage_class & (STCfield | STCout | STCref | STCstatic | STCmanifest) || !fd)
+	/* if (storage_class & (STCfield | STCout | STCref | STCstatic | STCmanifest | STCtls) || !fd)
 	{
 	    error("globals, statics, fields, manifest constants, ref and out parameters cannot be auto");
 	} */
@@ -947,10 +951,6 @@ Lagain:
 	    if (fd && !isStatic() && !(storage_class & STCmanifest) &&
 		!init->isVoidInitializer())
 	    {
-		Expression *e1;
-		Type *t;
-		int dim;
-
 		//printf("fd = '%s', var = '%s'\n", fd->toChars(), toChars());
 		if (!ei)
 		{
@@ -968,15 +968,15 @@ Lagain:
 		    init = ei;
 		}
 
-		e1 = new VarExp(loc, this);
+		Expression *e1 = new VarExp(loc, this);
 
-		t = type->toBasetype();
+		Type *t = type->toBasetype();
 		if (t->ty == Tsarray)
 		{
 		    ei->exp = ei->exp->semantic(sc);
 		    if (!ei->exp->implicitConvTo(type))
 		    {
-			dim = ((TypeSArray *)t)->dim->toInteger();
+			int dim = ((TypeSArray *)t)->dim->toInteger();
 			// If multidimensional static array, treat as one large array
 			while (1)
 			{
@@ -993,7 +993,11 @@ Lagain:
 		{
 		    ei->exp = ei->exp->semantic(sc);
 		    if (!ei->exp->implicitConvTo(type))
-			ei->exp = new CastExp(loc, ei->exp, type);
+		    {	Type *ti = ei->exp->type->toBasetype();
+			// Don't cast away invariant or mutability in initializer
+			if (!(ti->ty == Tstruct && t->toDsymbol(sc) == ti->toDsymbol(sc)))
+			    ei->exp = new CastExp(loc, ei->exp, type);
+		    }
 		}
 		ei->exp = new AssignExp(loc, e1, ei->exp);
 		ei->exp->op = op;
@@ -1107,14 +1111,20 @@ Dsymbol *VarDeclaration::toAlias()
 
 void VarDeclaration::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 {
-    if (storage_class & STCmanifest)
-	buf->writestring("manifest ");
-    if (storage_class & STCstatic)
-	buf->writestring("static ");
     if (storage_class & STCconst)
 	buf->writestring("const ");
+    if (storage_class & STCstatic)
+	buf->writestring("static ");
+    if (storage_class & STCauto)
+	buf->writestring("auto ");
+#if V2
+    if (storage_class & STCmanifest)
+	buf->writestring("manifest ");
     if (storage_class & STCinvariant)
 	buf->writestring("invariant ");
+    if (storage_class & STCtls)
+	buf->writestring("__thread ");
+#endif
 
     if (type)
 	type->toCBuffer(buf, ident, hgs);
@@ -1282,7 +1292,7 @@ int VarDeclaration::isDataseg()
 	return 0;
     }
     return canTakeAddressOf() &&
-	(storage_class & (STCstatic | STCextern) ||
+	(storage_class & (STCstatic | STCextern | STCtls) ||
 	 toParent()->isModule() ||
 	 toParent()->isTemplateInstance());
 }

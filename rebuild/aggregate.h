@@ -106,11 +106,13 @@ struct AnonymousAggregateDeclaration : AggregateDeclaration
 struct StructDeclaration : AggregateDeclaration
 {
     int zeroInit;		// !=0 if initialize with 0 fill
+#if V2
     int hasIdentityAssign;	// !=0 if has identity opAssign
     FuncDeclaration *cpctor;	// generated copy-constructor, if any
 
     FuncDeclarations postblits;	// Array of postblit functions
     FuncDeclaration *postblit;	// aggregate postblit
+#endif
 
     StructDeclaration(Loc loc, Identifier *id);
     Dsymbol *syntaxCopy(Dsymbol *s);
@@ -198,6 +200,8 @@ struct ClassDeclaration : AggregateDeclaration
 
     int isnested;			// !=0 if is nested
     VarDeclaration *vthis;		// 'this' parameter if this class is nested
+
+    int inuse;				// to prevent recursive attempts
 
     ClassDeclaration(Loc loc, Identifier *id, BaseClasses *baseclasses);
     Dsymbol *syntaxCopy(Dsymbol *s);

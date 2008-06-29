@@ -67,16 +67,12 @@ string linkCommand(const string &i, const string &o, string &response, bool &use
     } else if (global.params.dylib) {
         linkset = "dyliblink";
     }
-    
-    if (post)
-        linkset = "postliblink";
-    
-    // compile object files into an executable
-    if (masterConfig.find(linkset) == masterConfig.end() ||
-        masterConfig[linkset].find("cmd") == masterConfig[linkset].end()) {
-        cerr << "No 'link' setting configured." << endl;
-        global.errors++;
-        return "";
+    else
+    {	// Generate exe file name from first obj name
+	char *n = (char *)global.params.objfiles->data[0];
+	n = FileName::name(n);
+	FileName *fn = FileName::forceExt(n, "exe");
+	global.params.exefile = fn->toChars();
     }
     
     // check if we need to use a response file

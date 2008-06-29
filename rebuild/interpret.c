@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2007 by Digital Mars
+// Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -77,7 +77,6 @@ Expression *FuncDeclaration::interpret(InterState *istate, Expressions *argument
 	return NULL;
     }
 
-    //printf("test2 %d, %p\n", semanticRun, scope);
     if (semanticRun == 0 && scope)
     {
 	semantic3(scope);
@@ -109,7 +108,7 @@ Expression *FuncDeclaration::interpret(InterState *istate, Expressions *argument
     istatex.caller = istate;
     istatex.fd = this;
 
-    Expressions vsave;
+    Expressions vsave;		// place to save previous parameter values
     size_t dim = 0;
     if (arguments)
     {
@@ -117,8 +116,39 @@ Expression *FuncDeclaration::interpret(InterState *istate, Expressions *argument
 	assert(!dim || parameters->dim == dim);
 	vsave.setDim(dim);
 
+	/* Evaluate all the arguments to the function,
+	 * store the results in eargs[]
+	 */
+	Expressions eargs;
+	eargs.setDim(dim);
+
 	for (size_t i = 0; i < dim; i++)
 	{   Expression *earg = (Expression *)arguments->data[i];
+	    Argument *arg = Argument::getNth(tf->parameters, i);
+
+	    if (arg->storageClass & (STCout | STCref))
+	    {
+	    }
+	    else
+	    {	/* Value parameters
+		 */
+		Type *ta = arg->type->toBasetype();
+		if (ta->ty == Tsarray && earg->op == TOKaddress)
+		{
+		    /* Static arrays are passed by a simple pointer.
+		     * Skip past this to get at the actual arg.
+		     */
+		    earg = ((AddrExp *)earg)->e1;
+		}
+		earg = earg->interpret(istate ? istate : &istatex);
+		if (earg == EXP_CANT_INTERPRET)
+		    return NULL;
+	    }
+	    eargs.data[i] = earg;
+	}
+
+	for (size_t i = 0; i < dim; i++)
+	{   Expression *earg = (Expression *)eargs.data[i];
 	    Argument *arg = Argument::getNth(tf->parameters, i);
 	    VarDeclaration *v = (VarDeclaration *)parameters->data[i];
 	    vsave.data[i] = v->value;
@@ -161,17 +191,6 @@ Expression *FuncDeclaration::interpret(InterState *istate, Expressions *argument
 	    else
 	    {	/* Value parameters
 		 */
-		Type *ta = arg->type->toBasetype();
-		if (ta->ty == Tsarray && earg->op == TOKaddress)
-		{
-		    /* Static arrays are passed by a simple pointer.
-		     * Skip past this to get at the actual arg.
-		     */
-		    earg = ((AddrExp *)earg)->e1;
-		}
-		earg = earg->interpret(istate ? istate : &istatex);
-		if (earg == EXP_CANT_INTERPRET)
-		    return NULL;
 		v->value = earg;
 	    }
 #if LOG

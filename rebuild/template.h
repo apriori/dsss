@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2006 by Digital Mars
+// Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -53,6 +53,8 @@ struct TemplateDeclaration : ScopeDsymbol
 
     TemplateParameters *origParameters;	// originals for Ddoc
 
+    Expression *constraint;
+
     Array instances;			// array of TemplateInstance's
 
     TemplateDeclaration *overnext;	// next overloaded TemplateDeclaration
@@ -61,7 +63,8 @@ struct TemplateDeclaration : ScopeDsymbol
     Scope *scope;
     Dsymbol *onemember;		// if !=NULL then one member of this template
 
-    TemplateDeclaration(Loc loc, Identifier *id, TemplateParameters *parameters, Array *decldefs);
+    TemplateDeclaration(Loc loc, Identifier *id, TemplateParameters *parameters,
+	Expression *constraint, Array *decldefs);
     Dsymbol *syntaxCopy(Dsymbol *);
     void semantic(Scope *sc);
     int overloadInsert(Dsymbol *s);
@@ -75,7 +78,7 @@ struct TemplateDeclaration : ScopeDsymbol
     MATCH matchWithInstance(TemplateInstance *ti, Objects *atypes, int flag);
     MATCH leastAsSpecialized(TemplateDeclaration *td2);
 
-    MATCH deduceFunctionTemplateMatch(Objects *targsi, Expression *ethis, Expressions *fargs, Objects *dedargs);
+    MATCH deduceFunctionTemplateMatch(Loc loc, Objects *targsi, Expression *ethis, Expressions *fargs, Objects *dedargs);
     FuncDeclaration *deduceFunctionTemplate(Scope *sc, Loc loc, Objects *targsi, Expression *ethis, Expressions *fargs, int flags = 0);
     void declareParameter(Scope *sc, TemplateParameter *tp, Object *o);
 
@@ -118,7 +121,7 @@ struct TemplateParameter
     virtual void print(Object *oarg, Object *oded) = 0;
     virtual void toCBuffer(OutBuffer *buf, HdrGenState *hgs) = 0;
     virtual Object *specialization() = 0;
-    virtual Object *defaultArg(Scope *sc) = 0;
+    virtual Object *defaultArg(Loc loc, Scope *sc) = 0;
 
     /* If TemplateParameter's match as far as overloading goes.
      */
@@ -150,12 +153,13 @@ struct TemplateTypeParameter : TemplateParameter
     void print(Object *oarg, Object *oded);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     Object *specialization();
-    Object *defaultArg(Scope *sc);
+    Object *defaultArg(Loc loc, Scope *sc);
     int overloadMatch(TemplateParameter *);
     MATCH matchArg(Scope *sc, Objects *tiargs, int i, TemplateParameters *parameters, Objects *dedtypes, Declaration **psparam, int flags);
     void *dummyArg();
 };
 
+#if V2
 struct TemplateThisParameter : TemplateTypeParameter
 {
     /* Syntax:
@@ -170,6 +174,7 @@ struct TemplateThisParameter : TemplateTypeParameter
     TemplateParameter *syntaxCopy();
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 };
+#endif
 
 struct TemplateValueParameter : TemplateParameter
 {
@@ -192,7 +197,7 @@ struct TemplateValueParameter : TemplateParameter
     void print(Object *oarg, Object *oded);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     Object *specialization();
-    Object *defaultArg(Scope *sc);
+    Object *defaultArg(Loc loc, Scope *sc);
     int overloadMatch(TemplateParameter *);
     MATCH matchArg(Scope *sc, Objects *tiargs, int i, TemplateParameters *parameters, Objects *dedtypes, Declaration **psparam, int flags);
     void *dummyArg();
@@ -201,17 +206,16 @@ struct TemplateValueParameter : TemplateParameter
 struct TemplateAliasParameter : TemplateParameter
 {
     /* Syntax:
-     *	ident : specAlias = defaultAlias
+     *	specType ident : specAlias = defaultAlias
      */
 
-    Type *specAliasT;
-    Dsymbol *specAlias;
-
-    Type *defaultAlias;
+    Type *specType;
+    Object *specAlias;
+    Object *defaultAlias;
 
     static Dsymbol *sdummy;
 
-    TemplateAliasParameter(Loc loc, Identifier *ident, Type *specAliasT, Type *defaultAlias);
+    TemplateAliasParameter(Loc loc, Identifier *ident, Type *specType, Object *specAlias, Object *defaultAlias);
 
     TemplateAliasParameter *isTemplateAliasParameter();
     TemplateParameter *syntaxCopy();
@@ -220,7 +224,7 @@ struct TemplateAliasParameter : TemplateParameter
     void print(Object *oarg, Object *oded);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     Object *specialization();
-    Object *defaultArg(Scope *sc);
+    Object *defaultArg(Loc loc, Scope *sc);
     int overloadMatch(TemplateParameter *);
     MATCH matchArg(Scope *sc, Objects *tiargs, int i, TemplateParameters *parameters, Objects *dedtypes, Declaration **psparam, int flags);
     void *dummyArg();
@@ -241,7 +245,7 @@ struct TemplateTupleParameter : TemplateParameter
     void print(Object *oarg, Object *oded);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     Object *specialization();
-    Object *defaultArg(Scope *sc);
+    Object *defaultArg(Loc loc, Scope *sc);
     int overloadMatch(TemplateParameter *);
     MATCH matchArg(Scope *sc, Objects *tiargs, int i, TemplateParameters *parameters, Objects *dedtypes, Declaration **psparam, int flags);
     void *dummyArg();
@@ -270,6 +274,7 @@ struct TemplateInstance : ScopeDsymbol
 					// sole member
     WithScopeSymbol *withsym;		// if a member of a with statement
     int semanticdone;	// has semantic() been done?
+    int semantictiargsdone;	// has semanticTiargs() been done?
     int nest;		// for recursion detection
     int havetempdecl;	// 1 if used second constructor
     Dsymbol *isnested;	// if referencing local symbols, this is the context

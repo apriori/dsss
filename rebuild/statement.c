@@ -205,6 +205,10 @@ Statement *ExpStatement::semantic(Scope *sc)
 	exp = resolveProperties(sc, exp);
 	exp->checkSideEffect(0);
 	exp = exp->optimize(0);
+	if (exp->op == TOKdeclaration && !isDeclarationStatement())
+	{   Statement *s = new DeclarationStatement(loc, exp);
+	    return s;
+	}
 	//exp = exp->optimize(isDeclarationStatement() ? WANTvalue : 0);
     }
     return this;
@@ -269,15 +273,15 @@ void CompileStatement::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
         buf->writenl();
 }
 
-Statement *CompileStatement::semantic(Scope *sc)
+Statements *CompileStatement::flatten(Scope *sc)
 {
-    //printf("CompileStatement::semantic() %s\n", exp->toChars());
+    //printf("CompileStatement::flatten() %s\n", exp->toChars());
     exp = exp->semantic(sc);
     exp = resolveProperties(sc, exp);
     exp = exp->optimize(WANTvalue | WANTinterpret);
     if (exp->op != TOKstring)
     {	//error("argument to mixin must be a string, not (%s)", exp->toChars());
-	return this;
+	return NULL;
     }
     StringExp *se = (StringExp *)exp;
     se = se->toUTF8(sc);
@@ -285,15 +289,24 @@ Statement *CompileStatement::semantic(Scope *sc)
     p.loc = loc;
     p.nextToken();
 
-    Statements *statements = new Statements();
+    Statements *a = new Statements();
     while (p.token.value != TOKeof)
     {
 	Statement *s = p.parseStatement(PSsemi | PScurlyscope);
-	statements->push(s);
+	a->push(s);
     }
+    return a;
+}
 
-    Statement *s = new CompoundStatement(loc, statements);
-    return s->semantic(sc);
+Statement *CompileStatement::semantic(Scope *sc)
+{
+    //printf("CompileStatement::semantic() %s\n", exp->toChars());
+    /* Shouldn't happen unless errors, as CompileStatement::flatten()
+     * should have replaced it.
+     * Return NULL so no further errors happen.
+     */
+    assert(global.errors);
+    return NULL;
 }
 
 
@@ -497,7 +510,9 @@ Statement *CompoundStatement::semantic(Scope *sc)
 	i++;
     }
     if (statements->dim == 1)
-	return s;
+    {
+	return (Statement *)statements->data[0];
+    }
     return this;
 }
 
@@ -507,13 +522,11 @@ Statements *CompoundStatement::flatten(Scope *sc)
 }
 
 ReturnStatement *CompoundStatement::isReturnStatement()
-{   int i;
+{
     ReturnStatement *rs = NULL;
 
-    for (i = 0; i < statements->dim; i++)
-    {	Statement *s;
-
-	s = (Statement *) statements->data[i];
+    for (int i = 0; i < statements->dim; i++)
+    {	Statement *s = (Statement *) statements->data[i];
 	if (s)
 	{
 	    rs = s->isReturnStatement();
@@ -525,12 +538,9 @@ ReturnStatement *CompoundStatement::isReturnStatement()
 }
 
 void CompoundStatement::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
-{   int i;
-
-    for (i = 0; i < statements->dim; i++)
-    {	Statement *s;
-
-	s = (Statement *) statements->data[i];
+{
+    for (int i = 0; i < statements->dim; i++)
+    {	Statement *s = (Statement *) statements->data[i];
 	if (s)
 	    s->toCBuffer(buf, hgs);
     }
@@ -539,9 +549,7 @@ void CompoundStatement::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 int CompoundStatement::usesEH()
 {
     for (int i = 0; i < statements->dim; i++)
-    {	Statement *s;
-
-	s = (Statement *) statements->data[i];
+    {	Statement *s = (Statement *) statements->data[i];
 	if (s && s->usesEH())
 	    return TRUE;
     }
@@ -1637,14 +1645,33 @@ Statement *ForeachStatement::semantic(Scope *sc)
 	    }
 	    else
 	    {
-		/* Call:
-		 *	aggr.apply(flde)
-		 */
-		ec = new DotIdExp(loc, aggr,
-			(op == TOKforeach_reverse) ? Id::applyReverse
-						   : Id::apply);
-		Expressions *exps = new Expressions();
-		exps->push(flde);
+		assert(tab->ty == Tstruct || tab->ty == Tclass);
+		Identifier *idapply = (op == TOKforeach_reverse)
+				? Id::applyReverse : Id::apply;
+		Dsymbol *sapply = search_function((AggregateDeclaration *)tab->toDsymbol(sc), idapply);
+	        Expressions *exps = new Expressions();
+#if 0
+		TemplateDeclaration *td;
+		if (sapply &&
+		    (td = sapply->isTemplateDeclaration()) != NULL)
+		{   /* Call:
+		     *	aggr.apply!(fld)()
+		     */
+		    TemplateInstance *ti = new TemplateInstance(loc, idapply);
+		    Objects *tiargs = new Objects();
+		    tiargs->push(fld);
+		    ti->tiargs = tiargs;
+		    ec = new DotTemplateInstanceExp(loc, aggr, ti);
+		}
+		else
+#endif
+		{
+		    /* Call:
+		     *	aggr.apply(flde)
+		     */
+		    ec = new DotIdExp(loc, aggr, idapply);
+		    exps->push(flde);
+		}
 		e = new CallExp(loc, ec, exps);
 		e = e->semantic(sc);
 		/*if (e->type != Type::tint32)
@@ -1819,7 +1846,7 @@ Statement *ForeachRangeStatement::semantic(Scope *sc)
 	 */
 	AddExp ea(loc, lwr, upr);
 	ea.typeCombine(sc);
-	arg->type = ea.type;
+	arg->type = ea.type->mutableOf();
 	lwr = ea.e1;
 	upr = ea.e2;
     }
@@ -2114,13 +2141,21 @@ void ConditionalStatement::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 {
     condition->toCBuffer(buf, hgs);
     buf->writenl();
+    buf->writeByte('{');
+    buf->writenl();
     if (ifbody)
 	ifbody->toCBuffer(buf, hgs);
+    buf->writeByte('}');
+    buf->writenl();
     if (elsebody)
     {
 	buf->writestring("else");
 	buf->writenl();
+	buf->writeByte('{');
+	buf->writenl();
 	elsebody->toCBuffer(buf, hgs);
+	buf->writeByte('}');
+	buf->writenl();
     }
     buf->writenl();
 }
@@ -2372,6 +2407,7 @@ SwitchStatement::SwitchStatement(Loc loc, Expression *c, Statement *b)
     tf = NULL;
     cases = NULL;
     hasNoDefault = 0;
+    hasVars = 0;
 }
 
 Statement *SwitchStatement::syntaxCopy()
@@ -2541,6 +2577,7 @@ CaseStatement::CaseStatement(Loc loc, Expression *exp, Statement *s)
 {
     this->exp = exp;
     this->statement = s;
+    index = 0;
     cblock = NULL;
 }
 
@@ -2556,17 +2593,33 @@ Statement *CaseStatement::semantic(Scope *sc)
     //printf("CaseStatement::semantic() %s\n", toChars());
     exp = exp->semantic(sc);
     if (sw)
-    {	int i;
-
+    {
 	exp = exp->implicitCastTo(sc, sw->condition->type);
 	exp = exp->optimize(WANTvalue | WANTinterpret);
+
+	/* This is where variables are allowed as case expressions.
+	 */
+	if (exp->op == TOKvar)
+	{   VarExp *ve = (VarExp *)exp;
+	    VarDeclaration *v = ve->var->isVarDeclaration();
+	    Type *t = exp->type->toBasetype();
+	    if (v && (t->isintegral() || t->ty == Tclass))
+	    {	/* Flag that we need to do special code generation
+		 * for this, i.e. generate a sequence of if-then-else
+		 */
+		sw->hasVars = 1;
+		goto L1;
+	    }
+	}
+
 	if (exp->op != TOKstring && exp->op != TOKint64)
 	{
 	    //error("case must be a string or an integral constant, not %s", exp->toChars());
 	    exp = new IntegerExp(0);
 	}
 
-	for (i = 0; i < sw->cases->dim; i++)
+    L1:
+	for (int i = 0; i < sw->cases->dim; i++)
 	{
 	    CaseStatement *cs = (CaseStatement *)sw->cases->data[i];
 
@@ -2580,7 +2633,7 @@ Statement *CaseStatement::semantic(Scope *sc)
 	sw->cases->push(this);
 
 	// Resolve any goto case's with no exp to this case statement
-	for (i = 0; i < sw->gotoCases.dim; i++)
+	for (int i = 0; i < sw->gotoCases.dim; i++)
 	{
 	    GotoCaseStatement *gcs = (GotoCaseStatement *)sw->gotoCases.data[i];
 
@@ -2858,6 +2911,8 @@ Statement *ReturnStatement::semantic(Scope *sc)
 
     Type *tret = fd->type->nextOf();
     if (fd->tintro)
+	/* We'll be implicitly casting the return expression to tintro
+	 */
 	tret = fd->tintro->nextOf();
     Type *tbret = NULL;
 
@@ -2979,32 +3034,25 @@ Statement *ReturnStatement::semantic(Scope *sc)
 	    exp->op == TOKstring)
 	{
 	    sc->fes->cases.push(this);
+	    // Construct: return cases.dim+1;
 	    s = new ReturnStatement(0, new IntegerExp(sc->fes->cases.dim + 1));
 	}
 	else if (fd->type->nextOf()->toBasetype() == Type::tvoid)
 	{
-	    Statement *s1;
-	    Statement *s2;
-
 	    s = new ReturnStatement(0, NULL);
 	    sc->fes->cases.push(s);
 
 	    // Construct: { exp; return cases.dim + 1; }
-	    s1 = new ExpStatement(loc, exp);
-	    s2 = new ReturnStatement(0, new IntegerExp(sc->fes->cases.dim + 1));
+	    Statement *s1 = new ExpStatement(loc, exp);
+	    Statement *s2 = new ReturnStatement(0, new IntegerExp(sc->fes->cases.dim + 1));
 	    s = new CompoundStatement(loc, s1, s2);
 	}
 	else
 	{
-	    VarExp *v;
-	    Statement *s1;
-	    Statement *s2;
-
 	    // Construct: return vresult;
 	    if (!fd->vresult)
-	    {	VarDeclaration *v;
-
-		v = new VarDeclaration(loc, tret, Id::result, NULL);
+	    {	// Declare vresult
+		VarDeclaration *v = new VarDeclaration(loc, tret, Id::result, NULL);
 		v->noauto = 1;
 		v->semantic(scx);
 		if (!scx->insert(v))
@@ -3013,16 +3061,14 @@ Statement *ReturnStatement::semantic(Scope *sc)
 		fd->vresult = v;
 	    }
 
-	    v = new VarExp(0, fd->vresult);
-	    s = new ReturnStatement(0, v);
+	    s = new ReturnStatement(0, new VarExp(0, fd->vresult));
 	    sc->fes->cases.push(s);
 
 	    // Construct: { vresult = exp; return cases.dim + 1; }
-	    v = new VarExp(0, fd->vresult);
-	    exp = new AssignExp(loc, v, exp);
+	    exp = new AssignExp(loc, new VarExp(0, fd->vresult), exp);
 	    exp = exp->semantic(sc);
-	    s1 = new ExpStatement(loc, exp);
-	    s2 = new ReturnStatement(0, new IntegerExp(sc->fes->cases.dim + 1));
+	    Statement *s1 = new ExpStatement(loc, exp);
+	    Statement *s2 = new ReturnStatement(0, new IntegerExp(sc->fes->cases.dim + 1));
 	    s = new CompoundStatement(loc, s1, s2);
 	}
 	return s;
@@ -3063,18 +3109,23 @@ Statement *ReturnStatement::semantic(Scope *sc)
 
 	gs->label = fd->returnLabel;
 	if (exp)
-	{   Statement *s;
-
-	    s = new ExpStatement(0, exp);
+	{   /* Replace: return exp;
+	     * with:    exp; goto returnLabel;
+	     */
+	    Statement *s = new ExpStatement(0, exp);
 	    return new CompoundStatement(loc, s, gs);
 	}
 	return gs;
     }
 
     if (exp && tbret->ty == Tvoid && !fd->isMain())
-    {   Statement *s;
-
-	s = new ExpStatement(loc, exp);
+    {
+	/* Replace:
+	 *	return exp;
+	 * with:
+	 *	exp; return;
+	 */
+	Statement *s = new ExpStatement(loc, exp);
 	loc = 0;
 	exp = NULL;
 	return new CompoundStatement(loc, s, this);

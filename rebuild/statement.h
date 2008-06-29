@@ -143,6 +143,7 @@ struct CompileStatement : Statement
     CompileStatement(Loc loc, Expression *exp);
     Statement *syntaxCopy();
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
+    Statements *flatten(Scope *sc);
     Statement *semantic(Scope *sc);
 };
 
@@ -423,6 +424,7 @@ struct SwitchStatement : Statement
     Array gotoCases;		// array of unresolved GotoCaseStatement's
     Array *cases;		// array of CaseStatement's
     int hasNoDefault;		// !=0 if no default statement
+    int hasVars;		// !=0 if has variable case values
 
     SwitchStatement(Loc loc, Expression *c, Statement *b);
     Statement *syntaxCopy();

@@ -1,6 +1,6 @@
 
 // Compiler implementation of the D programming language
-// Copyright (c) 1999-2007 by Digital Mars
+// Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -67,6 +67,9 @@ enum STC
     STCmanifest	    = 0x800000,		// manifest constant
     STCnodtor	    = 0x1000000,	// don't run destructor
     STCnothrow	    = 0x2000000,	// never throws exceptions
+    STCpure	    = 0x4000000,	// pure function
+    STCtls	    = 0x8000000,	// thread local
+    STCalias	    = 0x10000000,	// alias parameter
 };
 
 struct Match
@@ -255,7 +258,6 @@ struct VarDeclaration : Declaration
     VarDeclaration *isVarDeclaration() { return (VarDeclaration *)this; }
 };
 
-
 /**************************************************************/
 
 // This is a shell around a back end symbol
@@ -368,15 +370,11 @@ struct TypeInfoTupleDeclaration : TypeInfoDeclaration
 struct TypeInfoConstDeclaration : TypeInfoDeclaration
 {
     TypeInfoConstDeclaration(Type *tinfo);
-
-    void toDt(dt_t **pdt);
 };
 
 struct TypeInfoInvariantDeclaration : TypeInfoDeclaration
 {
     TypeInfoInvariantDeclaration(Type *tinfo);
-
-    void toDt(dt_t **pdt);
 };
 #endif
 
@@ -482,9 +480,11 @@ struct FuncDeclaration : Declaration
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     void bodyToCBuffer(OutBuffer *buf, HdrGenState *hgs);
     int overrides(FuncDeclaration *fd);
+    int findVtblIndex(Array *vtbl, int dim);
     int overloadInsert(Dsymbol *s);
     FuncDeclaration *overloadExactMatch(Type *t);
     FuncDeclaration *overloadResolve(Loc loc, Expression *ethis, Expressions *arguments, int flags = 0);
+    MATCH leastAsSpecialized(FuncDeclaration *g);
     LabelDsymbol *searchLabel(Identifier *ident);
     AggregateDeclaration *isThis();
     AggregateDeclaration *isMember2();
@@ -532,7 +532,6 @@ struct FuncAliasDeclaration : FuncDeclaration
 
     FuncAliasDeclaration *isFuncAliasDeclaration() { return this; }
     char *kind();
-    Symbol *toSymbol();
 };
 
 struct FuncLiteralDeclaration : FuncDeclaration
@@ -567,6 +566,7 @@ struct CtorDeclaration : FuncDeclaration
     CtorDeclaration *isCtorDeclaration() { return this; }
 };
 
+#if V2
 struct PostBlitDeclaration : FuncDeclaration
 {
     PostBlitDeclaration(Loc loc, Loc endloc);
@@ -582,6 +582,7 @@ struct PostBlitDeclaration : FuncDeclaration
 
     PostBlitDeclaration *isPostBlitDeclaration() { return this; }
 };
+#endif
 
 struct DtorDeclaration : FuncDeclaration
 {
@@ -616,7 +617,8 @@ struct StaticCtorDeclaration : FuncDeclaration
 };
 
 struct StaticDtorDeclaration : FuncDeclaration
-{
+{   VarDeclaration *vgate;	// 'gate' variable
+
     StaticDtorDeclaration(Loc loc, Loc endloc);
     Dsymbol *syntaxCopy(Dsymbol *);
     void semantic(Scope *sc);

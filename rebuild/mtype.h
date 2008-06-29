@@ -373,6 +373,7 @@ struct TypeAArray : TypeArray
     Type *syntaxCopy();
     d_uns64 size(Loc loc);
     Type *semantic(Loc loc, Scope *sc);
+    void resolve(Loc loc, Scope *sc, Expression **pe, Type **pt, Dsymbol **ps);
     void toDecoBuffer(OutBuffer *buf, int flag);
     void toCBuffer2(OutBuffer *buf, HdrGenState *hgs, int mod);
     Expression *dotExp(Scope *sc, Expression *e, Identifier *ident);
@@ -436,6 +437,7 @@ struct TypeFunction : TypeNext
     int varargs;	// 1: T t, ...) style for variable number of arguments
 			// 2: T t ...) style for variable number of arguments
     bool isnothrow;	// true: nothrow
+    bool ispure;	// true: pure
     enum LINK linkage;	// calling convention
 
     int inuse;
@@ -719,6 +721,7 @@ struct Argument : Object
     static void argsCppMangle(OutBuffer *buf, CppMangleState *cms, Arguments *arguments, int varargs);
     static void argsToCBuffer(OutBuffer *buf, HdrGenState *hgs, Arguments *arguments, int varargs);
     static void argsToDecoBuffer(OutBuffer *buf, Arguments *arguments);
+    static int isTPL(Arguments *arguments);
     static size_t dim(Arguments *arguments);
     static Argument *getNth(Arguments *arguments, size_t nth, size_t *pn = NULL);
 };
