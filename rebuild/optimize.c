@@ -322,7 +322,7 @@ Expression *AddrExp::optimize(int result)
 	    {
 		TypeSArray *ts = (TypeSArray *)ve->type;
 		integer_t dim = ts->dim->toInteger();
-		/*if (index < 0 || index >= dim)
+		/* if (index < 0 || index >= dim)
 		    error("array index %jd is out of bounds [0..%jd]", index, dim); */
 		e = new SymOffExp(loc, ve->var, index * ts->nextOf()->size());
 		e->type = type;
@@ -517,7 +517,7 @@ Expression *BinExp::optimize(int result)
 	    integer_t i2 = e2->toInteger();
 	    d_uns64 sz = e1->type->size() * 8;
 	    if (i2 < 0 || i2 > sz)
-	    {   error("shift assign by %jd is outside the range 0.." ZU, i2, sz);
+	    {   /* error("shift assign by %jd is outside the range 0.." ZU, i2, sz); */
 		e2 = new IntegerExp(0);
 	    }
 	}
@@ -612,7 +612,7 @@ Expression *shift_optimize(int result, BinExp *e, Expression *(*shift)(Type *, E
 	integer_t i2 = e->e2->toInteger();
 	d_uns64 sz = e->e1->type->size() * 8;
 	if (i2 < 0 || i2 > sz)
-	{   // error("shift by %jd is outside the range 0.." ZU, i2, sz);
+	{   /* e->error("shift by %jd is outside the range 0..%zu", i2, sz); */
 	    e->e2 = new IntegerExp(0);
 	}
 	if (e->e1->isConst() == 1)
@@ -791,7 +791,7 @@ Expression *AndAndExp::optimize(int result)
     else
     {
 	e2 = e2->optimize(WANTflags | (result & WANTinterpret));
-	/*if (result && e2->type->toBasetype()->ty == Tvoid && !global.errors)
+	/* if (result && e2->type->toBasetype()->ty == Tvoid && !global.errors)
 	    error("void has no value"); */
 	if (e1->isConst())
 	{
@@ -822,7 +822,7 @@ Expression *OrOrExp::optimize(int result)
     else
     {
 	e2 = e2->optimize(WANTflags | (result & WANTinterpret));
-	/*if (result && e2->type->toBasetype()->ty == Tvoid && !global.errors)
+	/* if (result && e2->type->toBasetype()->ty == Tvoid && !global.errors)
 	    error("void has no value"); */
 	if (e1->isConst())
 	{

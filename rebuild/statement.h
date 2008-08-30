@@ -322,6 +322,7 @@ struct ForeachStatement : Statement
     Statement *inlineScan(InlineScanState *iss);
 };
 
+#if V2
 struct ForeachRangeStatement : Statement
 {
     enum TOK op;		// TOKforeach or TOKforeach_reverse
@@ -347,6 +348,7 @@ struct ForeachRangeStatement : Statement
 
     Statement *inlineScan(InlineScanState *iss);
 };
+#endif
 
 struct IfStatement : Statement
 {

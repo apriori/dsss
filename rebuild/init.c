@@ -377,8 +377,8 @@ Initializer *ArrayInitializer::semantic(Scope *sc, Type *t)
 	val = val->semantic(sc, t->nextOf());
 	value.data[i] = (void *)val;
 	length++;
-	/*if (length == 0)
-	    error("array dimension overflow"); */
+	/* if (length == 0)
+	    error(loc, "array dimension overflow"); */
 	if (length > dim)
 	    dim = length;
     }

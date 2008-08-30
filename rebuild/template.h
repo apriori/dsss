@@ -69,7 +69,7 @@ struct TemplateDeclaration : ScopeDsymbol
     void semantic(Scope *sc);
     int overloadInsert(Dsymbol *s);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
-    char *kind();
+    const char *kind();
     char *toChars();
 
     void emitComment(Scope *sc);
@@ -296,7 +296,7 @@ struct TemplateInstance : ScopeDsymbol
     void inlineScan();
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
     Dsymbol *toAlias();			// resolve real symbol
-    char *kind();
+    const char *kind();
     int oneMember(Dsymbol **ps);
     char *toChars();
     char *mangle();
@@ -327,7 +327,7 @@ struct TemplateMixin : TemplateInstance
     void semantic2(Scope *sc);
     void semantic3(Scope *sc);
     void inlineScan();
-    char *kind();
+    const char *kind();
     int oneMember(Dsymbol **ps);
     int hasPointers();
     char *toChars();

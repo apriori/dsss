@@ -1,6 +1,6 @@
 
 
-// Copyright (c) 1999-2007 by Digital Mars
+// Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
 // http://www.digitalmars.com
@@ -49,6 +49,38 @@ using namespace std;
 int executecmd(char *cmd, char *args, int useenv);
 int executearg0(char *cmd, char *args);
 
+/****************************************
+ * Write filename to cmdbuf, quoting if necessary.
+ */
+
+void writeFilename(OutBuffer *buf, char *filename, size_t len)
+{
+    /* Loop and see if we need to quote
+     */
+    for (size_t i = 0; i < len; i++)
+    {	char c = filename[i];
+
+	if (isalnum(c) || c == '_')
+	    continue;
+
+	/* Need to quote
+	 */
+	buf->writeByte('"');
+	buf->write(filename, len);
+	buf->writeByte('"');
+	return;
+    }
+
+    /* No quoting necessary
+     */
+    buf->write(filename, len);
+}
+
+void writeFilename(OutBuffer *buf, char *filename)
+{
+    writeFilename(buf, filename, strlen(filename));
+}
+
 /*****************************
  * Run the linker.  Return status of execution.
  */
@@ -68,7 +100,9 @@ string linkCommand(const string &i, const string &o, string &response, bool &use
         linkset = "dyliblink";
     }
     else
-    {	// Generate exe file name from first obj name
+    {	/* Generate exe file name from first obj name.
+	 * No need to add it to cmdbuf because the linker will default to it.
+	 */
 	char *n = (char *)global.params.objfiles->data[0];
 	n = FileName::name(n);
 	FileName *fn = FileName::forceExt(n, "exe");

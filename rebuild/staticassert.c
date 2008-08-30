@@ -86,7 +86,7 @@ void StaticAssert::inlineScan()
 {
 }
 
-char *StaticAssert::kind()
+const char *StaticAssert::kind()
 {
     return "static assert";
 }

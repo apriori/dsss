@@ -480,7 +480,7 @@ Expression *Div(Type *type, Expression *e1, Expression *e2)
 	n2 = e2->toInteger();
 	if (n2 == 0)
 	{   //e2->error("divide by 0");
-	    e2 = new IntegerExp(0, 1, e2->type);
+	    e2 = new IntegerExp(loc, 1, e2->type);
 	    n2 = 1;
 	}
 	if (e1->type->isunsigned() || e2->type->isunsigned())
@@ -544,7 +544,7 @@ Expression *Mod(Type *type, Expression *e1, Expression *e2)
 	n2 = e2->toInteger();
 	if (n2 == 0)
 	{   //e2->error("divide by 0");
-	    e2 = new IntegerExp(0, 1, e2->type);
+	    e2 = new IntegerExp(loc, 1, e2->type);
 	    n2 = 1;
 	}
 	if (e1->type->isunsigned() || e2->type->isunsigned())
@@ -653,26 +653,21 @@ Expression *Ushr(Type *type, Expression *e1, Expression *e2)
 }
 
 Expression *And(Type *type, Expression *e1, Expression *e2)
-{   Expression *e;
-    Loc loc = e1->loc;
-
-    e = new IntegerExp(loc, e1->toInteger() & e2->toInteger(), type);
+{
+    Expression *e;
+    e = new IntegerExp(e1->loc, e1->toInteger() & e2->toInteger(), type);
     return e;
 }
 
 Expression *Or(Type *type, Expression *e1, Expression *e2)
 {   Expression *e;
-    Loc loc = e1->loc;
-
-    e = new IntegerExp(loc, e1->toInteger() | e2->toInteger(), type);
+    e = new IntegerExp(e1->loc, e1->toInteger() | e2->toInteger(), type);
     return e;
 }
 
 Expression *Xor(Type *type, Expression *e1, Expression *e2)
 {   Expression *e;
-    Loc loc = e1->loc;
-
-    e = new IntegerExp(loc, e1->toInteger() ^ e2->toInteger(), type);
+    e = new IntegerExp(e1->loc, e1->toInteger() ^ e2->toInteger(), type);
     return e;
 }
 
@@ -1187,7 +1182,7 @@ Expression *Cast(Type *type, Type *to, Expression *e1)
     else
     {
 	// error(loc, "cannot cast %s to %s", e1->type->toChars(), type->toChars());
-	e = new IntegerExp(loc, 0, type);
+	e = new IntegerExp(loc, 0, Type::tint32);
     }
     return e;
 }
@@ -1493,7 +1488,7 @@ Expression *Cat(Type *type, Expression *e1, Expression *e2)
 
 	if (type->toBasetype()->ty == Tsarray)
 	{
-	    e->type = new TypeSArray(t1->nextOf(), new IntegerExp(0, es1->elements->dim, Type::tindex));
+	    e->type = new TypeSArray(t1->nextOf(), new IntegerExp(loc, es1->elements->dim, Type::tindex));
 	    e->type = e->type->semantic(loc, NULL);
 	}
 	else
@@ -1516,7 +1511,7 @@ Expression *Cat(Type *type, Expression *e1, Expression *e2)
 
 	if (type->toBasetype()->ty == Tsarray)
 	{
-	    e->type = new TypeSArray(e2->type, new IntegerExp(0, es1->elements->dim, Type::tindex));
+	    e->type = new TypeSArray(e2->type, new IntegerExp(loc, es1->elements->dim, Type::tindex));
 	    e->type = e->type->semantic(loc, NULL);
 	}
 	else
@@ -1533,7 +1528,7 @@ Expression *Cat(Type *type, Expression *e1, Expression *e2)
 
 	if (type->toBasetype()->ty == Tsarray)
 	{
-	    e->type = new TypeSArray(e1->type, new IntegerExp(0, es2->elements->dim, Type::tindex));
+	    e->type = new TypeSArray(e1->type, new IntegerExp(loc, es2->elements->dim, Type::tindex));
 	    e->type = e->type->semantic(loc, NULL);
 	}
 	else
