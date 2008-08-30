@@ -20,11 +20,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#if _WIN32
-#define PTW32_STATIC_LIB
-#endif
-
+#ifndef _WIN32
+/*#define PTW32_STATIC_LIB*/
 #include <pthread.h>
+#endif
 
 #if _WIN32
 #include <windows.h>
@@ -125,7 +124,11 @@ class GroupedCompile {
 };
 Array GroupedCompiles;
 unsigned int curcompile = 0;
+
+#ifndef _WIN32
 pthread_mutex_t compilemutex;
+#endif
+
 void *compileThread(void *);
 
 
@@ -1718,6 +1721,7 @@ int main(int argc, char *argv[])
     mem.fullcollect();
     
     // Now do the actual compilation, across any number of processors
+#ifndef _WIN32
     if (global.params.procs > 1) {
         pthread_t threads[global.params.procs];
         pthread_mutex_init(&compilemutex, NULL);
@@ -1728,7 +1732,9 @@ int main(int argc, char *argv[])
         for (unsigned int j = 0; j < global.params.procs; j++) {
             pthread_join(threads[j], NULL);
         }
-    } else {
+    } else
+#endif
+    {
         compileThread(NULL);
     }
     
@@ -1787,15 +1793,21 @@ int main(int argc, char *argv[])
  */
 void *compileThread(void *ignore)
 {
+#ifndef _WIN32
     pthread_mutex_lock(&compilemutex);
+#endif
     int tnum = rand();
     while (curcompile < GroupedCompiles.dim) {
         GroupedCompile *gc = (GroupedCompile *) GroupedCompiles.data[curcompile];
         curcompile++;
+#ifndef _WIN32
         pthread_mutex_unlock(&compilemutex);
+#endif
 
         if (gc->imodules.dim == 0) {
+#ifndef _WIN32
             pthread_mutex_lock(&compilemutex);
+#endif
             continue;
         }
         
@@ -1843,9 +1855,13 @@ void *compileThread(void *ignore)
             }
         }
 
+#ifndef _WIN32
         pthread_mutex_lock(&compilemutex);
+#endif
     }
+#ifndef _WIN32
     pthread_mutex_unlock(&compilemutex);
+#endif
 }
 
 
