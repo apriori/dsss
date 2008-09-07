@@ -75,13 +75,7 @@ Global::Global()
 
     obj_ext  = "o";
 
-#if _WIN32
-    lib_ext  = "lib";
-#elif linux
     lib_ext  = "a";
-#else
-#error "fix this"
-#endif
 
     copyright = "Copyright (c) 1999-2008 by Digital Mars and Gregor Richards";
     written = "written by Walter Bright and Gregor Richards";
