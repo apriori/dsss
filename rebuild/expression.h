@@ -143,6 +143,10 @@ struct Expression : Object
     virtual int isCommutative();
     virtual Identifier *opId();
     virtual Identifier *opId_r();
+
+    // For array ops
+    virtual void buildArrayIdent(OutBuffer *buf, Expressions *arguments);
+    virtual Expression *buildArrayLoop(Arguments *fparams);
 };
 
 struct IntegerExp : Expression
@@ -554,6 +558,7 @@ struct VarExp : SymbolExp
     //Expression *inlineScan(InlineScanState *iss);
 };
 
+#if V2
 // Overload Set
 
 struct OverExp : Expression
@@ -564,7 +569,7 @@ struct OverExp : Expression
     int isLvalue();
     Expression *toLvalue(Scope *sc, Expression *e);
 };
-
+#endif
 
 // Function/Delegate literal
 
@@ -614,6 +619,7 @@ struct TypeidExp : Expression
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 };
 
+#if V2
 struct TraitsExp : Expression
 {
     Identifier *ident;
@@ -624,6 +630,7 @@ struct TraitsExp : Expression
     Expression *semantic(Scope *sc);
     void toCBuffer(OutBuffer *buf, HdrGenState *hgs);
 };
+#endif
 
 struct HaltExp : Expression
 {
@@ -699,6 +706,7 @@ struct BinExp : Expression
     Expression *interpretCommon2(InterState *istate, Expression *(*fp)(TOK, Type *, Expression *, Expression *));
     Expression *interpretAssignCommon(InterState *istate, Expression *(*fp)(Type *, Expression *, Expression *), int post = 0);
     int canThrow();
+    Expression *arrayOp(Scope *sc);
 
     int inlineCost(InlineCostState *ics);
     Expression *doInline(InlineDoState *ids);
@@ -870,6 +878,8 @@ struct NegExp : UnaExp
     Expression *semantic(Scope *sc);
     Expression *optimize(int result);
     Expression *interpret(InterState *istate);
+    void buildArrayIdent(OutBuffer *buf, Expressions *arguments);
+    Expression *buildArrayLoop(Arguments *fparams);
 
     // For operator overloading
     Identifier *opId();
@@ -890,6 +900,8 @@ struct ComExp : UnaExp
     Expression *semantic(Scope *sc);
     Expression *optimize(int result);
     Expression *interpret(InterState *istate);
+    void buildArrayIdent(OutBuffer *buf, Expressions *arguments);
+    Expression *buildArrayLoop(Arguments *fparams);
 
     // For operator overloading
     Identifier *opId();
@@ -961,6 +973,8 @@ struct SliceExp : UnaExp
     Expression *interpret(InterState *istate);
     void dump(int indent);
     void scanForNestedRef(Scope *sc);
+    void buildArrayIdent(OutBuffer *buf, Expressions *arguments);
+    Expression *buildArrayLoop(Arguments *fparams);
 
     int inlineCost(InlineCostState *ics);
     Expression *doInline(InlineDoState *ids);
@@ -1056,6 +1070,8 @@ struct AssignExp : BinExp
     Expression *checkToBoolean();
     Expression *interpret(InterState *istate);
     Identifier *opId();    // For operator overloading
+    void buildArrayIdent(OutBuffer *buf, Expressions *arguments);
+    Expression *buildArrayLoop(Arguments *fparams);
 };
 
 #define ASSIGNEXP(op)	\
@@ -1064,23 +1080,31 @@ struct op##AssignExp : BinExp					\
     op##AssignExp(Loc loc, Expression *e1, Expression *e2);	\
     Expression *semantic(Scope *sc);				\
     Expression *interpret(InterState *istate);			\
+    X(void buildArrayIdent(OutBuffer *buf, Expressions *arguments);) \
+    X(Expression *buildArrayLoop(Arguments *fparams);)		\
 								\
     Identifier *opId();    /* For operator overloading */	\
 };
 
+#define X(a) a
 ASSIGNEXP(Add)
 ASSIGNEXP(Min)
-ASSIGNEXP(Cat)
 ASSIGNEXP(Mul)
 ASSIGNEXP(Div)
 ASSIGNEXP(Mod)
-ASSIGNEXP(Shl)
-ASSIGNEXP(Shr)
-ASSIGNEXP(Ushr)
 ASSIGNEXP(And)
 ASSIGNEXP(Or)
 ASSIGNEXP(Xor)
+#undef X
 
+#define X(a)
+
+ASSIGNEXP(Shl)
+ASSIGNEXP(Shr)
+ASSIGNEXP(Ushr)
+ASSIGNEXP(Cat)
+
+#undef X
 #undef ASSIGNEXP
 
 struct AddExp : BinExp
@@ -1089,6 +1113,8 @@ struct AddExp : BinExp
     Expression *semantic(Scope *sc);
     Expression *optimize(int result);
     Expression *interpret(InterState *istate);
+    void buildArrayIdent(OutBuffer *buf, Expressions *arguments);
+    Expression *buildArrayLoop(Arguments *fparams);
 
     // For operator overloading
     int isCommutative();
@@ -1102,6 +1128,8 @@ struct MinExp : BinExp
     Expression *semantic(Scope *sc);
     Expression *optimize(int result);
     Expression *interpret(InterState *istate);
+    void buildArrayIdent(OutBuffer *buf, Expressions *arguments);
+    Expression *buildArrayLoop(Arguments *fparams);
 
     // For operator overloading
     Identifier *opId();
@@ -1126,6 +1154,8 @@ struct MulExp : BinExp
     Expression *semantic(Scope *sc);
     Expression *optimize(int result);
     Expression *interpret(InterState *istate);
+    void buildArrayIdent(OutBuffer *buf, Expressions *arguments);
+    Expression *buildArrayLoop(Arguments *fparams);
 
     // For operator overloading
     int isCommutative();
@@ -1139,6 +1169,8 @@ struct DivExp : BinExp
     Expression *semantic(Scope *sc);
     Expression *optimize(int result);
     Expression *interpret(InterState *istate);
+    void buildArrayIdent(OutBuffer *buf, Expressions *arguments);
+    Expression *buildArrayLoop(Arguments *fparams);
 
     // For operator overloading
     Identifier *opId();
@@ -1151,6 +1183,8 @@ struct ModExp : BinExp
     Expression *semantic(Scope *sc);
     Expression *optimize(int result);
     Expression *interpret(InterState *istate);
+    void buildArrayIdent(OutBuffer *buf, Expressions *arguments);
+    Expression *buildArrayLoop(Arguments *fparams);
 
     // For operator overloading
     Identifier *opId();
@@ -1199,6 +1233,8 @@ struct AndExp : BinExp
     Expression *semantic(Scope *sc);
     Expression *optimize(int result);
     Expression *interpret(InterState *istate);
+    void buildArrayIdent(OutBuffer *buf, Expressions *arguments);
+    Expression *buildArrayLoop(Arguments *fparams);
 
     // For operator overloading
     int isCommutative();
@@ -1212,6 +1248,8 @@ struct OrExp : BinExp
     Expression *semantic(Scope *sc);
     Expression *optimize(int result);
     Expression *interpret(InterState *istate);
+    void buildArrayIdent(OutBuffer *buf, Expressions *arguments);
+    Expression *buildArrayLoop(Arguments *fparams);
 
     // For operator overloading
     int isCommutative();
@@ -1225,6 +1263,8 @@ struct XorExp : BinExp
     Expression *semantic(Scope *sc);
     Expression *optimize(int result);
     Expression *interpret(InterState *istate);
+    void buildArrayIdent(OutBuffer *buf, Expressions *arguments);
+    Expression *buildArrayLoop(Arguments *fparams);
 
     // For operator overloading
     int isCommutative();
@@ -1337,7 +1377,7 @@ struct CondExp : BinExp
     Expression *inlineScan(InlineScanState *iss);
 };
 
-
+#if V2
 /****************************************************************/
 
 struct DefaultInitExp : Expression
@@ -1362,6 +1402,7 @@ struct LineInitExp : DefaultInitExp
     Expression *semantic(Scope *sc);
     Expression *resolve(Loc loc, Scope *sc);
 };
+#endif
 
 /****************************************************************/
 

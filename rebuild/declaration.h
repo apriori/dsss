@@ -515,7 +515,7 @@ struct FuncDeclaration : Declaration
     FuncDeclaration *isUnique();
     int needsClosure();
 
-    static FuncDeclaration *genCfunc(Type *treturn, char *name);
+    static FuncDeclaration *genCfunc(Type *treturn, const char *name);
     static FuncDeclaration *genCfunc(Type *treturn, Identifier *id);
 
     Symbol *toThunkSymbol(int offset);	// thunk version

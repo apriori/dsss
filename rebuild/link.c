@@ -1,5 +1,4 @@
 
-
 // Copyright (c) 1999-2008 by Digital Mars
 // All Rights Reserved
 // written by Walter Bright
@@ -474,7 +473,7 @@ int runProgram()
     childpid = fork();
     if (childpid == 0)
     {
-	char *fn = (char *)argv.data[0];
+	const char *fn = (const char *)argv.data[0];
 	if (!FileName::absolute(fn))
 	{   // Make it "./fn"
 	    fn = FileName::combine(".", fn);

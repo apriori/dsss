@@ -20,6 +20,7 @@ SYSCONFDIR=$(PREFIX)/etc
 OBJS=\
   access.o \
   array.o \
+  arrayop.o \
   attrib.o \
   cast.o \
   class.o \

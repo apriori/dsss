@@ -45,9 +45,9 @@ char *Identifier::toChars()
     return (char *)string;
 }
 
-char *Identifier::toHChars2()
+const char *Identifier::toHChars2()
 {
-    char *p = NULL;
+    const char *p = NULL;
 
     if (this == Id::ctor) p = "this";
     else if (this == Id::dtor) p = "~this";
@@ -81,15 +81,21 @@ int Identifier::dyncast()
     return DYNCAST_IDENTIFIER;
 }
 
-Identifier *Identifier::generateId(char *prefix)
+
+Identifier *Identifier::generateId(const char *prefix)
+{
+    static size_t i;
+
+    return generateId(prefix, ++i);
+}
+
+Identifier *Identifier::generateId(const char *prefix, size_t i)
 {   OutBuffer buf;
-    char *id;
-    static unsigned i;
 
     buf.writestring(prefix);
-    buf.printf("%u", ++i);
+    buf.printf("%zu", i);
 
-    id = buf.toChars();
+    char *id = buf.toChars();
     buf.data = NULL;
-    return new Identifier(id, TOKidentifier);
+    return Lexer::idPool(id);
 }

@@ -1438,9 +1438,14 @@ Statement *ForeachStatement::semantic(Scope *sc)
 		    //var->storage_class |= STCfinal;
 		}
 		else
-		{   //if (!(arg->storageClass & STCref))
-			//var->storage_class |= STCfinal;
+		{
 		    value = var;
+		    /* Reference to immutable data should be marked as const
+		     */
+		    if (var->storage_class & STCref && !tn->isMutable())
+		    {
+			var->storage_class |= STCconst;
+		    }
 		}
 #if 1
 		DeclarationExp *de = new DeclarationExp(loc, var);
@@ -2091,8 +2096,10 @@ void IfStatement::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
 	if (arg->type)
 	    arg->type->toCBuffer(buf, arg->ident, hgs);
 	else
+	{   buf->writestring("auto ");
 	    buf->writestring(arg->ident->toChars());
-	buf->writebyte(';');
+	}
+	buf->writestring(" = ");
     }
     condition->toCBuffer(buf, hgs);
     buf->writebyte(')');
@@ -2162,6 +2169,14 @@ Statements *ConditionalStatement::flatten(Scope *sc)
 int ConditionalStatement::usesEH()
 {
     return (ifbody && ifbody->usesEH()) || (elsebody && elsebody->usesEH());
+}
+
+int ConditionalStatement::blockExit()
+{
+    int result = ifbody->blockExit();
+    if (elsebody)
+	result |= elsebody->blockExit();
+    return result;
 }
 
 void ConditionalStatement::toCBuffer(OutBuffer *buf, HdrGenState *hgs)
