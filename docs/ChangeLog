@@ -1,12 +1,16 @@
-0.76 from 0.75:
+0.77 from 0.75:
         - Rebuild: dmd-win-tango now correctly uses -ltango-base-dmd instead
           of -lphobos
         - Rebuild: Added support for multi-process builds, including automatic
           detection of number of CPUs.
-        - Rebuild: Now uses libgc.
         - Rebuild: Fixed a pipe left open in Windows.
         - User -S and -I now come before system -S and -I options, so users can
           override system defaults more easily.
+        - Rebuild: Builds are run concurrently across all processors, or any
+          number of processes specified explicitly with the -j option (except
+          on Windows)
+
+(0.76 had problems, and was canceled)
 
 0.75 from 0.74:
         - Rebuild: Fixed DMD issues.
