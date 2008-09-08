@@ -1,4 +1,5 @@
 0.77 from 0.75:
+        - Rebuild: Merged DMD 2.019.
         - Rebuild: dmd-win-tango now correctly uses -ltango-base-dmd instead
           of -lphobos
         - Rebuild: Added support for multi-process builds, including automatic
