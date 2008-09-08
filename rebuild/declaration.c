@@ -141,10 +141,10 @@ void Declaration::checkModify(Loc loc, Scope *sc, Type *t)
 		p = "manifest constant";
 	    else if (!t->isAssignable())
 		p = "struct with immutable members";
-	    if (p)
+	    /* if (p)
 	    {	error(loc, "cannot modify %s", p);
 		halt();
-	    }
+	    } */
 	}
     }
 }
@@ -803,7 +803,7 @@ Lagain:
     }
     else if (storage_class & STCfinal)
     {
-	error("final cannot be applied to variable");
+	// error("final cannot be applied to variable");
     }
 
     if (storage_class & (STCstatic | STCextern | STCmanifest | STCtemplateparameter | STCtls))
@@ -876,8 +876,8 @@ Lagain:
 
     if (init)
 	storage_class |= STCinit;     // remember we had an explicit initializer
-    else if (storage_class & STCmanifest)
-	error("manifest constants must have initializers");
+    /* else if (storage_class & STCmanifest)
+	error("manifest constants must have initializers"); */
 
     enum TOK op = TOKconstruct;
     if (!init && !sc->inunion && !isStatic() && fd &&

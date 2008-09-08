@@ -266,7 +266,7 @@ void FuncDeclaration::semantic(Scope *sc)
 	(pd = toParent2()) != NULL &&
 	(id = pd->isInterfaceDeclaration()) != NULL)
     {
-	error("template member function not allowed in interface %s", id->toChars());
+	/* error("template member function not allowed in interface %s", id->toChars()); */
     }
 
     cd = parent->isClassDeclaration();
@@ -1005,7 +1005,7 @@ void FuncDeclaration::semantic3(Scope *sc)
 		ScopeDsymbol *ad = p->isScopeDsymbol();
 		if (!ad)
 		{
-		    error("static constructor can only be member of struct/class/module, not %s %s", p->kind(), p->toChars());
+		    /* error("static constructor can only be member of struct/class/module, not %s %s", p->kind(), p->toChars()); */
 		}
 		else
 		{
@@ -1379,8 +1379,8 @@ int FuncDeclaration::findVtblIndex(Array *vtbl, int dim)
 		    //type->print();
 		    //fdv->type->print();
 		    //printf("%s %s\n", type->deco, fdv->type->deco);
-		    error("of type %s overrides but is not covariant with %s of type %s",
-			type->toChars(), fdv->toPrettyChars(), fdv->type->toChars());
+		    /* error("of type %s overrides but is not covariant with %s of type %s",
+			type->toChars(), fdv->toPrettyChars(), fdv->type->toChars()); */
 		    break;
 
 		case 3:
@@ -1497,7 +1497,7 @@ int overloadApply(FuncDeclaration *fstart,
 	    {
 		f = d->isFuncDeclaration();
 		if (!f)
-		{   d->error("is aliased to a function");
+		{   /* d->error("is aliased to a function"); */
 		    break;		// BUG: should print error message?
 		}
 		if ((*fp)(param, f))
@@ -2339,7 +2339,7 @@ void CtorDeclaration::semantic(Scope *sc)
     // See if it's the default constructor
     if (ad && varargs == 0 && Argument::dim(arguments) == 0)
     {	if (ad->isStructDeclaration())
-	    error("default constructor not allowed for structs");
+        {} /* error("default constructor not allowed for structs"); */
 	else
 	    ad->defaultCtor = this;
     }
@@ -2407,7 +2407,7 @@ void PostBlitDeclaration::semantic(Scope *sc)
     StructDeclaration *ad = parent->isStructDeclaration();
     if (!ad)
     {
-	error("post blits are only for struct/union definitions, not %s %s", parent->kind(), parent->toChars());
+	/* error("post blits are only for struct/union definitions, not %s %s", parent->kind(), parent->toChars()); */
     }
     else if (ident == Id::_postblit)
 	ad->postblits.push(this);

@@ -1541,7 +1541,7 @@ TemplateParameters *Parser::parseTemplateParameterList(int flag)
 	    {	// ThisParameter
 		nextToken();
 		if (token.value != TOKidentifier)
-		{   error("identifier expected for template this parameter");
+		{   /* error("identifier expected for template this parameter"); */
 		    goto Lerr;
 		}
 		tp_ident = token.ident;
@@ -3581,8 +3581,8 @@ Statement *Parser::parseStatement(int flags)
 	    nextToken();
 	    s = parseStatement(PSsemi | PScurlyscope);
 #if V2
-	    if (!global.params.useDeprecated)
-		error("volatile statements deprecated; used synchronized statements instead");
+	    /* if (!global.params.useDeprecated)
+		error("volatile statements deprecated; used synchronized statements instead"); */
 #endif
 	    s = new VolatileStatement(loc, s);
 	    break;

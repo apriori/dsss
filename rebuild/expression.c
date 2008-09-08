@@ -274,8 +274,8 @@ Expression *getRightThis(Loc loc, Scope *sc, AggregateDeclaration *ad,
 	    }
 	    /* Can't find a path from e1 to ad
 	     */
-	    e1->error("this for %s needs to be type %s not type %s",
-		var->toChars(), ad->toChars(), t->toChars());
+	    /* e1->error("this for %s needs to be type %s not type %s",
+		var->toChars(), ad->toChars(), t->toChars()); */
 	}
     }
     return e1;
@@ -3517,8 +3517,8 @@ Lagain:
 	}
 	else
 	{
-	    if (arguments && arguments->dim)
-		error("no constructor for %s", sd->toChars());
+	    /* if (arguments && arguments->dim)
+		error("no constructor for %s", sd->toChars()); */
 	}
 
 
@@ -3546,8 +3546,8 @@ Lagain:
 	}
 	else
 	{
-	    if (newargs && newargs->dim)
-		error("no allocator for %s", sd->toChars());
+	    /* if (newargs && newargs->dim)
+		error("no allocator for %s", sd->toChars()); */
 	}
 
 	type = type->pointerTo();
@@ -4546,8 +4546,8 @@ Expression *IsExp::semantic(Scope *sc)
 		if (m == MATCHnomatch)
 		    goto Lno;
 		s->semantic(sc);
-		if (!sc->insert(s))
-		    error("declaration %s is already defined", s->toChars());
+		/* if (!sc->insert(s))
+		    error("declaration %s is already defined", s->toChars()); */
 #if 0
 		Object *o = (Object *)dedtypes.data[i];
 		Dsymbol *s = TemplateDeclaration::declareParameter(loc, sc, tp, o);
@@ -4592,8 +4592,8 @@ Lyes:
     {
 	Dsymbol *s = new AliasDeclaration(loc, id, tded);
 	s->semantic(sc);
-	if (!sc->insert(s))
-	    error("declaration %s is already defined", s->toChars());
+	/* if (!sc->insert(s))
+	    error("declaration %s is already defined", s->toChars()); */
 	if (sc->sd)
 	    s->addMember(sc, sc->sd, 1);
     }
@@ -5252,8 +5252,8 @@ Expression *DotIdExp::semantic(Scope *sc)
 	    TupleDeclaration *tup = s->isTupleDeclaration();
 	    if (tup)
 	    {
-		if (eleft)
-		    error("cannot have e.tuple");
+		/* if (eleft)
+		    error("cannot have e.tuple"); */
 		e = new TupleExp(loc, tup);
 		e = e->semantic(sc);
 		return e;
@@ -5969,8 +5969,8 @@ Lagain:
 	    if (search_function(ad, Id::call))
 		goto L1;	// overload of opCall, therefore it's a call
 
-	    if (e1->op != TOKtype)
-		error("%s %s does not overload ()", ad->kind(), ad->toChars());
+	    /* if (e1->op != TOKtype)
+		error("%s %s does not overload ()", ad->kind(), ad->toChars()); */
 	    /* It's a struct literal
 	     */
 	    Expression *e = new StructLiteralExp(loc, (StructDeclaration *)ad, arguments);
@@ -6039,7 +6039,7 @@ Lagain:
 	    f->addPostInvariant()
 	   )
 	{
-	    error("cannot call public/export function %s from invariant", f->toChars());
+	    /* error("cannot call public/export function %s from invariant", f->toChars()); */
 	}
 
 	checkDeprecated(sc, f);
@@ -6411,8 +6411,8 @@ Expression *AddrExp::semantic(Scope *sc)
 	    VarExp *ve = (VarExp *)e1;
 
 	    VarDeclaration *v = ve->var->isVarDeclaration();
-	    if (v && !v->canTakeAddressOf())
-		error("cannot take address of %s", e1->toChars());
+	    /* if (v && !v->canTakeAddressOf())
+		error("cannot take address of %s", e1->toChars()); */
 
 	    FuncDeclaration *f = ve->var->isFuncDeclaration();
 
@@ -7673,7 +7673,7 @@ Expression *AssignExp::semantic(Scope *sc)
 	size_t dim = tup1->exps->dim;
 	if (dim != tup2->exps->dim)
 	{
-	    error("mismatched tuple lengths, %d and %d", (int)dim, (int)tup2->exps->dim);
+	    /* error("mismatched tuple lengths, %d and %d", (int)dim, (int)tup2->exps->dim); */
 	}
 	else
 	{   Expressions *exps = new Expressions;
@@ -9144,7 +9144,7 @@ Expression *CmpExp::semantic(Scope *sc)
     if (e1->type->toBasetype()->ty == Tclass && e2->op == TOKnull ||
 	e2->type->toBasetype()->ty == Tclass && e1->op == TOKnull)
     {
-	error("do not use null when comparing class types");
+	/* error("do not use null when comparing class types"); */
     }
 
     e = op_overload(sc);
@@ -9241,9 +9241,9 @@ Expression *EqualExp::semantic(Scope *sc)
     if (e1->type->toBasetype()->ty == Tclass && e2->op == TOKnull ||
 	e2->type->toBasetype()->ty == Tclass && e1->op == TOKnull)
     {
-	error("use '%s' instead of '%s' when comparing with null",
+	/* error("use '%s' instead of '%s' when comparing with null",
 		Token::toChars(op == TOKequal ? TOKidentity : TOKnotidentity),
-		Token::toChars(op));
+		Token::toChars(op)); */
     }
 
     //if (e2->op != TOKnull)

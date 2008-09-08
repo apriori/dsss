@@ -568,8 +568,8 @@ int CompoundStatement::blockExit()
 	    if (!(result & BEfallthru) && !s->comeFrom())
 	    {
 		if (global.params.warnings)
-		{   fprintf(stdmsg, "warning - ");
-		    s->error("statement is not reachable");
+		{   /* fprintf(stdmsg, "warning - ");
+		    s->error("statement is not reachable"); */
 		}
 	    }
 
@@ -2686,8 +2686,8 @@ Statement *CaseStatement::semantic(Scope *sc)
 	    }
 	}
 
-	if (sc->sw->tf != sc->tf)
-	    error("switch and case are in different finally blocks");
+	/* if (sc->sw->tf != sc->tf)
+	    error("switch and case are in different finally blocks"); */
     }
     /*else
 	error("case not in switch statement"); */
@@ -2760,8 +2760,8 @@ Statement *DefaultStatement::semantic(Scope *sc)
 	}
 	sc->sw->sdefault = this;
 
-	if (sc->sw->tf != sc->tf)
-	    error("switch and default are in different finally blocks");
+	/* if (sc->sw->tf != sc->tf)
+	    error("switch and default are in different finally blocks"); */
     }
     /*else
 	error("default not in switch statement"); */

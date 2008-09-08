@@ -879,9 +879,9 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	    for (size_t u = 0; u < len;)
 	    {	unsigned c;
 		const char *p = utf_decodeChar((unsigned char *)se->string, len, &u, &c);
-		if (p)
+		/* if (p)
 		    error("%s", p);
-		else
+		else */
 		    buffer.writeUTF16(c);
 	    }
 	    newlen = buffer.offset / 2;
@@ -892,8 +892,8 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	    for (size_t u = 0; u < len;)
 	    {	unsigned c;
 		const char *p = utf_decodeChar((unsigned char *)se->string, len, &u, &c);
-		if (p)
-		    error("%s", p);
+		/* if (p)
+		    error("%s", p); */
 		buffer.write4(c);
 		newlen++;
 	    }
@@ -904,9 +904,9 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	    for (size_t u = 0; u < len;)
 	    {	unsigned c;
 		const char *p = utf_decodeWchar((unsigned short *)se->string, len, &u, &c);
-		if (p)
+		/* if (p)
 		    error("%s", p);
-		else
+		else */
 		    buffer.writeUTF8(c);
 	    }
 	    newlen = buffer.offset;
@@ -917,8 +917,8 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	    for (size_t u = 0; u < len;)
 	    {	unsigned c;
 		const char *p = utf_decodeWchar((unsigned short *)se->string, len, &u, &c);
-		if (p)
-		    error("%s", p);
+		/* if (p)
+		    error("%s", p); */
 		buffer.write4(c);
 		newlen++;
 	    }
@@ -929,9 +929,9 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	    for (size_t u = 0; u < len; u++)
 	    {
 		unsigned c = ((unsigned *)se->string)[u];
-		if (!utf_isValidDchar(c))
+		/* if (!utf_isValidDchar(c))
 		    error("invalid UCS-32 char \\U%08x", c);
-		else
+		else */
 		    buffer.writeUTF8(c);
 		newlen++;
 	    }
@@ -943,9 +943,9 @@ Expression *StringExp::castTo(Scope *sc, Type *t)
 	    for (size_t u = 0; u < len; u++)
 	    {
 		unsigned c = ((unsigned *)se->string)[u];
-		if (!utf_isValidDchar(c))
+		/* if (!utf_isValidDchar(c))
 		    error("invalid UCS-32 char \\U%08x", c);
-		else
+		else */
 		    buffer.writeUTF16(c);
 		newlen++;
 	    }
@@ -1239,15 +1239,15 @@ Expression *DelegateExp::castTo(Scope *sc, Type *t)
 		f = func->overloadExactMatch(tb->nextOf());
 		if (f)
 		{   int offset;
-		    if (f->tintro && f->tintro->nextOf()->isBaseOf(f->type->nextOf(), &offset) && offset)
-			error("%s", msg);
+		    /* if (f->tintro && f->tintro->nextOf()->isBaseOf(f->type->nextOf(), &offset) && offset)
+			error("%s", msg); */
 		    f->tookAddressOf = 1;
 		    e = new DelegateExp(loc, e1, f);
 		    e->type = t;
 		    return e;
 		}
-		if (func->tintro)
-		    error("%s", msg);
+		/* if (func->tintro)
+		    error("%s", msg); */
 	    }
 	}
 	e = Expression::castTo(sc, t);
@@ -1256,8 +1256,8 @@ Expression *DelegateExp::castTo(Scope *sc, Type *t)
     {	int offset;
 
 	func->tookAddressOf = 1;
-	if (func->tintro && func->tintro->nextOf()->isBaseOf(func->type->nextOf(), &offset) && offset)
-	    error("%s", msg);
+	/* if (func->tintro && func->tintro->nextOf()->isBaseOf(func->type->nextOf(), &offset) && offset)
+	    error("%s", msg); */
 	e = copy();
 	e->type = t;
     }

@@ -381,8 +381,8 @@ void TemplateDeclaration::semantic(Scope *sc)
 	TemplateParameter *tp = (TemplateParameter *)parameters->data[i];
 
 	tp->semantic(paramscope);
-	if (i + 1 != parameters->dim && tp->isTemplateTupleParameter())
-	    error("template tuple parameter must be last one");
+	/* if (i + 1 != parameters->dim && tp->isTemplateTupleParameter())
+	    error("template tuple parameter must be last one"); */
     }
 
     paramscope->pop();
@@ -583,10 +583,10 @@ MATCH TemplateDeclaration::matchWithInstance(TemplateInstance *ti,
             ;
         else if (e->isBool(FALSE))
             goto Lnomatch;
-        else
+        /* else
         {
             e->error("constraint %s is not constant or does not evaluate to a bool", e->toChars());
-        }
+        } */
     }
 
 #if LOGM
@@ -1053,10 +1053,10 @@ Lmatch:
             ;
         else if (e->isBool(FALSE))
             goto Lnomatch;
-        else
+        /* else
         {
             e->error("constraint %s is not constant or does not evaluate to a bool", e->toChars());
-        }
+        } */
     }
 
 
@@ -4347,10 +4347,10 @@ void TemplateMixin::semantic(Scope *sc)
     }
 
     // Give additional context info if error occurred during instantiation
-    if (global.errors != errorsave)
+    /* if (global.errors != errorsave)
     {
 	error("error instantiating");
-    }
+    } */
 
     sc2->pop();
 

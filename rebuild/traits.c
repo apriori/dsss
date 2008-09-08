@@ -234,8 +234,8 @@ Expression *TraitsExp::semantic(Scope *sc)
 	    unsigned errors = global.errors;
 	    Expression *ex = e;
 	    e = e->semantic(sc);
-	    if (errors < global.errors)
-		error("%s cannot be resolved", ex->toChars());
+	    /* if (errors < global.errors)
+		error("%s cannot be resolved", ex->toChars()); */
 
 	    /* Create tuple of virtual function overloads of e
 	     */

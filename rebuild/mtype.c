@@ -736,8 +736,8 @@ Expression *Type::getProperty(Loc loc, Identifier *ident)
     }
     else if (ident == Id::init)
     {
-	if (ty == Tvoid)
-	    error(loc, "void does not have an initializer");
+	/* if (ty == Tvoid)
+	    error(loc, "void does not have an initializer"); */
 	e = defaultInit(loc);
     }
     else if (ident == Id::mangleof)
@@ -1578,8 +1578,8 @@ Expression *TypeBasic::defaultInit(Loc loc)
 	case Tcomplex80:
 	    return getProperty(loc, Id::nan);
 
-	case Tvoid:
-	    error(loc, "void does not have a default initializer");
+	/* case Tvoid:
+	    error(loc, "void does not have a default initializer"); */
     }
     return new IntegerExp(loc, value, this);
 }
@@ -1788,8 +1788,8 @@ Expression *TypeArray::dotExp(Scope *sc, Expression *e, Identifier *ident)
 	e = new CallExp(e->loc, ec, arguments);
 	if (ident == Id::idup)
 	{   Type *einv = next->invariantOf();
-	    if (next->implicitConvTo(einv) < MATCHconst)
-		error(e->loc, "cannot implicitly convert element type %s to invariant", next->toChars());
+	    /* if (next->implicitConvTo(einv) < MATCHconst)
+		error(e->loc, "cannot implicitly convert element type %s to invariant", next->toChars()); */
 	    e->type = einv->arrayOf();
 	}
 	else
@@ -2533,8 +2533,8 @@ void TypeAArray::resolve(Loc loc, Scope *sc, Expression **pe, Type **pt, Dsymbol
 	}
 	else if (t)
 	    index = t;
-	else
-	    index->error(loc, "index is not a type or an expression");
+	/* else
+	    index->error(loc, "index is not a type or an expression"); */
     }
     Type::resolve(loc, sc, pe, pt, ps);
 }
@@ -4139,10 +4139,10 @@ Type *TypeTypeof::semantic(Loc loc, Scope *sc)
 	sc->intypeof++;
 	exp = exp->semantic(sc);
 	sc->intypeof--;
-	if (exp->op == TOKtype)
+	/* if (exp->op == TOKtype)
 	{
 	    error(loc, "argument %s to typeof is not an expression", exp->toChars());
-	}
+	} */
 	t = exp->type;
 	if (!t)
 	{
@@ -4224,7 +4224,7 @@ Type *TypeReturn::semantic(Loc loc, Scope *sc)
 {
     Type *t;
     if (!sc->func)
-    {	error(loc, "typeof(return) must be inside function");
+    {	/* error(loc, "typeof(return) must be inside function"); */
 	goto Lerr;
     }
     t = sc->func->type->nextOf();
@@ -4248,12 +4248,12 @@ Type *TypeReturn::semantic(Loc loc, Scope *sc)
 	{
 	    t = s->getType();
 	    if (!t)
-	    {	error(loc, "%s is not a type", s->toChars());
+	    {	/* error(loc, "%s is not a type", s->toChars()); */
 		goto Lerr;
 	    }
 	}
 	else
-	{   error(loc, "cannot resolve .property for %s", toChars());
+	{   /* error(loc, "cannot resolve .property for %s", toChars()); */
 	    goto Lerr;
 	}
     }
@@ -4453,7 +4453,7 @@ Expression *TypeEnum::defaultInit(Loc loc)
     //printf("%s\n", sym->defaultval->type->toChars());
     if (!sym->defaultval)
     {
-	error(loc, "forward reference of %s.init", toChars());
+	/* error(loc, "forward reference of %s.init", toChars()); */
 	return new IntegerExp(0, 0, this);
     }
     return sym->defaultval;
