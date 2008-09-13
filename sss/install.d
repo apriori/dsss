@@ -108,7 +108,7 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
 
                 // and perhaps the debug version as well
                 if (buildDebug)
-                    copyAndManifest("libSdebug-" ~ target ~ ".a", libPrefix);
+                    copyAndManifest("libdebug-" ~ target ~ ".a", libPrefix);
                 
                 char[] shlibname = getShLibName(settings);
                 
