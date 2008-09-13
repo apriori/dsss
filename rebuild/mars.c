@@ -233,6 +233,7 @@ Usage:\n\
                  Windows: Link to <lib>.lib\n\
                  Posix: Link to lib<lib>.{a,so}\n\
   -Spath         search path for libraries\n\
+  -gui           (Windows only) create a GUI executable\n\
   -ignore        ignore unsupported pragmas\n\
   -O             optimize\n\
   -oqobjdir      write object files to directory objdir with fully-qualified\n\
