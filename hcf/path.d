@@ -146,10 +146,14 @@ char[] canonPath(char[] origpath)
             for (j = i - 1; j > 0 && ret[j..(j+1)] != std.path.sep; j--) {}
             if (j > 0) {
                 // cut
-                ret = ret[0..j] ~ ret[(i + 3) .. $];
+                if (ret[j..j+2] == "/.") {
+                    j = i + 2; // skip it
+                } else {
+                    ret = ret[0..j] ~ ret[(i + 3) .. $];
+                }
             } else {
-                // sort of ridiculous, but cut as best we can
-                ret = std.path.sep ~ ret[(i + 3) .. $];
+                // can't cut
+                j = i + 2;
             }
             i = j - 1;
         }
