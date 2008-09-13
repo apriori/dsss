@@ -1082,11 +1082,16 @@ char[][] sourcesByElems(char[][] buildElems, DSSSConf conf)
         } else {
             // now select the builds that have been requested
             foreach (be; buildElems) {
+                // on Windows, make sure the name is sensible
+                version (Windows) {
+                    be = std.string.replace(be, "\\", "/");
+                }
+
                 // search for a section or target with this name
                 bool found = false;
                 
                 foreach (section; conf.sections) {
-                    if (fnmatch(section, be)) {
+                    if (fnmatch(std.string.replace(section, "\\", "/"), be)) {
                         // build this
                         buildSources ~= section;
                         found = true;
@@ -1094,7 +1099,7 @@ char[][] sourcesByElems(char[][] buildElems, DSSSConf conf)
                     }
                     
                     // not the section name, so try "target"
-                    if (fnmatch(conf.settings[section]["target"], be)) {
+                    if (fnmatch(std.string.replace(conf.settings[section]["target"], "\\", "/"), be)) {
                         
                         // build this (by section name)
                         buildSources ~= section;
