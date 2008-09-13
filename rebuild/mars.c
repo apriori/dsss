@@ -275,7 +275,7 @@ bool stringInArray(Array *arr, char *str)
 
 int main(int argc, char *argv[])
 {
-    int i;
+    int i, j;
     Array files;
     Array libmodules;
     char *p;
@@ -889,6 +889,14 @@ int main(int argc, char *argv[])
             }
             else if (p[1] == 'S')
             {
+                // on Windows, change forward slashes to backslashes
+#ifdef __WIN32
+                p = mem.strdup(p);
+                for (j = 2; p[j]; j++) {
+                    if (p[j] == '/') p[j] = '\\';
+                }
+#endif
+
                 // add a flag both to compile and to link
                 addFlag(compileFlags, "compile", "libdir", "-L-L$i", p + 2);
 
