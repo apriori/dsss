@@ -399,7 +399,14 @@ void linkLibrary(const std::string &name)
     if (last == name) return;
     last = name;
     
-    addFlag(linkFlags, "link", "lib", "$i", name, "", true);
-    addFlag(liblinkFlags, "liblink", "lib", "$i", name, "", true);
-    addFlag(shliblinkFlags, "shliblink", "lib", "$i", name, "", true);
+    if (name.length() != 0 && name[0] == '-') {
+        // a general link flag
+        addFlag(linkFlags, "link", "flag", "$i", name.substr(1), "", true);
+        addFlag(liblinkFlags, "link", "flag", "$i", name.substr(1), "", true);
+        addFlag(shliblinkFlags, "link", "flag", "$i", name.substr(1), "", true);
+    } else {
+        addFlag(linkFlags, "link", "lib", "$i", name, "", true);
+        addFlag(liblinkFlags, "liblink", "lib", "$i", name, "", true);
+        addFlag(shliblinkFlags, "shliblink", "lib", "$i", name, "", true);
+    }
 }
