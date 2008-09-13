@@ -1,3 +1,20 @@
+SVN from 0.77:
+        - Rebuild: Removed some needless errors that could cause problems with
+          using D-2 keywords in D-1 code.
+        - Rebuild: Fixed -exec. (see ticket #203)
+        - Rebuild: Documented -gui. (see ticket #180)
+        - Fixed installation of debug libraries. (see ticket #185)
+        - Substantially reduced the default verbosity. -v now gives the
+          previous verbosity, -vv puts rebuild in verbose mode as well.
+        - Rebuild: Allow general link flags in pragma(link) (for Mac OS X
+          frameworks, etc.
+        - Rebuild: -S with forward slashes now works on Windows. (see ticket
+          #182)
+        - defaulttargets with forward slashes now works on Windows.
+        - Multiple '..' elements in section names will now be interpreted
+          correctly. (see ticket #198)
+        - Rebuild: Fixed library-linking problems.
+
 0.77 from 0.75:
         - Rebuild: Merged DMD 2.019.
         - Rebuild: dmd-win-tango now correctly uses -ltango-base-dmd instead
