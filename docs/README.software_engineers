@@ -452,6 +452,10 @@ $ dsss build --doc
 will cause API documentation for every library to be generated with CandyDoc,
 which beautifies and organizes the documentation.
 
+The flag '--debug', when passed to `dsss build`:
+$ dsss build --debug
+will cause libraries to be built in both a debug- and non-debug mode.
+
 
 == SUBDIRECTORIES ==
 
