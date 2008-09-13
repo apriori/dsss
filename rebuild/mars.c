@@ -1006,7 +1006,7 @@ int main(int argc, char *argv[])
     if (global.params.useUnitTests)
 	global.params.useAssert = 1;
 
-    if (!global.params.obj || global.params.lib)
+    if (!global.params.obj)
 	global.params.link = 0;
 
 #if _WIN32
@@ -1722,7 +1722,7 @@ int main(int argc, char *argv[])
     }
     
     mem.fullcollect();
-    
+
     // Now do the actual compilation, across any number of processors
 #ifndef _WIN32
     if (global.params.procs > 1) {
