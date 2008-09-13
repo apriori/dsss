@@ -1,4 +1,4 @@
-SVN from 0.77:
+0.78 from 0.77:
         - Rebuild: Removed some needless errors that could cause problems with
           using D-2 keywords in D-1 code.
         - Rebuild: Fixed -exec. (see ticket #203)
