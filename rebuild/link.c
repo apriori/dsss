@@ -102,10 +102,12 @@ string linkCommand(const string &i, const string &o, string &response, bool &use
     {	/* Generate exe file name from first obj name.
 	 * No need to add it to cmdbuf because the linker will default to it.
 	 */
-	char *n = (char *)global.params.objfiles->data[0];
-	n = FileName::name(n);
-	FileName *fn = FileName::forceExt(n, "exe");
-	global.params.exefile = fn->toChars();
+        if (global.params.exefile == NULL) {
+	        char *n = (char *)global.params.objfiles->data[0];
+	        n = FileName::name(n);
+	        FileName *fn = FileName::forceExt(n, "exe");
+	        global.params.exefile = fn->toChars();
+        }
     }
     
     // check if we need to use a response file
