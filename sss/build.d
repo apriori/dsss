@@ -39,6 +39,7 @@ import hcf.path;
 import hcf.process;
 
 import sss.conf;
+import sss.system;
 
 /** The entry function to the DSSS "build" command */
 int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
@@ -186,10 +187,10 @@ version (build) {
                 if (targetGNUOrPosix()) {
                     char[] stubbl = bl ~ "-fPIC -shlib " ~ stubDLoc ~ " -of" ~ shlibname ~
                         " " ~ shlibflag;
-                    saySystemRDie(stubbl, "-rf", shlibname ~ "_stub.rf", deleteRFiles);
+                    vSaySystemRDie(stubbl, "-rf", shlibname ~ "_stub.rf", deleteRFiles);
                     if (targetVersion("Posix")) {
                         foreach (ssln; shortshlibnames) {
-                            saySystemDie("ln -sf " ~ shlibname ~ " " ~ ssln);
+                            vSaySystemDie("ln -sf " ~ shlibname ~ " " ~ ssln);
                         }
                     }
                 } else {
@@ -216,9 +217,9 @@ version (build) {
             chdir(docdir);
         
             version (Windows) {
-                sayAndSystem("bsdtar -xf " ~ candyDocPrefix);
+                vSayAndSystem("bsdtar -xf " ~ candyDocPrefix);
             } else {
-                sayAndSystem("gunzip -c " ~ candyDocPrefix ~ " | tar -xf -");
+                vSayAndSystem("gunzip -c " ~ candyDocPrefix ~ " | tar -xf -");
             }
         
             chdir(origcwd);
@@ -377,7 +378,7 @@ version (build) {
             }
             
             // then do it
-            saySystemRDie(bbl, "-rf", target ~ ".rf", deleteRFiles);
+            vSaySystemRDie(bbl, "-rf", target ~ ".rf", deleteRFiles);
             
             // do the postbuild
             if ("postbuild" in settings) {
@@ -417,14 +418,14 @@ void buildLibrary(char[] target, char[] bl, char[] bflags, char[] docbl,
                     char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib " ~ fileList ~ " -oflib" ~ target ~ ".a";
                     if (testLibs || (shLibSupport() && ("shared" in settings)))
                         stbl ~= " -full";
-                    saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
+                    vSaySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
 
                     // perhaps test the static library
                     if (testLibs) {
                         writefln("Testing %s", target);
                         char[] tbl = bl ~ bflags ~ " -unittest -full " ~ fileList ~ " " ~ dsssLibTestDPrefix ~ " -oftest_" ~ target;
-                        saySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
-                        saySystemDie("./test_" ~ target);
+                        vSaySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
+                        vSaySystemDie("./test_" ~ target);
                     }
                     
                     if (shLibSupport() &&
@@ -435,7 +436,7 @@ void buildLibrary(char[] target, char[] bl, char[] bflags, char[] docbl,
                         " " ~ shlibflag;
                         
                         // finally, the shared compile
-                        saySystemRDie(shbl, "-rf", target ~ "_shared.rf", deleteRFiles);
+                        vSaySystemRDie(shbl, "-rf", target ~ "_shared.rf", deleteRFiles);
                     }
                     
                 } else if (targetVersion("Windows")) {
@@ -444,14 +445,14 @@ void buildLibrary(char[] target, char[] bl, char[] bflags, char[] docbl,
                     char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib " ~ fileList ~ " -of" ~ target ~ ".lib";
                     if (testLibs)
                         stbl ~= " -full";
-                    saySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
+                    vSaySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
 
                     // perhaps test the static library
                     if (testLibs) {
                         writefln("Testing %s", target);
                         char[] tbl = bl ~ bflags ~ " -unittest -full " ~ fileList ~ " " ~ dsssLibTestDPrefix ~ " -oftest_" ~ target ~ ".exe";
-                        saySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
-                        saySystemDie("test_" ~ target ~ ".exe");
+                        vSaySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
+                        vSaySystemDie("test_" ~ target ~ ".exe");
                     }
 
                 } else {

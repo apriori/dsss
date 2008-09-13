@@ -187,6 +187,13 @@ int main(char[][] args)
             } else if (parseArg(arg, "debug", false)) {
                 buildDebug = true;
 
+            } else if (parseArg(arg, "v", false)) {
+                verboseMode = true;
+
+            } else if (parseArg(arg, "vv", false)) {
+                verboseMode = true;
+                dsss_buildOptions ~= "-v ";
+
             } else if (parseArg(arg, "prefix", true, &val)) {
                 // force a prefix
                 forcePrefix = makeAbsolute(val);

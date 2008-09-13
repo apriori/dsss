@@ -39,6 +39,7 @@ import std.c.stdlib;
 
 import sss.clean;
 import sss.platform;
+import sss.system;
 
 import hcf.env;
 import hcf.path;
@@ -126,6 +127,9 @@ bool testLibs = false;
 
 /** Should we build debug versions? */
 bool buildDebug = false;
+
+/** Should we be verbose? */
+bool verboseMode = false;
 
 /** The prefix for scratch work */
 char[] scratchPrefix;
@@ -884,13 +888,13 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
         // clean cmd
         while (cmd.length > 0 && iswhite(cmd[0])) cmd = cmd[1..$];
         while (cmd.length > 0 && iswhite(cmd[$-1])) cmd = cmd[0..($-1)];
-        writefln("Command: %s", cmd);
+        if (verboseMode) writefln("Command: %s", cmd);
         
         // run it
         char[] ext = std.string.tolower(getExt(cmd));
         if (find(cmd, ' ') == -1 && ext == "d") {
             // if it's a .d file, -exec it
-            saySystemDie(dsss_build ~ "-full -exec " ~ cmd);
+            vSaySystemDie(dsss_build ~ "-full -exec " ~ cmd);
 
         } else if (cmd.length > 5 &&
                    cmd[0..5] == "warn ") {
@@ -1053,7 +1057,7 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
             
         } else {
             // hopefully we can just run it
-            saySystemDie(cmd);
+            vSaySystemDie(cmd);
         }
     }
     
@@ -1237,7 +1241,7 @@ void copyInFile(char[] file, char[] prefix, char[] from = "")
         char[] target = prefix ~ std.path.sep ~ file;
         
         // preserve permissions
-        saySystemDie("cp -fpRL " ~ from ~ file ~ " " ~ target);
+        vSaySystemDie("cp -fpRL " ~ from ~ file ~ " " ~ target);
         
         // but then guarantee the permissions we made aren't too bad (ignore errors)
         system("chmod a+rX " ~ target ~ " 2> /dev/null");

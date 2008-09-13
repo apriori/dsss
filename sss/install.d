@@ -36,6 +36,7 @@ import hcf.path;
 import hcf.process;
 
 import sss.conf;
+import sss.system;
 
 /** Entry into the "install" command */
 int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char[][]* subManifest = null)
@@ -124,7 +125,7 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
                         // make softlinks
                         foreach (ssln; shortshlibnames) {
                             // make it
-                            saySystemDie("ln -sf " ~ shlibname ~ " " ~
+                            vSaySystemDie("ln -sf " ~ shlibname ~ " " ~
                                          libPrefix ~ std.path.sep ~ ssln);
                             manifest ~= libPrefix ~ std.path.sep ~ ssln;
                         }

@@ -42,6 +42,7 @@ import sss.build;
 import sss.clean;
 import sss.conf;
 import sss.install;
+import sss.system;
 import sss.uninstall;
 
 import hcf.path;
@@ -296,9 +297,9 @@ int net(char[][] args)
                     foreach(file;files)
                         if(regexp.test(file))
                             cmdline ~= " " ~ file;
-                    saySystemDie(cmdline);
+                    vSaySystemDie(cmdline);
                 } else {
-                    saySystemDie("tar -cf - * | gzip -c > " ~ archname);
+                    vSaySystemDie("tar -cf - * | gzip -c > " ~ archname);
                 }
                 
                 // move into place
@@ -533,7 +534,7 @@ bool getSources(char[] pkg, NetConfig conf)
         switch (srcFormat) {
             case "svn":
                 // Subversion, check it out
-                res = sayAndSystem("svn export " ~ conf.srcURL[pkg]);
+                res = vSayAndSystem("svn export " ~ conf.srcURL[pkg]);
                 break;
                 
             default:
@@ -545,7 +546,7 @@ bool getSources(char[] pkg, NetConfig conf)
                 write("src." ~ srcFormat, dlhttp.read());*/
                 
                 // mango doesn't work properly for me :(
-                res = sayAndSystem("curl -k " ~ conf.srcURL[pkg] ~ " -o src." ~ srcFormat);
+                res = vSayAndSystem("curl -k " ~ conf.srcURL[pkg] ~ " -o src." ~ srcFormat);
                 if (res != 0) return false;
                 
                 // extract it
@@ -554,31 +555,31 @@ bool getSources(char[] pkg, NetConfig conf)
                     case "tgz":
                         version (Windows) {
                             // assume BsdTar
-                            sayAndSystem("bsdtar -xf src." ~ srcFormat);
+                            vSayAndSystem("bsdtar -xf src." ~ srcFormat);
                             res = 0;
                         } else {
-                            res = sayAndSystem("gunzip -c src." ~ srcFormat ~ " | tar -xf -");
+                            res = vSayAndSystem("gunzip -c src." ~ srcFormat ~ " | tar -xf -");
                         }
                         break;
                         
                     case "tar.bz2":
                         version (Windows) {
                             // assume BsdTar
-                            sayAndSystem("bsdtar -xf src.tar.bz2");
+                            vSayAndSystem("bsdtar -xf src.tar.bz2");
                             res = 0;
                         } else {
-                            res = sayAndSystem("bunzip2 -c src.tar.bz2 | tar -xf -");
+                            res = vSayAndSystem("bunzip2 -c src.tar.bz2 | tar -xf -");
                         }
                         break;
                         
                     case "zip":
                         version (Windows) {
                             // assume BsdTar
-                            sayAndSystem("bsdtar -xf src.zip");
+                            vSayAndSystem("bsdtar -xf src.zip");
                             res = 0;
                         } else {
                             // assume InfoZip
-                            res = sayAndSystem("unzip src.zip");
+                            res = vSayAndSystem("unzip src.zip");
                         }
                         break;
                         
@@ -610,12 +611,12 @@ bool getSources(char[] pkg, NetConfig conf)
             chdir(dir);
             
             // download the patch file
-            saySystemDie("curl -k " ~ conf.mirror ~ "/" ~ pfile ~
+            vSaySystemDie("curl -k " ~ conf.mirror ~ "/" ~ pfile ~
                          " -o " ~ pfile);
             
             // convert it to DOS line endings if necessary
             version (Windows) {
-                saySystemDie("unix2dos " ~ pfile);
+                vSaySystemDie("unix2dos " ~ pfile);
             }
             
             // install the patch
@@ -642,14 +643,14 @@ bool getSources(char[] pkg, NetConfig conf)
             uint sel = cast(uint) ((cast(double) mirrorsList.length) * (rand() / (uint.max + 1.0)));
             char[] mirror = mirrorsList[sel];
             
-            saySystemDie("curl -k " ~ mirror ~ "/" ~ pkg ~ ".tar.gz " ~
+            vSaySystemDie("curl -k " ~ mirror ~ "/" ~ pkg ~ ".tar.gz " ~
                          "-o " ~ pkg ~ ".tar.gz");
             
             // extract
             version (Windows) {
-                sayAndSystem("bsdtar -xf " ~ pkg ~ ".tar.gz");
+                vSayAndSystem("bsdtar -xf " ~ pkg ~ ".tar.gz");
             } else {
-                saySystemDie("gunzip -c " ~ pkg ~ ".tar.gz | tar -xf -");
+                vSaySystemDie("gunzip -c " ~ pkg ~ ".tar.gz | tar -xf -");
             }
         }
     }
