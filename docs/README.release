@@ -18,7 +18,7 @@ instructions on how to make a release of the current version of DSSS.
 
 6) Make binaries for supported platforms.
 
-7) Add it to the downloads/ branch in SVN.
+7) Add it to the downloads/ branch in SVN, with README-BINARIES.txt.
 
 8) Update the wiki at dsource.org
 
