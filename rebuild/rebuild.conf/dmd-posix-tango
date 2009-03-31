@@ -11,7 +11,6 @@ version=DigitalMars
 noversion=GNU
 version=linux
 noversion=Unix
-version=Posix
 noversion=Windows
 noversion=Win32
 noversion=Win64
@@ -28,7 +27,7 @@ version=Tango
 
 
 [compile]
-cmd=dmd -version=Posix -version=Tango -c $i
+cmd=dmd -version=Tango -c $i
 
 flag=$i
 incdir=-I$i
