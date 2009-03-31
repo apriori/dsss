@@ -38,9 +38,6 @@
 
 module util.pathex;
 
-version(linux)  version = Posix;
-version(darwin) version = Posix;
-
 private {
     static import util.str;
     static import util.booltype;   // definition of True and False

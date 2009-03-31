@@ -49,9 +49,6 @@
 
 module util.fdt;
 version(unix)  version = Unix;
-version(Unix)  version = Posix;
-version(linux)  version = Posix;
-version(darwin) version = Posix;
 
 private
 {
