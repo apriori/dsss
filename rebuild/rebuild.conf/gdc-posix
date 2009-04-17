@@ -11,6 +11,7 @@ version=GNU
 testversion=linux
 testversion=darwin
 version=Unix
+version=Posix
 noversion=Windows
 noversion=Win32
 noversion=Win64
@@ -26,7 +27,7 @@ testversion=BigEndian
 
 
 [compile]
-cmd=gdmd -c $i
+cmd=gdmd -version=Posix -c $i
 
 flag=$i
 incdir=-I$i

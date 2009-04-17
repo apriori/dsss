@@ -11,6 +11,7 @@ version=DigitalMars
 noversion=GNU
 version=linux
 noversion=Unix
+version=Posix
 noversion=Windows
 noversion=Win32
 noversion=Win64
@@ -26,7 +27,7 @@ noversion=BigEndian
 
 
 [compile]
-cmd=dmd -c $i
+cmd=dmd -version=Posix -c $i
 
 flag=$i
 incdir=-I$i
