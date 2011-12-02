@@ -41,21 +41,22 @@ private {
     static import std.ctype;
     static import std.string;
     static import std.utf;
+    import std.conv;
 
 }
-char[][] TokenizeLine(char[] pSource,
-                      char[] pDelim = ",",
-                      char[] pComment = "//",
-                      char[] pEscape = "\\")
+string[] TokenizeLine(string pSource,
+                      string pDelim = ",",
+                      string pComment = "//",
+                      string pEscape = "\\")
 {
-    dchar[][] lTemp;
-    char[][] lResult;
+    dstring[] lTemp;
+    string[] lResult;
 
     lTemp= TokenizeLine( std.utf.toUTF32(pSource),
                          std.utf.toUTF32(pDelim),
                          std.utf.toUTF32(pComment),
                          std.utf.toUTF32(pEscape) );
-    foreach( dchar[] lLine; lTemp )
+    foreach(dstring lLine; lTemp )
     {
         lResult ~= std.utf.toUTF8( lLine );
     }
@@ -63,23 +64,23 @@ char[][] TokenizeLine(char[] pSource,
     return lResult;
 }
 
-dchar[][] TokenizeLine(dchar[] pSource,
-                       dchar[] pDelim = ",",
-                       dchar[] pComment = "//",
-                       dchar[] pEscape = "\\")
+dstring[] TokenizeLine(dstring pSource,
+                       dstring pDelim = ",",
+                       dstring pComment = "//",
+                       dstring pEscape = "\\")
 {
-    dchar[][] lResult;
+    dstring[] lResult;
     dchar lOpenBracket;
     dchar lCloseBracket;
     int lNestLevel;
-    int lInToken;
-    dchar[] lDelim;
-    int lTrimSpot;
-    int lPos;
+    sizediff_t lInToken;
+    dstring lDelim;
+    sizediff_t lTrimSpot;
+    sizediff_t lPos;
     bool lLitMode;
 
-    static dchar[] vOpenBracket  = "\"'([{`";
-    static dchar[] vCloseBracket = "\"')]}`";
+    static dstring vOpenBracket  = "\"'([{`";
+    static dstring vCloseBracket = "\"')]}`";
 
     if (pDelim.length > 0)
         // Only use single-char delimiters. Excess chars are ignored.
@@ -164,11 +165,8 @@ dchar[][] TokenizeLine(dchar[] pSource,
         if (lResult[lInToken].length == 0)
         {
             // Not started a token yet.
-            dchar[] lChar;
-
-            lChar.length = 1;
-            lChar[0] = c;
-            lPos = std.string.find(std.utf.toUTF8(vOpenBracket), std.utf.toUTF8(lChar));
+            dstring lChar;
+            lPos = std.string.indexOf(std.utf.toUTF8(vOpenBracket), to!char(c));
             if (lPos != -1)
             {
                 // An 'open' bracket was found, so make this its
@@ -246,13 +244,13 @@ Insert this into your code ...
 
 Then to call it use ...
 
-   char[] Toks;
-   char[] InputLine;
-   char[] DelimChar;
-   char[] CommentString;
+   string Toks;
+   string InputLine;
+   string DelimChar;
+   string CommentString;
 
    Toks = TokenizeLine(InputLine, DelimChar, CommentString);
-** Note that it accepts all 'char[]' or all 'dchar[]' arguments.
+** Note that it accepts all 'string' or all 'dstring' arguments.
 
 The routine scans the input string and returns a set of strings, one
 per token found in the input string.

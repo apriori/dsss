@@ -52,6 +52,8 @@ private{
     static import std.ctype;
     static import std.string;
     static import std.stdio;
+    static import std.array;
+    static import std.conv;
     // --------- C externals ----------------
     extern (C)
     {
@@ -69,13 +71,13 @@ public{
 ///desc Replace all occurances a character with another.
 //This examines each character in /i pText and where it matches /i pFrom
 // it is replaced with /i pTo. /n
-///b Note that /i pText can be a /char[], /wchar[], /dchar[] or /ubyte[] datatypes. /n
+///b Note that /i pText can be a /string, /wstring, /dstring or /ubyte[] datatypes. /n
 ///b Note that if /i pText is a ubyte[] type, the /i pFrom and /i pTo must
 //be either /b ubyte or /b char datatypes.
 //
 //Example:
 ///code
-//  char[] test;
+//  string test;
 //  test = "abc,de,frgh,ijk,kmn";
 //  ReplaceChar( test, ',', ':');
 //  assert(test == "abc:de:frgh:ijk:kmn");
@@ -90,8 +92,8 @@ out (pResult){
 
     assert( ! (pResult is null) );
 
-    lTempA = pText;
-    lTempB = pResult;
+    lTempA = pText.dup;
+    lTempB = pResult.dup;
     assert(lTempA.length == lTempB.length);
     if ( pFrom != pTo)
     {
@@ -115,11 +117,11 @@ body {
     if (pFrom == pTo)
         return pText;
 
-    foreach( uint i, inout ubyte lTestChar; pText)
+    foreach( uint i, ref ubyte lTestChar; pText)
     {
         if(lTestChar == pFrom) {
             ubyte[] lTemp = pText.dup;
-            foreach( inout ubyte lNextChar; lTemp[i .. length]){
+            foreach( ref ubyte lNextChar; lTemp[i ..$]){
                 if(lNextChar == pFrom) {
                     lNextChar = pTo;
                 }
@@ -149,11 +151,11 @@ ubyte[] ReplaceChar(in ubyte[] pText, char pFrom, char pTo)
 
 
 //----------------------------------------------------------
-dchar[] ReplaceChar(in dchar[] pText, dchar pFrom, dchar pTo)
+dstring ReplaceChar(in dstring pText, dchar pFrom, dchar pTo)
 //----------------------------------------------------------
 out (pResult){
-    dchar[] lTempA;
-    dchar[] lTempB;
+    dstring lTempA;
+    dstring lTempB;
 
     assert( ! (pResult is null) );
 
@@ -182,16 +184,16 @@ body {
         return pText;
 
     else {
-    foreach( uint i, inout dchar lTestChar; pText){
+    foreach( uint i, ref dchar lTestChar; pText){
         if(lTestChar == pFrom) {
             dchar[] lTemp = pText.dup;
-            foreach( inout dchar lNextChar; lTemp[i .. length]){
+            foreach( ref dchar lNextChar; lTemp[i ..$]){
                 if(lNextChar == pFrom) {
                     lNextChar = pTo;
                 }
             }
 
-            return lTemp;
+            return std.conv.to!dstring(lTemp);
         }
 
 
@@ -203,7 +205,7 @@ body {
 
 
 //----------------------------------------------------------
-char[] ReplaceChar(in char[] pText, dchar pFrom, dchar pTo)
+string ReplaceChar(in string pText, dchar pFrom, dchar pTo)
 //----------------------------------------------------------
 body {
 
@@ -212,7 +214,7 @@ body {
 }
 
 //----------------------------------------------------------
-wchar[] ReplaceChar(in wchar[] pText, dchar pFrom, dchar pTo)
+wstring ReplaceChar(in wstring pText, dchar pFrom, dchar pTo)
 //----------------------------------------------------------
 body {
 
@@ -232,18 +234,18 @@ ubyte[] toStringZ(ubyte[] pData)
 }
 
 //----------------------------------------------------------
-char[] toStringZ(char[] pData)
+string toStringZ(string pData)
 //----------------------------------------------------------
 {
-    char[] lTemp;
+    string lTemp;
 
-    lTemp = pData.dup;
+    lTemp = pData;
     lTemp ~= '\0';
     return lTemp;
 }
 
 //----------------------------------------------------------
-ubyte[] toStringA(char[] pData)
+ubyte[] toStringA(string pData)
 //----------------------------------------------------------
 {
     ubyte[] lTemp;
@@ -257,11 +259,11 @@ ubyte[] toStringA(char[] pData)
     return lTemp;
 }
 //----------------------------------------------------------
-ubyte[] toStringA(wchar[] pData)
+ubyte[] toStringA(wstring pData)
 //----------------------------------------------------------
 {
     ubyte[] lTemp;
-    char[] lInter;
+    string lInter;
 
     lInter = std.utf.toUTF8( pData );
     lTemp.length = lInter.length;
@@ -273,11 +275,11 @@ ubyte[] toStringA(wchar[] pData)
     return lTemp;
 }
 //----------------------------------------------------------
-ubyte[] toStringA(dchar[] pData)
+ubyte[] toStringA(dstring pData)
 //----------------------------------------------------------
 {
     ubyte[] lTemp;
-    char[] lInter;
+    string lInter;
 
     lInter = std.utf.toUTF8( pData );
     lTemp.length = lInter.length;
@@ -295,10 +297,10 @@ ubyte[] toStringA(dchar[] pData)
 //----------------------------------------------------------
 debug(str) private import std.stdio;
 unittest{
-    debug(str) std.stdio.writefln("%s", "str.UT01: b = ReplaceChar ( char[] a, lit, lit) ");
-    char[] testA;
-    char[] testB;
-    char[] testC;
+    debug(str) std.stdio.writefln("%s", "str.UT01: b = ReplaceChar ( string a, lit, lit) ");
+    string testA;
+    string testB;
+    string testC;
 
     testA = "abcdbefbq";
     testB = "a cd ef q";
@@ -308,10 +310,10 @@ unittest{
 }
 
 unittest{
-    debug(str)  std.stdio.writefln("%s", "str.UT02: a = ReplaceChar ( char[] a, lit, lit) ");
-    char[] testA;
-    char[] testB;
-    char[] testC;
+    debug(str)  std.stdio.writefln("%s", "str.UT02: a = ReplaceChar ( string a, lit, lit) ");
+    string testA;
+    string testB;
+    string testC;
 
     testA = "abcdbefbq";
     testB = "a cd ef q";
@@ -320,10 +322,10 @@ unittest{
 }
 
 unittest{
-    debug(str)  std.stdio.writefln("%s", "str.UT03: ReplaceChar ( char[], 'b', 'b') ");
-    char[] testA;
-    char[] testB;
-    char[] testC;
+    debug(str)  std.stdio.writefln("%s", "str.UT03: ReplaceChar ( string, 'b', 'b') ");
+    string testA;
+    string testB;
+    string testC;
 
     testA = "abcdbefbq";
     testB = "abcdbefbq";
@@ -333,10 +335,10 @@ unittest{
 }
 
 unittest{
-    debug(str)  std.stdio.writefln("%s", "str.UT04: ReplaceChar ( wchar[], lit, lit) ");
-    wchar[] testA;
-    wchar[] testB;
-    wchar[] testC;
+    debug(str)  std.stdio.writefln("%s", "str.UT04: ReplaceChar ( wstring, lit, lit) ");
+    wstring testA;
+    wstring testB;
+    wstring testC;
 
     testA = "abcdbefbq";
     testB = "a cd ef q";
@@ -346,10 +348,10 @@ unittest{
 }
 
 unittest{
-    debug(str)  std.stdio.writefln("%s", "str.UT05: ReplaceChar ( dchar[], lit, lit) ");
-    dchar[] testA;
-    dchar[] testB;
-    dchar[] testC;
+    debug(str)  std.stdio.writefln("%s", "str.UT05: ReplaceChar ( dstring, lit, lit) ");
+    dstring testA;
+    dstring testB;
+    dstring testC;
 
     testA = "abcdbefbq";
     testB = "a cd ef q";
@@ -359,10 +361,10 @@ unittest{
 }
 
 unittest{
-    debug(str)  std.stdio.writefln("%s", "str.UT06: ReplaceChar ( char[], wchar, wchar) ");
-    char[] testA;
-    char[] testB;
-    char[] testC;
+    debug(str)  std.stdio.writefln("%s", "str.UT06: ReplaceChar ( string, wchar, wchar) ");
+    string testA;
+    string testB;
+    string testC;
     wchar f,t;
 
     testA = "abcdbefbq";
@@ -376,10 +378,10 @@ unittest{
 }
 
 unittest{
-    debug(str)  std.stdio.writefln("%s", "str.UT07: ReplaceChar ( dchar[], dchar, dchar) ");
-    dchar[] testA;
-    dchar[] testB;
-    dchar[] testC;
+    debug(str)  std.stdio.writefln("%s", "str.UT07: ReplaceChar ( dstring, dchar, dchar) ");
+    dstring testA;
+    dstring testB;
+    dstring testC;
     dchar f,t;
 
     testA = "abcdbefbq";
@@ -398,8 +400,8 @@ unittest{
     ubyte[] testC;
     ubyte f,t;
 
-    testA = toStringA(cast(char[])"abcdbefbq");
-    testB = toStringA(cast(char[])"a cd ef q");
+    testA = toStringA(cast(string)"abcdbefbq");
+    testB = toStringA(cast(string)"a cd ef q");
     f = 'b';
     t = ' ';
     testC = ReplaceChar(testA, f, t);
@@ -414,8 +416,8 @@ unittest{
     ubyte[] testC;
     char f,t;
 
-    testA = toStringA(cast(char[])"abcdbefbq");
-    testB = toStringA(cast(char[])"a cd ef q");
+    testA = toStringA(cast(string)"abcdbefbq");
+    testB = toStringA(cast(string)"a cd ef q");
     f = 'b';
     t = ' ';
     testC = ReplaceChar(testA, f, t);
@@ -425,9 +427,9 @@ unittest{
 
     // ---- toStringA() -----
 unittest{
-    debug(str)  std.stdio.writefln("%s", "str.UT10: toStringA( char[]) ");
+    debug(str)  std.stdio.writefln("%s", "str.UT10: toStringA( string) ");
     ubyte[] testA;
-    char[] testB;
+    string testB;
     ubyte[] testC;
     int c;
 
@@ -444,9 +446,9 @@ unittest{
 }
 
 unittest{
-    debug(str)  std.stdio.writefln("%s", "str.UT11: toStringA( wchar[]) ");
+    debug(str)  std.stdio.writefln("%s", "str.UT11: toStringA( wstring) ");
     ubyte[] testA;
-    wchar[] testB;
+    wstring testB;
     ubyte[] testC;
     int c;
 
@@ -463,9 +465,9 @@ unittest{
 }
 
 unittest{
-    debug(str)  std.stdio.writefln("%s", "str.UT12: toStringA( dchar[]) ");
+    debug(str)  std.stdio.writefln("%s", "str.UT12: toStringA( dstring) ");
     ubyte[] testA;
-    dchar[] testB;
+    dstring testB;
     ubyte[] testC;
     int c;
 
@@ -494,15 +496,15 @@ public {
 
 
 */
-Bool IsLike(dchar[] pText, dchar[] pPattern)
+Bool IsLike(dstring pText, dstring pPattern)
 body {
     const dchar kZeroOrMore = '*';
     const dchar kExactlyOne = '?';
     const dchar kEscape     = '\\';
-    uint  lTX = 0;
-    uint  lPX = 0;
-    uint  lPMark;
-    uint  lTMark;
+    size_t  lTX = 0;
+    size_t  lPX = 0;
+    size_t lPMark;
+    size_t lTMark;
 
     lPMark = pPattern.length;
     lTMark = 0;
@@ -601,7 +603,7 @@ body {
     return False;
 }
 
-Bool IsLike(char[] pText, char[] pPattern )
+Bool IsLike(string pText, string pPattern )
 {
     return IsLike( std.utf.toUTF32(pText), std.utf.toUTF32(pPattern));
 }
@@ -610,21 +612,21 @@ Bool IsLike(char[] pText, char[] pPattern )
 
 
 //-------------------------------------------------------
-Bool begins(char[] pString, char[] pSubString)
+Bool begins(string pString, string pSubString)
 //-------------------------------------------------------
 {
     return begins( std.utf.toUTF32(pString), std.utf.toUTF32(pSubString));
 }
 
 //-------------------------------------------------------
-Bool begins(wchar[] pString, wchar[] pSubString)
+Bool begins(wstring pString, wstring pSubString)
 //-------------------------------------------------------
 {
     return begins( std.utf.toUTF32(pString), std.utf.toUTF32(pSubString));
 }
 
 //-------------------------------------------------------
-Bool begins(dchar[] pString, dchar[] pSubString)
+Bool begins(dstring pString, dstring pSubString)
 //-------------------------------------------------------
 {
     if (pString.length < pSubString.length)
@@ -638,24 +640,24 @@ Bool begins(dchar[] pString, dchar[] pSubString)
 }
 
 //-------------------------------------------------------
-Bool ends(char[] pString, char[] pSubString)
+Bool ends(string pString, string pSubString)
 //-------------------------------------------------------
 {
     return ends( std.utf.toUTF32(pString), std.utf.toUTF32(pSubString));
 }
 
 //-------------------------------------------------------
-Bool ends(wchar[] pString, wchar[] pSubString)
+Bool ends(wstring pString, wstring pSubString)
 //-------------------------------------------------------
 {
     return ends( std.utf.toUTF32(pString), std.utf.toUTF32(pSubString));
 }
 
 //-------------------------------------------------------
-Bool ends(dchar[] pString, dchar[] pSubString)
+Bool ends(dstring pString, dstring pSubString)
 //-------------------------------------------------------
 {
-    uint lSize;
+    size_t lSize;
 
     if (pString.length < pSubString.length)
         return False;
@@ -671,11 +673,11 @@ Bool ends(dchar[] pString, dchar[] pSubString)
 
 
 //-------------------------------------------------------
-char[] enquote(char[] pString, char pTrigger = ' ', char[] pPrefix = `"`, char[] pSuffix = `"`)
+string enquote(string pString, char pTrigger = ' ', string pPrefix = `"`, string pSuffix = `"`)
 //-------------------------------------------------------
 {
     if ( (pString.length > 0) &&
-         (std.string.find(pString, pTrigger) != -1) &&
+         (std.string.indexOf(pString, pTrigger) != -1) &&
 		 (begins(pString, pPrefix) == False) &&
 		 (ends(pString, pSuffix) == False)
        )
@@ -685,14 +687,11 @@ char[] enquote(char[] pString, char pTrigger = ' ', char[] pPrefix = `"`, char[]
 }
 
 //-------------------------------------------------------
-wchar[] enquote(wchar[] pString, wchar pTrigger = ' ', wchar[] pPrefix = `"`, wchar[] pSuffix = `"`)
+wstring enquote(wstring pString, wchar pTrigger = ' ', wstring pPrefix = `"`, wstring pSuffix = `"`)
 //-------------------------------------------------------
 {
-    wchar[] lTrigger;
-    lTrigger.length = 1;
-    lTrigger[0] = pTrigger;
     if ( (pString.length > 0) &&
-         (find(pString, lTrigger,0 ) != -1) &&
+         (std.string.indexOf(pString, pTrigger),0 ) != -1 &&
 		 (begins(pString, pPrefix) == False) &&
 		 (ends(pString, pSuffix) == False)
        )
@@ -702,14 +701,11 @@ wchar[] enquote(wchar[] pString, wchar pTrigger = ' ', wchar[] pPrefix = `"`, wc
 }
 
 //-------------------------------------------------------
-dchar[] enquote(dchar[] pString, dchar pTrigger = ' ', dchar[] pPrefix = `"`, dchar[] pSuffix = `"`)
+dstring enquote(dstring pString, dchar pTrigger = ' ', dstring pPrefix = `"`, dstring pSuffix = `"`)
 //-------------------------------------------------------
 {
-    dchar[] lTrigger;
-    lTrigger.length = 1;
-    lTrigger[0] = pTrigger;
     if ( (pString.length > 0) &&
-         (find(pString, lTrigger,0) != -1) &&
+         (std.string.indexOf(pString, pTrigger),0 ) != -1 &&
 		 (begins(pString, pPrefix) == False) &&
 		 (ends(pString, pSuffix) == False)
        )
@@ -816,57 +812,57 @@ unittest
 unittest
 {  // begins
      debug(str)  std.stdio.writefln("str.begins.UT01");
-     assert( begins( cast(char[])"foobar", cast(char[])"o") == False);
+     assert( begins( cast(string)"foobar", cast(string)"o") == False);
      debug(str)  std.stdio.writefln("str.begins.UT02");
-     assert( begins( cast(char[])"foobar", cast(char[])"f") == True);
+     assert( begins( cast(string)"foobar", cast(string)"f") == True);
      debug(str)  std.stdio.writefln("str.begins.UT03");
-     assert( begins( cast(char[])"foobar", cast(char[])"fo") == True);
+     assert( begins( cast(string)"foobar", cast(string)"fo") == True);
      debug(str)  std.stdio.writefln("str.begins.UT04");
-     assert( begins( cast(char[])"foobar", cast(char[])"foo") == True);
+     assert( begins( cast(string)"foobar", cast(string)"foo") == True);
      debug(str)  std.stdio.writefln("str.begins.UT05");
-     assert( begins( cast(char[])"foobar", cast(char[])"foob") == True);
+     assert( begins( cast(string)"foobar", cast(string)"foob") == True);
      debug(str)  std.stdio.writefln("str.begins.UT06");
-     assert( begins( cast(char[])"foobar", cast(char[])"fooba") == True);
+     assert( begins( cast(string)"foobar", cast(string)"fooba") == True);
      debug(str)  std.stdio.writefln("str.begins.UT07");
-     assert( begins( cast(char[])"foobar", cast(char[])"foobar") == True);
+     assert( begins( cast(string)"foobar", cast(string)"foobar") == True);
      debug(str)  std.stdio.writefln("str.begins.UT08");
-     assert( begins( cast(char[])"foobar", cast(char[])"foobarx") == False);
+     assert( begins( cast(string)"foobar", cast(string)"foobarx") == False);
      debug(str)  std.stdio.writefln("str.begins.UT09");
-     assert( begins( cast(char[])"foobar", cast(char[])"oo") == False);
+     assert( begins( cast(string)"foobar", cast(string)"oo") == False);
      debug(str)  std.stdio.writefln("str.begins.UT10");
-     assert( begins( cast(char[])"foobar", cast(char[])"") == False);
+     assert( begins( cast(string)"foobar", cast(string)"") == False);
      debug(str)  std.stdio.writefln("str.begins.UT11");
-     assert( begins( cast(char[])"", cast(char[])"") == False);
+     assert( begins( cast(string)"", cast(string)"") == False);
 }
 
 unittest
 {  // ends
      debug(str)  std.stdio.writefln("str.ends.UT01");
-     assert( ends( cast(char[])"foobar", cast(char[])"a") == False);
+     assert( ends( cast(string)"foobar", cast(string)"a") == False);
      debug(str)  std.stdio.writefln("str.ends.UT02");
-     assert( ends( cast(char[])"foobar", cast(char[])"r") == True);
+     assert( ends( cast(string)"foobar", cast(string)"r") == True);
      debug(str)  std.stdio.writefln("str.ends.UT03");
-     assert( ends( cast(char[])"foobar", cast(char[])"ar") == True);
+     assert( ends( cast(string)"foobar", cast(string)"ar") == True);
      debug(str)  std.stdio.writefln("str.ends.UT04");
-     assert( ends( cast(char[])"foobar", cast(char[])"bar") == True);
+     assert( ends( cast(string)"foobar", cast(string)"bar") == True);
      debug(str)  std.stdio.writefln("str.ends.UT05");
-     assert( ends( cast(char[])"foobar", cast(char[])"obar") == True);
+     assert( ends( cast(string)"foobar", cast(string)"obar") == True);
      debug(str)  std.stdio.writefln("str.ends.UT06");
-     assert( ends( cast(char[])"foobar", cast(char[])"oobar") == True);
+     assert( ends( cast(string)"foobar", cast(string)"oobar") == True);
      debug(str)  std.stdio.writefln("str.ends.UT07");
-     assert( ends( cast(char[])"foobar", cast(char[])"foobar") == True);
+     assert( ends( cast(string)"foobar", cast(string)"foobar") == True);
      debug(str)  std.stdio.writefln("str.ends.UT08");
-     assert( ends( cast(char[])"foobar", cast(char[])"foobarx") == False);
+     assert( ends( cast(string)"foobar", cast(string)"foobarx") == False);
      debug(str)  std.stdio.writefln("str.ends.UT09");
-     assert( ends( cast(char[])"foobar", cast(char[])"oo") == False);
+     assert( ends( cast(string)"foobar", cast(string)"oo") == False);
      debug(str)  std.stdio.writefln("str.ends.UT10");
-     assert( ends( cast(char[])"foobar", cast(char[])"") == False);
+     assert( ends( cast(string)"foobar", cast(string)"") == False);
      debug(str)  std.stdio.writefln("str.ends.UT11");
-     assert( ends( cast(char[])"", cast(char[])"") == False);
+     assert( ends( cast(string)"", cast(string)"") == False);
 }
 
-char[] Expand(char[] pOriginal, char[] pTokenList,
-                char[] pLeading = "{", char[] pTrailing = "}")
+string Expand(string pOriginal, string pTokenList,
+                string pLeading = "{", string pTrailing = "}")
 {
     return std.utf.toUTF8( Expand (
                     std.utf.toUTF32(pOriginal),
@@ -877,27 +873,27 @@ char[] Expand(char[] pOriginal, char[] pTokenList,
 
 }
 
-dchar[] Expand(dchar[] pOriginal, dchar[] pTokenList,
-                dchar[] pLeading = "{", dchar[] pTrailing = "}")
+dstring Expand(dstring pOriginal, dstring pTokenList,
+                dstring pLeading = "{", dstring pTrailing = "}")
 {
-    dchar[] lResult;
-    dchar[][] lTokens;
-    int lPos;
+    dstring lResult;
+    dstring[] lTokens;
+    sizediff_t lPos;
     struct KV
     {
-        dchar[] Key;
-        dchar[] Value;
+        dstring Key;
+        dstring Value;
     }
 
     KV[] lKeyValues;
 
-    lResult = pOriginal.dup;
+    lResult = pOriginal;
 
     // Split up token list into separate token pairs.
     lTokens = util.linetoken.TokenizeLine(pTokenList, ","d, "", "");
-    foreach(dchar [] lKV; lTokens)
+    foreach(dstring lKV; lTokens)
     {
-        dchar[][] lKeyValue;
+        dstring[] lKeyValue;
         if (lKV.length > 0)
         {
             lKeyValue = util.linetoken.TokenizeLine(lKV, "="d, "", "");
@@ -910,10 +906,10 @@ dchar[] Expand(dchar[] pOriginal, dchar[] pTokenList,
     // First to the simple replacements.
     foreach(KV lKV; lKeyValues)
     {
-        dchar[] lToken;
+        dstring lToken;
 
         lToken = pLeading ~ lKV.Key ~ pTrailing;
-        while( (lPos = find(lResult, lToken,0 )) != -1 )
+        while( (lPos = std.string.indexOf(lResult, lToken, std.string.CaseSensitive.no)) != -1 )
         {
             lResult = lResult[0..lPos] ~
                       lKV.Value ~
@@ -924,18 +920,18 @@ dchar[] Expand(dchar[] pOriginal, dchar[] pTokenList,
     // Now check for conditional replacements
     foreach(KV lKV; lKeyValues)
     {
-        dchar[] lToken;
-        dchar[] lOptValue;
+        dstring lToken;
+        dstring lOptValue;
 
         // First check for missing conditionals...
         lToken = pLeading ~ "?" ~ lKV.Key ~ ":";
         while ( (lPos = find(lResult, lToken,0)) != -1)
         {
-            int lEndPos;
+            sizediff_t lEndPos;
             lEndPos = find(lResult, pTrailing, lPos+lToken.length);
             if (lEndPos != -1)
             {
-                lOptValue = lResult[lPos+lToken.length..lEndPos].dup;
+                lOptValue = lResult[lPos+lToken.length..lEndPos];
                 if (lKV.Value.length == 0)
                 {
                     lResult = lResult[0..lPos] ~
@@ -956,11 +952,11 @@ dchar[] Expand(dchar[] pOriginal, dchar[] pTokenList,
         lToken = pLeading ~ "?" ~ lKV.Key ~ "=";
         while ( (lPos = find(lResult, lToken, 0)) != -1)
         {
-            int lEndPos;
+            sizediff_t lEndPos;
             lEndPos = find(lResult, pTrailing, lPos+lToken.length);
             if (lEndPos != -1)
             {
-                lOptValue = lResult[lPos+lToken.length..lEndPos].dup;
+                lOptValue = lResult[lPos+lToken.length..lEndPos];
                 if (lKV.Value.length != 0)
                 {
                     lResult = lResult[0..lPos] ~
@@ -980,9 +976,9 @@ dchar[] Expand(dchar[] pOriginal, dchar[] pTokenList,
     // Now remove all unused tokens.
     while( (lPos = find(lResult, pLeading,0 )) != -1)
     {
-        int lPos1;
-        int lPos2;
-        int lPos3;
+        sizediff_t lPos1;
+        sizediff_t lPos2;
+        sizediff_t lPos3;
 
         lPos2 = find(lResult, pTrailing, lPos + 1 );
         if (lPos2 == -1)
@@ -1031,12 +1027,12 @@ unittest
      assert( Expand( "foo{?what=,}bar"c, "what=when"c) == "foo,bar");
 }
 
-char[] toASCII(char[] pUTF8)
+string toASCII(string pUTF8)
 {
     bool lChanged;
     char[] lResult;
     // Convert non-ASCII chars based on the Microsoft DOS Western Europe charset
-    static char[] lTranslateTable =
+    static string lTranslateTable =
         "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"
         "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F"
         " !\"#$%&'()*+,-./0123456789:;<=>?"
@@ -1046,7 +1042,7 @@ char[] toASCII(char[] pUTF8)
         "aiounNa0?R!24!<>-----AAAC----c$-"
         "------aA-------$dDEEEiIII----|I-"
         "OBOOoOmdDUUUyY-'-+=3PS/,0:.132- ";
-    lResult = pUTF8;
+    lResult = pUTF8.dup;
     for (int i = 0; i < lResult.length; i++)
     {
         if (lResult[i] > 127)
@@ -1059,7 +1055,7 @@ char[] toASCII(char[] pUTF8)
             lResult[i] = lTranslateTable[lResult[i]];
         }
     }
-    return lResult;
+    return std.conv.to!string(lResult);
 }
 
 /**************************************
@@ -1069,7 +1065,7 @@ char[] toASCII(char[] pUTF8)
  */
 
 
-private static dchar[] Unicode_WhiteSpace =
+private static dstring Unicode_WhiteSpace =
     "\u0009\u000A\u000B\u000C\u000D"  // TAB, NL, , NP, CR
     // "\u0020"  // SPACE
     "\u0085" // <control-0085>
@@ -1099,7 +1095,7 @@ bool UC_IsSpace(dchar pChar)
 }
 
 // Returns a slice up to the first whitespace (if any)
-char[] findws(char[] pText)
+string findws(string pText)
 {
     foreach(int lPos, dchar c; pText)
     {
@@ -1116,9 +1112,9 @@ unittest
 }
 
 // Returns a slice from the last whitespace (if any) to the end
-dchar[] findws_r(dchar[] pText)
+dstring findws_r(dstring pText)
 {
-    int lPos = pText.length-1;
+    sizediff_t lPos = pText.length-1;
     while (lPos >= 0 && !UC_IsSpace(pText[lPos]))
         lPos--;
 
@@ -1129,7 +1125,7 @@ dchar[] findws_r(dchar[] pText)
  * Strips leading or trailing whitespace, or both.
  */
 
-dchar[] stripl(dchar[] s)
+dstring stripl(dstring s)
 {
     int i;
 
@@ -1143,15 +1139,15 @@ dchar[] stripl(dchar[] s)
     }
     return s[i .. s.length];
 }
-char[] stripl(char[] s) /// ditto
+string stripl(string s) /// ditto
 {
     return std.utf.toUTF8(stripl(std.utf.toUTF32(s)));
 }
 
 
-dchar[] stripr(dchar[] s) /// ditto
+dstring stripr(dstring s) /// ditto
 {
-    int i;
+    sizediff_t i;
 
     for (i = s.length-1; i >= 0; i--)
     {
@@ -1161,29 +1157,29 @@ dchar[] stripr(dchar[] s) /// ditto
     return s[0 .. i+1];
 }
 
-char[] stripr(char[] s) /// ditto
+string stripr(string s) /// ditto
 {
     return std.utf.toUTF8(stripr(std.utf.toUTF32(s)));
 }
 
-dchar[] strip(dchar[] s) /// ditto
+dstring strip(dstring s) /// ditto
 {
     return stripr(stripl(s));
 }
 
-wchar[] strip(wchar[] s) /// ditto
+wstring strip(wstring s) /// ditto
 {
     return std.utf.toUTF16(stripr(stripl(std.utf.toUTF32(s))));
 }
 
-char[] strip(char[] s) /// ditto
+string strip(string s) /// ditto
 {
     return std.utf.toUTF8(stripr(stripl(std.utf.toUTF32(s))));
 }
 
 unittest
 {
-    dchar[] s;
+    dstring s;
 
     s = strip("  foo\t "d);
     assert(s == "foo"d);
@@ -1195,12 +1191,12 @@ unittest
 
 template Tfind(T)
 {
-    int find(T[] pText, T[] pSubText, int pFrom = 0)
+    sizediff_t find(immutable(T)[] pText, immutable(T)[] pSubText, size_t pFrom = 0)
     {
-        int lTexti;
-        int lSubi;
-        int lPos;
-        int lTextEnd;
+        sizediff_t lTexti;
+        sizediff_t lSubi;
+        sizediff_t lPos;
+        sizediff_t lTextEnd;
 
         if (pFrom < 0)
             pFrom = 0;
@@ -1243,7 +1239,7 @@ alias Tfind!(wchar).find find;
 
 unittest
 {
-    dchar[] Target = "abcdefgcdemn"d;
+    dstring Target = "abcdefgcdemn"d;
     assert( find(Target, "mno") == -1);
     assert( find(Target, "mn") == 10);
     assert( find(Target, "cde") == 2);
@@ -1259,13 +1255,13 @@ unittest
     assert( find(Target, "d"d, -4) == 3);
 }
 
-char[] TranslateEscapes(char[] pText)
+string TranslateEscapes(string pText)
 {
     char[] lResult;
-    int lInPos;
-    int lOutPos;
+    sizediff_t lInPos;
+    sizediff_t lOutPos;
 
-    if (std.string.find(pText, '\\') == -1)
+    if (std.string.indexOf(pText, '\\') == -1)
         return pText;
 
     lResult.length = pText.length;
@@ -1308,7 +1304,7 @@ char[] TranslateEscapes(char[] pText)
         lOutPos++;
     }
 
-    return lResult[0..lOutPos];
+    return std.conv.to!string(lResult[0..lOutPos]);
 }
 
 unittest
@@ -1324,19 +1320,19 @@ unittest
 // Function to replace tokens in the form %<SYM>%  with environment data.
 // Note that '%%' is replaced by a single '%'.
 // -------------------------------------------
-char[] ExpandEnvVar(char[] pLine)
+string ExpandEnvVar(string pLine)
 // -------------------------------------------
 {
-    char[] lLine;
-    char[] lSymName;
-    int lPos;
-    int lEnd;
+    string lLine;
+    string lSymName;
+    sizediff_t lPos;
+    sizediff_t lEnd;
 
-    lPos = std.string.find(pLine, '%');
+    lPos = std.string.indexOf(pLine, '%');
     if (lPos == -1)
         return pLine;
 
-    lLine = pLine[0.. lPos].dup;
+    lLine = pLine[0.. lPos];
     for( ; lPos < pLine.length; lPos++ )
     {
         if (pLine[lPos] == '%')
@@ -1383,18 +1379,18 @@ unittest {
 }
 
 //-------------------------------------------------------
-char[] GetEnv(char[] pSymbol)
+string GetEnv(string pSymbol)
 //-------------------------------------------------------
 {
-    return std.string.toString(getenv(std.string.toStringz(pSymbol)));
+    return std.process.getenv(pSymbol);
 }
 
 //-------------------------------------------------------
-void SetEnv(char[] pSymbol, char[] pValue, bool pOverwrite = true)
+void SetEnv(string pSymbol, string pValue, bool pOverwrite = true)
 //-------------------------------------------------------
 {
     if (pOverwrite || GetEnv(pSymbol).length == 0)
-        putenv(std.string.toStringz(pSymbol ~ "=" ~ pValue));
+        std.process.setenv(pSymbol, pValue, true);
 }
 
 unittest {
@@ -1405,7 +1401,7 @@ unittest {
 template Tyn(T)
 {
 //-------------------------------------------------------
-bool YesNo(T[] pText, bool pDefault)
+bool YesNo(immutable(T)[] pText, bool pDefault)
 //-------------------------------------------------------
 {
     bool lResult = pDefault;
@@ -1428,27 +1424,27 @@ bool YesNo(T[] pText, bool pDefault)
     return lResult;
 }
 //-------------------------------------------------------
-void YesNo(T[] pText, out bool pResult, bool pDefault)
+void YesNo(immutable(T)[] pText, out bool pResult, bool pDefault)
 //-------------------------------------------------------
 {
     pResult = YesNo(pText, pDefault);
 }
 
 //-------------------------------------------------------
-void YesNo(T[] pText, out T[] pResult, bool pDefault)
+void YesNo(immutable(T)[] pText, out immutable(T)[] pResult, bool pDefault)
 //-------------------------------------------------------
 {
-    pResult = (YesNo(pText, pDefault) ? cast(T[])"Y" : cast(T[])"N").dup;
+    pResult = (YesNo(pText, pDefault) ? cast(immutable(T)[])"Y" : cast(immutable(T)[])"N");
 }
 
 //-------------------------------------------------------
-void YesNo(T[] pText, out T pResult, bool pDefault)
+void YesNo(immutable(T)[] pText, out T pResult, bool pDefault)
 //-------------------------------------------------------
 {
     pResult = (YesNo(pText, pDefault) ? 'Y' : 'N');
 }
 //-------------------------------------------------------
-void YesNo(T[] pText, out Bool pResult, Bool pDefault)
+void YesNo(immutable(T)[] pText, out Bool pResult, Bool pDefault)
 //-------------------------------------------------------
 {
     pResult = (YesNo(pText, (pDefault==True?true:false)) ? True : False);

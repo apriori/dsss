@@ -28,14 +28,14 @@
 
 module sss.platform;
 
-const char[] DSSS_PLATFORM_GDC = "G";
-const char[] DSSS_PLATFORM_DMD = "D";
-const char[] DSSS_PLATFORM_OTHER = "O";
+const string DSSS_PLATFORM_GDC = "G";
+const string DSSS_PLATFORM_DMD = "D";
+const string DSSS_PLATFORM_OTHER = "O";
 
 version (GNU) {
-    const char[] DSSS_PLATFORM = DSSS_PLATFORM_GDC;
+    const string DSSS_PLATFORM = DSSS_PLATFORM_GDC;
 } else version (DigitalMars) {
-    const char[] DSSS_PLATFORM = DSSS_PLATFORM_DMD;
+    const string DSSS_PLATFORM = DSSS_PLATFORM_DMD;
 } else {
-    const char[] DSSS_PLATFORM = DSSS_PLATFORM_OTHER;
+    const string DSSS_PLATFORM = DSSS_PLATFORM_OTHER;
 }

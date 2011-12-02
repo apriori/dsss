@@ -52,7 +52,7 @@ private {
 }
 
 private {
-    char[] vInitCurDir;
+    string vInitCurDir;
 }
     debug(1)
     {
@@ -68,10 +68,10 @@ static this()
 }
 
 // ----------------------------------------------
-char[] GetCurDir()
+string GetCurDir()
 // ----------------------------------------------
 {
-    char[] lCurDir;
+    string lCurDir;
 
     lCurDir =  std.file.getcwd();
     // Ensure that it ends in a path separator.
@@ -82,12 +82,12 @@ char[] GetCurDir()
 }
 
 // ----------------------------------------------
-char[] GetCurDir(char pDrive)
+string GetCurDir(char pDrive)
 // ----------------------------------------------
 {
-    char[] lOrigDir;
-    char[] lCurDir;
-    char[] lDrive;
+    string lOrigDir;
+    string lCurDir;
+    string lDrive;
 
     lOrigDir =  std.file.getcwd();
     lDrive.length = 2;
@@ -105,14 +105,14 @@ char[] GetCurDir(char pDrive)
 }
 
 // ----------------------------------------------
-char[] GetInitCurDir()
+string GetInitCurDir()
 // ----------------------------------------------
 {
     return vInitCurDir;
 }
 
 // ----------------------------------------------
-Bool IsRelativePath(char[] pPath)
+Bool IsRelativePath(string pPath)
 // ----------------------------------------------
 {
     version(Windows)
@@ -126,7 +126,7 @@ Bool IsRelativePath(char[] pPath)
 }
 
 // ----------------------------------------------
-Bool IsAbsolutePath(char[] pPath)
+Bool IsAbsolutePath(string pPath)
 // ----------------------------------------------
 {
     version(Windows)
@@ -140,17 +140,17 @@ Bool IsAbsolutePath(char[] pPath)
 }
 
 // ----------------------------------------------
-char[] CanonicalPath(char[] pPath, bool pDirInput = true)
+string CanonicalPath(string pPath, bool pDirInput = true)
 // ----------------------------------------------
 {
     // Does not (yet) handle UNC paths or unix links.
-    char[] lPath;
+    string lPath;
     int lPosA = -1;
     int lPosB = -1;
     int lPosC = -1;
-    char[] lLevel;
-    char[] lCurDir;
-    char[] lDrive;
+    string lLevel;
+    string lCurDir;
+    string lDrive;
 
     lPath = pPath.dup;
 
@@ -231,10 +231,10 @@ char[] CanonicalPath(char[] pPath, bool pDirInput = true)
 }
 
 // ----------------------------------------------
-char[] ReplaceExtension(char[] pFileName, char[] pNewExtension)
+string ReplaceExtension(string pFileName, string pNewExtension)
 // ----------------------------------------------
 {
-    char[] lNewFileName;
+    string lNewFileName;
 
     lNewFileName = std.path.addExt(pFileName, pNewExtension);
 
@@ -257,7 +257,7 @@ char[] ReplaceExtension(char[] pFileName, char[] pNewExtension)
 }
 
 // ----------------------------------------------
-bool MakePath(char[] pNewPath)
+bool MakePath(string pNewPath)
 // ----------------------------------------------
 {
     /*
@@ -277,8 +277,8 @@ bool MakePath(char[] pNewPath)
         This returns true if the path was created.
     */
     bool lResult;  // false means it did not create a new path.
-    char[] lNewPath;
-    char[] lParentPath;
+    string lNewPath;
+    string lParentPath;
 
     // extract out the directory part of the parameter.
     for (int i = pNewPath.length-1; i >= 0; i--)
@@ -331,17 +331,17 @@ bool MakePath(char[] pNewPath)
     }
 }
 
-char[] AbbreviateFileName(char[] pName, char[][] pPrefixList = null)
+string AbbreviateFileName(string pName, string[] pPrefixList = null)
 {
     // If the file path supplied can be expressed relative to
     // the current directory, (without resorting to '..'), it
     // is returned in its shortened form.
 
-    char[][] lPrefixList;
-    char[] lShortName;
-    char[] lTemp;
-    char[] lOrigName;
-    char[] lFullName;
+    string[] lPrefixList;
+    string lShortName;
+    string lTemp;
+    string lOrigName;
+    string lFullName;
 
     lPrefixList ~= util.pathex.GetInitCurDir();
     if (pPrefixList.length != 0)
@@ -351,7 +351,7 @@ char[] AbbreviateFileName(char[] pName, char[][] pPrefixList = null)
     }
     lFullName = CanonicalPath(pName, false);
     LBL_CheckDirs:
-    foreach (char[] lCurDir; lPrefixList)
+    foreach (string lCurDir; lPrefixList)
     {
         lOrigName = lFullName.dup;
         if (lOrigName.length > lCurDir.length)
@@ -392,17 +392,17 @@ char[] AbbreviateFileName(char[] pName, char[][] pPrefixList = null)
     return lShortName;
 }
 
-char[] LocateFile(char[] pFileName, char[] pPathList)
+string LocateFile(string pFileName, string pPathList)
 {
     return LocateFile(pFileName,
                         std.string.split(pPathList, std.path.pathsep));
 }
 
-char[] LocateFile(char[] pFileName, char[][] pPathList)
+string LocateFile(string pFileName, string[] pPathList)
 {
-    char[] lFullName;
+    string lFullName;
 
-    foreach(char[] lPath; pPathList)
+    foreach(string lPath; pPathList)
     {
         if (lPath.length == 0)
             lPath = std.path.curdir.dup;
@@ -421,9 +421,9 @@ char[] LocateFile(char[] pFileName, char[][] pPathList)
 /**
     Return everything up to but not including the final '.'
 */
-char[] GetBaseName(char[] pPathFileName)
+string GetBaseName(string pPathFileName)
 {
-    char[] lBaseName;
+    string lBaseName;
 
     lBaseName = pPathFileName; //.dup;
     for(int i = lBaseName.length-1; i >= 0; i--)
@@ -441,9 +441,9 @@ char[] GetBaseName(char[] pPathFileName)
     Return everything from the beginning of the file name
     up to but not including the final '.'
 */
-char[] GetFileBaseName(char[] pPathFileName)
+string GetFileBaseName(string pPathFileName)
 {
-    char[] lBaseName;
+    string lBaseName;
 
     lBaseName = pPathFileName; //.dup;
     for(int i = lBaseName.length-1; i >= 0; i--)
@@ -486,12 +486,12 @@ char[] GetFileBaseName(char[] pPathFileName)
 // environment symbol, which is a list of paths.
 // This returns the path to the file if the file exists otherwise null.
 // -------------------------------------------
-char[] FindFileInPathList(char[] pSymName, char[] pFileName)
+string FindFileInPathList(string pSymName, string pFileName)
 // -------------------------------------------
 {
-    char[][] lPaths;
-    char[]   lCompilerPath;
-    char[]   lRawValue;
+    string[] lPaths;
+    string   lCompilerPath;
+    string   lRawValue;
 
     // Assume that an environment symbol name was supplied,
     // but if that fails, assume its a list of paths.
@@ -503,7 +503,7 @@ char[] FindFileInPathList(char[] pSymName, char[] pFileName)
     lPaths = std.string.split(util.str.toASCII(lRawValue), std.path.pathsep);
 
     lCompilerPath.length = 0;
-    foreach(char[] lPath; lPaths)
+    foreach(string lPath; lPaths)
     {
         if (lPath.length > 0)
         {

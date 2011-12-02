@@ -45,7 +45,7 @@ version (DSSS_Light) {} else {
 }
 import sss.uninstall;
 
-const char[] DSSS_VERSION = "0.78";
+const string DSSS_VERSION = "0.78";
 
 private {
     /** Possible commands */
@@ -66,23 +66,23 @@ private {
     cmd_t command;
 }
 
-int main(char[][] args)
+int main(string[] args)
 {
     bool commandSet = false;
     
     /** Elements to build/install/something */
-    char[][] buildElems;
+    string[] buildElems;
 
     /** Overridden dsss.conf to use */
-    char[] useDSSSConf = null;
+    string useDSSSConf;
 
-    char[] val;
+    string val;
 
     // Now load in dsssrc
     args ~= readDSSSRC();
     
     for (int i = 1; i < args.length; i++) {
-        char[] arg = args[i];
+        string arg = args[i];
         
         /** A simple function to check for any help-type option */
         bool argIsHelp() {
@@ -93,7 +93,7 @@ int main(char[][] args)
         }
         
         /** Parse an argument */
-        bool parseArg(char[] arg, char[] expect, bool takesVal, char[]* val = null) {
+        bool parseArg(string arg, string expect, bool takesVal, string* val = null) {
             if (takesVal) {
                 if (arg.length > expect.length + 2 &&
                     arg[0 .. (expect.length + 3)] == "--" ~ expect ~ "=") {
@@ -119,7 +119,7 @@ int main(char[][] args)
                 return 0;
 
             } else if (parseArg(arg, "config", true, &val)) {
-                useDSSSConf = val.dup;
+                useDSSSConf = val;
                 
             } else if (arg == "build") {
                 commandSet = true;
@@ -288,7 +288,7 @@ int main(char[][] args)
         conf = readConfig(buildElems, false, useDSSSConf);
     }
     
-    switch (command) {
+    final switch (command) {
         case cmd_t.BUILD:
             return sss.build.build(buildElems, conf);
             break;
@@ -330,13 +330,16 @@ int main(char[][] args)
         case cmd_t.GENCONFIG:
             return sss.genconfig.genconfig(buildElems);
             break;
+        case cmd_t.NONE:
+            writefln("NO CMD");
+            break;
     }
     
     return 0;
 }
 
 /** Make a dir absolute */
-char[] makeAbsolute(char[] path)
+string makeAbsolute(string path)
 {
     if (!isabs(path)) {
         return getcwd() ~ std.path.sep ~ path;

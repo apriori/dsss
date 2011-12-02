@@ -33,7 +33,7 @@ import std.stdio;
 import sss.conf;
 
 /** Entry into the "genconfig" command */
-int genconfig(char[][] buildElems)
+int genconfig(string[] buildElems)
 {
     // get the configuration
     DSSSConf conf = readConfig(buildElems, true);

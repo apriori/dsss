@@ -33,21 +33,21 @@ public import std.path;
 import std.stdio;
 import std.file;
 import std.string;
-
-import std.c.stdlib;
+import std.conv;
+import std.process;
 
 version (Windows) {
     import bcd.windows.windows;
 }
 
 /** Get the system PATH */
-char[][] getPath()
+string[] getPath()
 {
-    return split(toString(getenv("PATH")), std.path.pathsep);
+    return split(getenv("PATH"), std.path.pathsep);
 }
 
 /** From args[0], figure out our path.  Returns 'false' on failure */
-bool whereAmI(char[] argvz, inout char[] dir, inout char[] bname)
+bool whereAmI(string argvz, ref string dir, ref string bname)
 {
     // split it
     bname = getBaseName(argvz);
@@ -69,7 +69,7 @@ bool whereAmI(char[] argvz, inout char[] dir, inout char[] bname)
     
     version (Windows) {
         // is it in cwd?
-        char[] cwd = getcwd();
+        string cwd = getcwd();
         if (exists(cwd ~ std.path.sep ~ bname)) {
             dir = cwd;
             return true;
@@ -77,15 +77,15 @@ bool whereAmI(char[] argvz, inout char[] dir, inout char[] bname)
     }
     
     // rifle through the path
-    char[][] path = getPath();
+    string[] path = getPath();
     foreach (pe; path) {
-        char[] fullname = pe ~ std.path.sep ~ bname;
+        string fullname = pe ~ std.path.sep ~ bname;
         if (exists(fullname)) {
             version (Windows) {
                 dir = pe;
                 return true;
             } else {
-                if (getAttributes(fullname) & 0100) {
+                if (getAttributes(fullname) & octal!100) {
                     dir = pe;
                     return true;
                 }
@@ -98,9 +98,9 @@ bool whereAmI(char[] argvz, inout char[] dir, inout char[] bname)
 }
 
 /// Return a canonical pathname
-char[] canonPath(char[] origpath)
+string canonPath(string origpath)
 {
-    char[] ret;
+    string ret;
     
     version (Windows) {
         // replace any altsep with sep
@@ -110,7 +110,7 @@ char[] canonPath(char[] origpath)
             ret = origpath.dup;
         }
     } else {
-        ret = origpath.dup;
+        ret = origpath;
     }
     
     // expand tildes
@@ -183,7 +183,7 @@ char[] canonPath(char[] origpath)
 }
 
 /** Make a directory and all parent directories */
-void mkdirP(char[] dir)
+void mkdirP(string dir)
 {
     dir = canonPath(dir);
     version (Windows) {
@@ -191,9 +191,9 @@ void mkdirP(char[] dir)
     }
     
     // split it into elements
-    char[][] dires = split(dir, sep);
+    string[] dires = split(dir, sep);
     
-    char[] curdir;
+    string curdir;
     
     // check for root dir
     if (dires.length &&
@@ -217,7 +217,7 @@ void mkdirP(char[] dir)
 }
 
 /** Remove a file or directory and all of its children */
-void rmRecursive(char[] name)
+void rmRecursive(string name)
 {
     // can only delete writable files on Windows
     version (Windows) {
@@ -226,7 +226,7 @@ void rmRecursive(char[] name)
                            ~FILE_ATTRIBUTE_READONLY);
     }
     
-    if (isdir(name)) {
+    if (name.isDir) {
         foreach (elem; listdir(name)) {
             // don't delete . or ..
             if (elem == "." ||

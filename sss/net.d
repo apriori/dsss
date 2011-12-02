@@ -29,14 +29,16 @@
 module sss.net;
 
 import std.cstream;
+import std.conv;
 import std.stdio;
+import std.array;
 import std.string;
 alias std.string.split split;
 import std.file;
 alias std.file.write write;
 import std.path;
 import std.random;
-import std.regexp;
+import std.regex;
 
 import sss.build;
 import sss.clean;
@@ -49,13 +51,13 @@ import hcf.path;
 import hcf.process;
 
 /// If set, the given mirror will be used
-char[] forceMirror;
+string forceMirror;
 
 /*import mango.http.client.HttpClient;
 import mango.http.client.HttpGet;*/
 
 /** Entry to the "net" command */
-int net(char[][] args)
+int net(string[] args)
 {
     // cannot be used from the source dir
     if (inSourceDir) {
@@ -78,7 +80,7 @@ int net(char[][] args)
         
         if (!exists(srcListPrefix ~ std.path.sep ~ "mirror")) {
             // find the full list.list file name
-            char[] listlist = installPrefix ~ std.path.sep ~
+            string listlist = installPrefix ~ std.path.sep ~
                 ".." ~ std.path.sep ~
                 "etc" ~ std.path.sep ~
                 "dsss" ~ std.path.sep ~
@@ -90,9 +92,9 @@ int net(char[][] args)
             }
             
             // select a source list mirror
-            char[][] mirrorList = std.string.split(
-                std.string.replace(
-                    cast(char[]) std.file.read(listlist),
+            string[] mirrorList = std.string.split(
+                replace(
+                    cast(string) std.file.read(listlist),
                     "\r", ""),
                 "\n");
             while (mirrorList[$-1] == "") mirrorList = mirrorList[0..$-1];
@@ -114,15 +116,15 @@ int net(char[][] args)
                     }
                     
                     // choose
-                    char[] csel;
+                    string csel;
                     while (sel < 0 || sel >= mirrorList.length) {
-                        csel = din.readLine();
-                        sel = atoi(csel) - 1;
+                        csel = to!string(din.readLine());
+                        sel = to!int(csel) - 1;
                     }
                 }
             }
             
-            char[] mirror;
+            string mirror;
             if (sel == -1) {
                 mirror = forceMirror;
             } else {
@@ -140,17 +142,17 @@ int net(char[][] args)
             sayAndSystem("curl -s -S -k " ~ mirror ~ "/mirrors.list "
                         "-o " ~ srcListPrefix ~ std.path.sep ~ "mirrors.list");
         } else {
-            char[] mirror;
+            string mirror;
             if (forceMirror.length == 0) {
-                mirror = cast(char[]) std.file.read(
+                mirror = cast(string) std.file.read(
                     srcListPrefix ~ std.path.sep ~ "mirror");
             } else {
                 mirror = forceMirror;
             }
             
-            char[] srcList = srcListPrefix ~ std.path.sep ~ "source.list";
-            char[] pkgsList = srcListPrefix ~ std.path.sep ~ "pkgs.list";
-            char[] mirrorsList = srcListPrefix ~ std.path.sep ~ "mirrors.list";
+            string srcList = srcListPrefix ~ std.path.sep ~ "source.list";
+            string pkgsList = srcListPrefix ~ std.path.sep ~ "pkgs.list";
+            string mirrorsList = srcListPrefix ~ std.path.sep ~ "mirrors.list";
             
             sayAndSystem("curl -s -S -k " ~ mirror ~ "/source.list "
                         "-o " ~ srcList ~
@@ -179,7 +181,7 @@ int net(char[][] args)
         case "depslist":
         {
             DSSSConf dconf = readConfig(null);
-            char[][] deps;
+            string[] deps;
             if (args[0] == "deps") {
                 deps = sourceToDeps(true, conf, dconf);
             } else {
@@ -191,7 +193,7 @@ int net(char[][] args)
                 foreach (dep; deps) {
                     if (dep == "" || dep == dconf.settings[""]["name"]) continue;
                 
-                    char[][] netcommand;
+                    string[] netcommand;
                     netcommand ~= "assert";
                     netcommand ~= dep;
                 
@@ -203,7 +205,7 @@ int net(char[][] args)
             } else {
                 // just list them
                 deps = deps.dup.sort;
-                char[] last = "";
+                string last = "";
                 foreach (dep; deps) {
                     if (dep != last && dep != "" &&
                         dep != dconf.settings[""]["name"]) {
@@ -223,7 +225,7 @@ int net(char[][] args)
             
             // check for manifest files in every usedir
             bool found = false;
-            char[] manifestFile = manifestPrefix ~ std.path.sep ~ args[1] ~ ".manifest";
+            string manifestFile = manifestPrefix ~ std.path.sep ~ args[1] ~ ".manifest";
             if (exists(manifestFile)) {
                 found = true;
             } else {
@@ -265,13 +267,13 @@ int net(char[][] args)
             }
             
             // 1) make the source directory
-            char[] srcDir = scratchPrefix ~ std.path.sep ~ "DSSS_" ~ args[1];
-            char[] tmpDir = srcDir;
+            string srcDir = scratchPrefix ~ std.path.sep ~ "DSSS_" ~ args[1];
+            string tmpDir = srcDir;
             mkdirP(srcDir);
             writefln("Working in %s", srcDir);
             
             // 2) chdir
-            char[] origcwd = getcwd();
+            string origcwd = getcwd();
             chdir(srcDir);
             
             // make sure the directory gets removed
@@ -286,14 +288,14 @@ int net(char[][] args)
             
             // if we're just fetching, make the archive
             if (args[0] == "fetch") {
-                char[] archname = args[1] ~ ".tar.gz";
+                string archname = args[1] ~ ".tar.gz";
                 
                 // compress
                 version (Windows) {
                     // CyberShadow 2007.02.21: this code actually works now
-                    char[][] files = listdir("");
+                    string[] files = listdir("");
                     auto regexp = RegExp(r"^[^\.]");
-                    char[] cmdline = "bsdtar -zcf " ~ archname;
+                    string cmdline = "bsdtar -zcf " ~ archname;
                     foreach(file;files)
                         if(regexp.test(file))
                             cmdline ~= " " ~ file;
@@ -321,7 +323,7 @@ int net(char[][] args)
                     uninstall(args[1..2], true);
                 
                 // 5) install prerequisites
-                char[][] netcmd;
+                string[] netcmd;
                 netcmd ~= "deps";
                 int netret = net(netcmd);
                 if (netret) return netret;
@@ -355,7 +357,7 @@ int net(char[][] args)
             }
             
             foreach (pkg; conf.srcURL.keys.sort) {
-                if (std.regexp.find(pkg, args[1]) != -1) {
+                if (!std.regex.match(pkg, regex(args[1])).empty()) {
                     writefln("%s", pkg);
                 }
             }
@@ -372,22 +374,22 @@ int net(char[][] args)
 /** Net config object */
 class NetConfig {
     /** The mirror in use */
-    char[] mirror;
+    string mirror;
     
     /** Versions of packages */
-    char[][char[]] vers;
+    string[string] vers;
     
     /** Dependencies of packages */
-    char[][][char[]] deps;
+    string[][string] deps;
     
     /** Source formats of packages */
-    char[][char[]] srcFormat;
+    string[string] srcFormat;
     
     /** Source URL of packages */
-    char[][char[]] srcURL;
+    string[string] srcURL;
     
     /** Patches */
-    char[][][char[]] srcPatches;
+    string[][string] srcPatches;
 }
 
 /** Read the net configuration info */
@@ -396,16 +398,16 @@ NetConfig ReadNetConfig()
     NetConfig conf = new NetConfig();
     
     // read in the mirror
-    conf.mirror = cast(char[]) std.file.read(srcListPrefix ~ std.path.sep ~ "mirror");
+    conf.mirror = cast(string) std.file.read(srcListPrefix ~ std.path.sep ~ "mirror");
     
     // read in the main tool/dep/version list
-    char[] pkgslist = std.string.replace(
-        cast(char[]) std.file.read(srcListPrefix ~ std.path.sep ~ "pkgs.list"),
+    string pkgslist = replace(
+        cast(string) std.file.read(srcListPrefix ~ std.path.sep ~ "pkgs.list"),
         "\r", "");
     foreach (pkg; std.string.split(pkgslist, "\n")) {
         if (pkg.length == 0 || pkg[0] == '#') continue;
         
-        char[][] pkinfo = std.string.split(pkg, " ");
+        string[] pkinfo = std.string.split(pkg, " ");
         
         // format: pkg ver deps
         if (pkinfo.length < 2) continue;
@@ -414,11 +416,11 @@ NetConfig ReadNetConfig()
     }
     
     // then read in the source list
-    char[] srclist = cast(char[]) std.file.read(srcListPrefix ~ std.path.sep ~ "source.list");
+    string srclist = cast(string) std.file.read(srcListPrefix ~ std.path.sep ~ "source.list");
     foreach (pkg; std.string.split(srclist, "\n")) {
         if (pkg.length == 0 || pkg[0] == '#') continue;
         
-        char[][] pkinfo = std.string.split(pkg, " ");
+        string[] pkinfo = std.string.split(pkg, " ");
         
         //format: pkg protocol/format URL [patches]
         if (pkinfo.length < 3) continue;
@@ -431,7 +433,7 @@ NetConfig ReadNetConfig()
 }
 
 /** Generate a list of dependencies for the current source */
-char[][] sourceToDeps(bool unresolvedOnly, NetConfig nconf = null, DSSSConf conf = null)
+string[] sourceToDeps(bool unresolvedOnly, NetConfig nconf = null, DSSSConf conf = null)
 {
     if (nconf is null) {
         nconf = ReadNetConfig();
@@ -441,22 +443,22 @@ char[][] sourceToDeps(bool unresolvedOnly, NetConfig nconf = null, DSSSConf conf
     }
     
     // start with the requires setting
-    char[][] deps;
+    string[] deps;
     if ("requires" in conf.settings[""]) {
         deps ~= std.string.split(conf.settings[""]["requires"]);
     }
     
     // then trace uses
     foreach (section; conf.sections) {
-        char[][] files;
-        char[] type = conf.settings[section]["type"];
+        string[] files;
+        string type = conf.settings[section]["type"];
         if (type == "binary") {
             files ~= section;
         } else if (type == "library" || type == "sourcelibrary") {
             files ~= targetToFiles(section, conf);
         } else if (type == "subdir") {
             // recurse
-            char[] origcwd = getcwd();
+            string origcwd = getcwd();
             chdir(section);
             deps ~= sourceToDeps(unresolvedOnly, nconf);
             chdir(origcwd);
@@ -467,14 +469,14 @@ char[][] sourceToDeps(bool unresolvedOnly, NetConfig nconf = null, DSSSConf conf
         }
         
         // use dsss_build -files or -notfound to get the list of files
-        char[] filesFlag = "-files";
+        string filesFlag = "-files";
         if (unresolvedOnly)
             filesFlag = "-notfound";
         systemResponse(dsss_build ~ " " ~ filesFlag ~ " -offiles.tmp " ~
                        std.string.join(files, " "), "-rf", "temp.rf", true);
         
         // read the uses
-        char[][] uses = std.string.split(cast(char[]) std.file.read("files.tmp"),
+        string[] uses = std.string.split(cast(string) std.file.read("files.tmp"),
                                          "\n");
         foreach (use; uses) {
             if (use.length == 0) break;
@@ -498,9 +500,9 @@ char[][] sourceToDeps(bool unresolvedOnly, NetConfig nconf = null, DSSSConf conf
 }
 
 /** Canonicalize a dependency (.d -> source) */
-char[] canonicalSource(char[] origsrc, NetConfig nconf)
+string canonicalSource(string origsrc, NetConfig nconf)
 {
-    char[] src = origsrc.dup;
+    string src = origsrc;
     version (Windows) {
         src = std.string.replace(src, "\\", "/");
     }
@@ -512,7 +514,7 @@ char[] canonicalSource(char[] origsrc, NetConfig nconf)
         // convert to a proper source
         if (src in nconf.deps &&
             nconf.deps[src].length == 1) {
-            src = nconf.deps[src][0].dup;
+            src = nconf.deps[src][0];
         } else {
             src = "";
         }
@@ -524,12 +526,12 @@ char[] canonicalSource(char[] origsrc, NetConfig nconf)
 /** Get the source for a given package
  * Returns true on success, false on failure
  * NOTE: Your chdir can change! */
-bool getSources(char[] pkg, NetConfig conf)
+bool getSources(string pkg, NetConfig conf)
 {
     /// get sources from upstream, return false on failure
     bool getUpstream() {
         // 1) get source
-        char[] srcFormat = conf.srcFormat[pkg];
+        string srcFormat = conf.srcFormat[pkg];
         int res;
         switch (srcFormat) {
             case "svn":
@@ -593,11 +595,11 @@ bool getSources(char[] pkg, NetConfig conf)
         if (res != 0) return false;
         
         // 2) apply patches
-        char[] srcDir = getcwd();
+        string srcDir = getcwd();
         foreach (patch; conf.srcPatches[pkg]) {
-            char[][] pinfo = split(patch, ":");
-            char[] dir;
-            char[] pfile;
+            string[] pinfo = split(patch, ":");
+            string dir;
+            string pfile;
             
             // split into dir:file or just file
             if (pinfo.length < 2) {
@@ -630,8 +632,8 @@ bool getSources(char[] pkg, NetConfig conf)
     
     if (!getUpstream()) {
         // failed to get from upstream, try a mirror
-        char[][] mirrorsList = std.string.split(
-            cast(char[]) std.file.read(
+        string[] mirrorsList = std.string.split(
+            cast(string) std.file.read(
                 srcListPrefix ~ std.path.sep ~ "mirrors.list"
                 ),
             "\n");
@@ -640,8 +642,8 @@ bool getSources(char[] pkg, NetConfig conf)
         // fail with zero mirrors
         if (mirrorsList.length > 0) {
             // choose a random one
-            uint sel = cast(uint) ((cast(double) mirrorsList.length) * (rand() / (uint.max + 1.0)));
-            char[] mirror = mirrorsList[sel];
+            size_t sel = std.random.uniform(0, mirrorsList.length);
+            string mirror = mirrorsList[sel];
             
             vSaySystemDie("curl -k " ~ mirror ~ "/" ~ pkg ~ ".tar.gz " ~
                          "-o " ~ pkg ~ ".tar.gz");
@@ -657,12 +659,12 @@ bool getSources(char[] pkg, NetConfig conf)
     
     // 3) figure out where the source is and chdir
     if (!exists(configFName)) {
-        char[][] sub = listdir(".");
+        string[] sub = listdir(".");
         foreach (entr; sub) {
             if (entr[0] == '.') continue;
                     
             // check if it's a source directory
-            if (isdir(entr)) {
+            if (entr.isDir) {
                 if (exists(entr ~ std.path.sep ~ configFName)) {
                     // found
                     chdir(entr);

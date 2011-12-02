@@ -36,7 +36,7 @@ version (Tango) {
 
 int main()
 {
-    char[] msg = "All unit tests run successfully.";
+    string msg = "All unit tests run successfully.";
     version (Tango) {
         Cout(msg).newline;
     } else {

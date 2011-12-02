@@ -38,7 +38,7 @@ import sss.conf;
 import hcf.path;
 
 /** A utility function to attempt removal of a file but not fail on error */
-void tryRemove(char[] fn)
+void tryRemove(string fn)
 {
     try {
         std.file.remove(fn);
@@ -48,7 +48,7 @@ void tryRemove(char[] fn)
 }
 
 /** Clean a tree: Remove all empty directories in the tree */
-void cleanTree(char[] dirn)
+void cleanTree(string dirn)
 {
     try {
         rmdir(dirn);
@@ -83,15 +83,15 @@ int distclean(DSSSConf conf = null)
     writefln("");
     
     // get the sources
-    char[][] buildSources = sourcesByElems(null, conf);
+    string[] buildSources = sourcesByElems(null, conf);
     
     // then go through and delete actual files
     foreach (build; buildSources) {
-        char[][char[]] settings = conf.settings[build];
+        string[string] settings = conf.settings[build];
         
         // basic info
-        char[] type = settings["type"];
-        char[] target = settings["target"];
+        string type = settings["type"];
+        string target = settings["target"];
         
         // tell what we're doing
         writefln("Removing %s", target);
@@ -110,8 +110,8 @@ int distclean(DSSSConf conf = null)
                 tryRemove("test_" ~ target);
                 
                 // then remove the shared libraries
-                char[] shlibname = getShLibName(settings);
-                char[][] shortshlibnames = getShortShLibNames(settings);
+                string shlibname = getShLibName(settings);
+                string[] shortshlibnames = getShortShLibNames(settings);
                 
                 tryRemove(shlibname);
                 foreach (ssln; shortshlibnames) {
@@ -126,8 +126,8 @@ int distclean(DSSSConf conf = null)
                 tryRemove("test_" ~ target);
                 
                 // then remove the shared libraries
-                char[] shlibname = getShLibName(settings);
-                char[][] shortshlibnames = getShortShLibNames(settings);
+                string shlibname = getShLibName(settings);
+                string[] shortshlibnames = getShortShLibNames(settings);
                 
                 tryRemove(shlibname);
                 foreach (ssln; shortshlibnames) {
@@ -148,7 +148,7 @@ int distclean(DSSSConf conf = null)
             
         } else if (type == "subdir") {
             // recurse
-            char[] origcwd = getcwd();
+            string origcwd = getcwd();
             chdir(build);
             int cleanret = distclean();
             if (cleanret) return cleanret;

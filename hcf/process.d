@@ -46,7 +46,7 @@ private {
         extern (C) int fork();
         extern (C) int pipe(int[2]);
         extern (C) int read(int, void*, size_t);
-        extern (C) int write(int, void*, size_t);
+        extern (C) int write(int, const void*, size_t);
         extern (C) int close(int);
         extern (C) size_t waitpid(size_t, int*, int);
     }
@@ -94,7 +94,7 @@ class PStream : Stream {
     }
     
     /** Use system */
-    this(char[] command)
+    this(string command)
     {
         init1();
         
@@ -124,12 +124,13 @@ class PStream : Stream {
     }
     
     /** Use execvp */
-    this(char[] pathname, char[][] argv)
+    this(string pathname, string[] argv)
     {
         init1();
         
         version (Posix) {
             if (pid == 0) {
+                writefln("execvp %1$s, args %2$s", pathname, argv);
                 execvp(pathname, argv);
                 exit(1);
             }
@@ -169,7 +170,7 @@ class PStream : Stream {
         }
     }
     
-    override size_t writeBlock(void* buffer, size_t size)
+    override size_t writeBlock(const void* buffer, size_t size)
     {
         version (Posix) {
             int wt = hcf.process.write(ip[1], buffer, size);
@@ -257,21 +258,23 @@ class PStream : Stream {
 
 /** Exception to be thrown when a command called dies */
 class ProcessDeathException : Exception {
-    this(char[] smsg)
+    this(string smsg)
     {
         super(smsg);
     }
 }
 
 /** system + guarantee success */
-void systemOrDie(char[] cmd)
+void systemOrDie(string cmd)
 {
+    writefln("System %1$s", cmd);
     int res;
-    fflush(stdout); fflush(stderr);
+    std.stdio.stdout.flush(); 
+    std.stdio.stderr.flush();
     res = system(cmd);
     if (res)  // CyberShadow 2007.02.22: Display a message before exiting
     {
-        int p = cmd.find(' ');
+        size_t p = cmd.indexOf(' ');
         if(p!=-1) cmd=cmd[0..p];
         writefln("Command " ~ cmd ~ " returned with code ", res, ", aborting.");
         throw new ProcessDeathException("Command failed, aborting.");
@@ -279,31 +282,34 @@ void systemOrDie(char[] cmd)
 }
 
 /** system + output */
-int sayAndSystem(char[] cmd)
+int sayAndSystem(string cmd)
 {
     writefln("+ %s", cmd);
-    fflush(stdout); fflush(stderr);
+    std.stdio.stdout.flush(); 
+    std.stdio.stderr.flush();
     return system(cmd);
 }
 
 /** systemOrDie + output */
-void saySystemDie(char[] cmd)
+void saySystemDie(string cmd)
 {
     writefln("+ %s", cmd);
     systemOrDie(cmd);
 }
 
 /** system + use a response file */
-int systemResponse(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
+int systemResponse(string cmd, string rflag, string rfile, bool deleteRFile)
 {
     int ret;
-    char[][] elems = std.string.split(cmd, " ");
+    string[] elems = std.string.split(cmd, " ");
     
     /* the output is elems past 1 joined with \n */
-    char[] resp = std.string.join(elems[1..$], "\n");
+    string resp = std.string.join(elems[1..$], "\n");
     std.file.write(rfile, resp);
     
-    fflush(stdout); fflush(stderr);
+    std.stdio.stdout.flush(); 
+    std.stdio.stderr.flush();
+
     ret = system(elems[0] ~ " " ~ rflag ~ rfile);
     
     if (deleteRFile) std.file.remove(rfile);
@@ -312,13 +318,13 @@ int systemResponse(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
 }
 
 /** systemResponse + guarantee success */
-void systemROrDie(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
+void systemROrDie(string cmd, string rflag, string rfile, bool deleteRFile)
 {
     int res;
     res = systemResponse(cmd, rflag, rfile, deleteRFile);
     if (res)  // CyberShadow 2007.02.22: Display a message before exiting
     {
-        int p = cmd.find(' ');
+        size_t p = cmd.indexOf(' ');
         if(p!=-1) cmd=cmd[0..p];
         writefln("Command " ~ cmd ~ " returned with code ", res, ", aborting.");
         throw new ProcessDeathException("Command failed, aborting.");
@@ -326,14 +332,14 @@ void systemROrDie(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
 }
 
 /** systemResponse + output */
-int sayAndSystemR(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
+int sayAndSystemR(string cmd, string rflag, string rfile, bool deleteRFile)
 {
     writefln("+ %s", cmd);
     return systemResponse(cmd, rflag, rfile, deleteRFile);
 }
 
 /** systemROrDie + output */
-void saySystemRDie(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
+void saySystemRDie(string cmd, string rflag, string rfile, bool deleteRFile)
 {
     writefln("+ %s", cmd);
     systemROrDie(cmd, rflag, rfile, deleteRFile);

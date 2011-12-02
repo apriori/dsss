@@ -111,7 +111,7 @@ class Bool
        *   Bool g = new Bool("");  // Sets initial to False.
        *  --------------------
     **/
-    this(char[] x) {
+    this(string x) {
         switch (x)
         {
             case "TRUE", "True", "true",
@@ -340,7 +340,7 @@ class Bool
            *   std.stdio.writefln("The result was %s", a);
            *  --------------------
         **/
-            char[] toString();
+            string toString();
         }
         else
         {
@@ -355,23 +355,23 @@ class Bool
            *   std.stdio.writefln("The result was %s", a);
            *  --------------------
         **/
-            char[] toString();
+            string toString();
         }
     }
     else
     {
 
-        char[] toString()
+        string toString()
         {
             version(BoolUnknown)
             {
             if (m_Val == -1)
-                return "Unknown".dup;
+                return "Unknown";
             }
             if (m_Val == 1)
-                return "True".dup;
+                return "True";
 
-            return "False".dup;
+            return "False";
         }
     }
 
@@ -477,7 +477,7 @@ class BoolException : Exception
        *   throw new BoolException("Some Message");
        *  --------------------
     **/
-   this(char[] pMsg)
+   this(string pMsg)
     {
         super(pMsg);
     }

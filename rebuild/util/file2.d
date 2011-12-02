@@ -43,11 +43,11 @@ version(unix)   version = Unix;
 private{
     static import std.file;
     static import std.stdio;
-    bool[char[]] lExistingFiles;
+    bool[string] lExistingFiles;
 }
 
 // --------------------------------------------------
-bool FileExists(char[] pFileName)
+bool FileExists(string pFileName)
 {
     if (pFileName in lExistingFiles)
     {
@@ -66,10 +66,10 @@ bool FileExists(char[] pFileName)
 // --------------------------------------------------
 void PurgeFileExistsCache()
 {
-    char[][] lKeys;
+    string[] lKeys;
 
     lKeys = lExistingFiles.keys.dup;
-    foreach(char[] lFile; lKeys)
+    foreach(string lFile; lKeys)
     {
         lExistingFiles.remove(lFile);
     }

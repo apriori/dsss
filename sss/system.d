@@ -33,7 +33,7 @@ import hcf.process;
 import sss.conf;
 
 /** system + output */
-int vSayAndSystem(char[] cmd)
+int vSayAndSystem(string cmd)
 {
     if (verboseMode)
         return sayAndSystem(cmd);
@@ -42,7 +42,7 @@ int vSayAndSystem(char[] cmd)
 }
 
 /** systemOrDie + output */
-void vSaySystemDie(char[] cmd)
+void vSaySystemDie(string cmd)
 {
     if (verboseMode)
         saySystemDie(cmd);
@@ -51,7 +51,7 @@ void vSaySystemDie(char[] cmd)
 }
 
 /** systemResponse + output */
-int vSayAndSystemR(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
+int vSayAndSystemR(string cmd, string rflag, string rfile, bool deleteRFile)
 {
     if (verboseMode)
         return sayAndSystemR(cmd, rflag, rfile, deleteRFile);
@@ -60,7 +60,7 @@ int vSayAndSystemR(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
 }
 
 /** systemROrDie + output */
-void vSaySystemRDie(char[] cmd, char[] rflag, char[] rfile, bool deleteRFile)
+void vSaySystemRDie(string cmd, string rflag, string rfile, bool deleteRFile)
 {
     if (verboseMode)
         saySystemRDie(cmd, rflag, rfile, deleteRFile);

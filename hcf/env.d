@@ -29,45 +29,21 @@
 module hcf.env;
 
 import std.string;
+import std.process;
 
-import std.c.stdlib;
 
 version (Windows) {
     import bcd.windows.windows;
 }
 
 /** Get an environment variable D-ly */
-char[] getEnvVar(char[] var)
+string getEnvVar(string var)
 {
-    version (Posix) {
-        return toString(
-            getenv(toStringz(var)));
-    } else version (Windows) {
-        // CyberShadow 2007.02.22: enlarging buffer tenfold for people with huge PATHs (like me)
-        char[10240] buffer;
-        buffer[0] = '\0';
-        GetEnvironmentVariableA(
-                toStringz(var),
-                buffer.ptr,
-                10240);
-        return toString(buffer.ptr);
-    } else {
-        static assert(0);
-    }
+    return getenv(var);
 }
 
 /** Set an environment variable D-ly */
-void setEnvVar(char[] var, char[] val)
+void setEnvVar(string var, string val)
 {
-    version (Posix) {
-        setenv(toStringz(var),
-               toStringz(val),
-               1);
-    } else version(Windows) {
-        SetEnvironmentVariableA(
-            toStringz(var),
-            toStringz(val));
-    } else {
-        static assert(0);
-    }
+    setenv(var, val, true);
 }

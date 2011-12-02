@@ -39,27 +39,27 @@ import sss.conf;
 import sss.system;
 
 /** Entry into the "install" command */
-int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char[][]* subManifest = null)
+int install(string[] buildElems, DSSSConf conf = null, string pname = null, string[]* subManifest = null)
 {
     // get the configuration
     if (conf is null)
         conf = readConfig(buildElems);
     
     // get the corresponding sources
-    char[][] buildSources = sourcesByElems(buildElems, conf);
+    string[] buildSources = sourcesByElems(buildElems, conf);
     
     // prepare to make a manifest
     if (pname.length == 0) {
-        pname = conf.settings[""]["name"].dup;
+        pname = conf.settings[""]["name"];
     }
-    char[][] manifest;
-    char[] manifestFile;
+    string[] manifest;
+    string manifestFile;
     manifestFile = manifestPrefix ~ std.path.sep ~ conf.settings[""]["name"] ~ ".manifest";
     manifest ~= "share" ~ std.path.sep ~ "dsss" ~ std.path.sep ~ "manifest" ~ std.path.sep ~
         pname ~ ".manifest";
     
     /// Copy in the file and add it to the manifest
-    void copyAndManifest(char[] file, char[] prefix, char[] from = "")
+    void copyAndManifest(string file, string prefix, string from = "")
     {
         copyInFile(file, prefix, from);
         
@@ -73,11 +73,11 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
     
     // now install the requested things
     foreach (build; buildSources) {
-        char[][char[]] settings = conf.settings[build];
+        string[string] settings = conf.settings[build];
         
         // basic info
-        char[] type = settings["type"];
-        char[] target = settings["target"];
+        string type = settings["type"];
+        string target = settings["target"];
 
         // maybe we shouldn't install it
         if ("noinstall" in settings)
@@ -94,7 +94,7 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
         // figure out what it is
         if (type == "library" && libsSafe()) {
             // far more complicated
-            char[][] srcFiles = targetToFiles(build, conf, true);
+            string[] srcFiles = targetToFiles(build, conf, true);
             if (srcFiles.length == 0) {
                 // warning is in sss.build
                 continue;
@@ -111,13 +111,13 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
                 if (buildDebug)
                     copyAndManifest("libdebug-" ~ target ~ ".a", libPrefix);
                 
-                char[] shlibname = getShLibName(settings);
+                string shlibname = getShLibName(settings);
                 
                 if (shLibSupport() &&
                     ("shared" in settings)) {
                     if (targetVersion("Posix")) {
                         // 2) .so
-                        char[][] shortshlibnames = getShortShLibNames(settings);
+                        string[] shortshlibnames = getShortShLibNames(settings);
                 
                         // copy in
                         copyAndManifest(shlibname, libPrefix);
@@ -142,7 +142,7 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
                 // 1) .lib
                 copyAndManifest(target ~ ".lib", libPrefix);
                 
-                char[] shlibname = getShLibName(settings);
+                string shlibname = getShLibName(settings);
                 
                 if (shLibSupport() &&
                     ("shared" in settings)) {
@@ -182,10 +182,10 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
         } else if (type == "sourcelibrary" ||
                    (type == "library" && !libsSafe())) {
             // also fairly easy
-            char[][] srcFiles = targetToFiles(build, conf, true);
+            string[] srcFiles = targetToFiles(build, conf, true);
             foreach (file; srcFiles) {
-                char[] fdir = getDirName(file);
-                char[] pdir = fdir.dup;
+                string fdir = getDirName(file);
+                string pdir = fdir;
                 if (fdir != "") fdir ~= std.path.sep;
                 if (pdir != "") pdir = std.path.sep ~ pdir;
                 
@@ -196,7 +196,7 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
             
         } else if (type == "subdir") {
             // recurse
-            char[] origcwd = getcwd();
+            string origcwd = getcwd();
             chdir(build);
             int installret = install(null, null, pname, &manifest);
             if (installret) return installret;
@@ -224,20 +224,20 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
     if (doDocs && exists("dsss_docs")) {
         writefln("Installing documentation...");
         
-        char[] docs = docPrefix ~ std.path.sep ~ pname;
+        string docs = docPrefix ~ std.path.sep ~ pname;
         mkdirP(docs);
         
         chdir("dsss_docs");
         
         // copy in everything
-        void copyDir(char[] cdir)
+        void copyDir(string cdir)
         {
-            char[] subdocs = docs ~ std.path.sep ~ cdir;
+            string subdocs = docs ~ std.path.sep ~ cdir;
             mkdirP(subdocs);
             
             foreach (file; listdir(cdir)) {
-                char[] full = cdir ~ std.path.sep ~ file;
-                if (isdir(full)) {
+                string full = cdir ~ std.path.sep ~ file;
+                if (full.isDir) {
                     copyDir(full);
                 } else {
                     copyInFile(file, subdocs, cdir ~ std.path.sep);
@@ -246,7 +246,7 @@ int install(char[][] buildElems, DSSSConf conf = null, char[] pname = null, char
         }
         
         foreach (file; listdir(".")) {
-            if (isdir(file)) {
+            if (file.isDir) {
                 copyDir(file);
             } else {
                 copyInFile(file, docs);

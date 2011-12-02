@@ -37,7 +37,7 @@ import std.stdio;
 import std.string;
 
 /** Entry to the "uninstall" function */
-int uninstall(char[][] toolList, bool quiet = false)
+int uninstall(string[] toolList, bool quiet = false)
 {
     if (toolList.length == 0) {
         writefln("Uninstall what?");
@@ -47,7 +47,7 @@ int uninstall(char[][] toolList, bool quiet = false)
     foreach (tool; toolList)
     {
         // uninstall this tool
-        char[] manifestFile = manifestPrefix ~ std.path.sep ~ tool ~ ".manifest";
+        string manifestFile = manifestPrefix ~ std.path.sep ~ tool ~ ".manifest";
         if (!exists(manifestFile)) {
             if(!quiet)
             	writefln("Package " ~ tool ~ " is not installed.");
@@ -57,8 +57,8 @@ int uninstall(char[][] toolList, bool quiet = false)
         writefln("Uninstalling %s", tool);
         
         // get the list
-        char[][] manifest = std.string.split(
-            cast(char[]) std.file.read(manifestFile),
+        string[] manifest = std.string.split(
+            cast(string) std.file.read(manifestFile),
             "\n");
         
         // then delete them

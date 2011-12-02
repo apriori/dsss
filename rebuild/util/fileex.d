@@ -56,11 +56,11 @@ private{
     static import util.pathex;
     static import util.file2;
 
-    char[][] vGrepOpts;
+    string[] vGrepOpts;
 
     class FileExException : Error
     {
-        this(char[] pMsg)
+        this(string pMsg)
         {
             super (__FILE__ ~ ":" ~ pMsg);
         }
@@ -76,8 +76,8 @@ private{
 public {
     version(BuildVerbose) Bool vVerbose;
     Bool vTestRun;
-    char[] vExeExtension;
-    char[] vPathId;
+    string vExeExtension;
+    string vPathId;
 }
 // Module constructor
 // ----------------------------------------------
@@ -106,12 +106,12 @@ enum GetOpt
 };
 
 // Read an entire file into a string.
-char[] GetText(char[] pFileName, GetOpt pOpt = GetOpt.Always)
+string GetText(string pFileName, GetOpt pOpt = GetOpt.Always)
 {
-    char[] lFileText;
+    string lFileText;
     if (std.file.exists( pFileName))
     {
-        lFileText = cast(char[]) std.file.read(pFileName);
+        lFileText = cast(string) std.file.read(pFileName);
         if ( (lFileText.length == 0) ||
              (lFileText[$-1] != '\n'))
              lFileText ~= std.path.linesep;
@@ -124,10 +124,10 @@ char[] GetText(char[] pFileName, GetOpt pOpt = GetOpt.Always)
 }
 
 // Read a entire file in to a set of lines (strings).
-char[][] GetTextLines(char[] pFileName, GetOpt pOpt = GetOpt.Always)
+string[] GetTextLines(string pFileName, GetOpt pOpt = GetOpt.Always)
 {
-    char[][] lLines;
-    char[]   lText;
+    string[] lLines;
+    string   lText;
     lText = GetText(pFileName, pOpt);
     lLines = std.string.splitlines( lText );
     return lLines;
@@ -140,9 +140,9 @@ enum CreateOpt
     Replace = 'r'   // Must replace an existing file.
 };
 
-void CreateTextFile(char[] pFileName, char[][] pLines, CreateOpt pOpt = CreateOpt.Create)
+void CreateTextFile(string pFileName, string[] pLines, CreateOpt pOpt = CreateOpt.Create)
 {
-    char[] lBuffer;
+    string lBuffer;
     bool lFileExists;
 
     lFileExists = (std.file.exists( pFileName) ? true : false);
@@ -155,7 +155,7 @@ void CreateTextFile(char[] pFileName, char[][] pLines, CreateOpt pOpt = CreateOp
     if (std.file.exists(pFileName))
         std.file.remove(pFileName);
 
-    foreach(char[] lText; pLines) {
+    foreach(string lText; pLines) {
         // Strip off any trailing line-end chars.
         for(int i = lText.length-1; i >= 0; i--)
         {
@@ -173,11 +173,11 @@ void CreateTextFile(char[] pFileName, char[][] pLines, CreateOpt pOpt = CreateOp
     std.file.write(pFileName, lBuffer);
 }
 
-void CreateTextFile(char[] pFileName, char[] pLines, CreateOpt pOpt = CreateOpt.Create)
+void CreateTextFile(string pFileName, string pLines, CreateOpt pOpt = CreateOpt.Create)
 {
-    char[] lBuffer;
+    string lBuffer;
     bool lFileExists;
-    char[][] lLines;
+    string[] lLines;
 
     // Split into lines, disregarding line-end conventions.
     lLines = std.string.splitlines(pLines);
@@ -185,23 +185,23 @@ void CreateTextFile(char[] pFileName, char[] pLines, CreateOpt pOpt = CreateOpt.
     CreateTextFile(pFileName, lLines, pOpt);
 }
 
-long grep(char[] pData, char[] pPattern)
+long grep(string pData, string pPattern)
 {
     return std.regexp.find(pData, pPattern, vGrepOpts[$-1]);
 }
 
-ulong[] FindInFile(char[] pFileName, char[] pText, char[] pOptions = "", uint pMax=1)
+ulong[] FindInFile(string pFileName, string pText, string pOptions = "", uint pMax=1)
 {
     bool lCaseSensitive;
     bool lRegExp;
     bool lWordOnly;
     bool lCounting;
-    auto char[] lBuffer;
+    auto string lBuffer;
     int lPos;
     int lStartPos;
     ulong[] lResult;
-    int function(char[] a, char[] b) lFind;
-    char[] lGrepOpt;
+    int function(string a, string b) lFind;
+    string lGrepOpt;
 
 
     lCaseSensitive = true;
@@ -244,7 +244,7 @@ ulong[] FindInFile(char[] pFileName, char[] pText, char[] pOptions = "", uint pM
 
     if (lRegExp)
     {
-        lFind = cast(int function(char[] a, char[] b)) &grep;
+        lFind = cast(int function(string a, string b)) &grep;
         if (lCaseSensitive)
             lGrepOpt ~= 'i';
 
@@ -254,13 +254,13 @@ ulong[] FindInFile(char[] pFileName, char[] pText, char[] pOptions = "", uint pM
     else
     {
         if (lCaseSensitive)
-            lFind = cast(int function(char[] a, char[] b)) &std.string.find;
+            lFind = cast(int function(string a, string b)) &std.string.find;
         else
-            lFind = cast(int function(char[] a, char[] b)) &std.string.ifind;
+            lFind = cast(int function(string a, string b)) &std.string.ifind;
     }
 
     // Pull the entire text into RAM.
-    lBuffer = cast(char[])std.file.read(pFileName);
+    lBuffer = cast(string)std.file.read(pFileName);
 
     // Locate next instance and process it.
     while ( lStartPos = lPos, (lPos = lFind(lBuffer[lStartPos..$], pText)) != -1)
@@ -320,7 +320,7 @@ ulong[] FindInFile(char[] pFileName, char[] pText, char[] pOptions = "", uint pM
 }
 
 //-------------------------------------------------------
-int RunCommand(char[] pExeName, char[] pCommand)
+int RunCommand(string pExeName, string pCommand)
 //-------------------------------------------------------
 {
 
@@ -332,7 +332,7 @@ int RunCommand(char[] pExeName, char[] pCommand)
 
     if (util.pathex.IsRelativePath(pExeName) == True)
     {
-        char[] lExePath;
+        string lExePath;
         lExePath = util.pathex.FindFileInPathList(vPathId, pExeName);
         if (util.str.ends(lExePath, std.path.sep) == False)
             lExePath ~= std.path.sep;
@@ -348,7 +348,7 @@ int RunCommand(char[] pExeName, char[] pCommand)
 }
 
 //-------------------------------------------------------
-int RunCommand(char[] pCommand)
+int RunCommand(string pCommand)
 //-------------------------------------------------------
 {
     int lRC;

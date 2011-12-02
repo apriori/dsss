@@ -31,6 +31,7 @@ module sss.build;
 import std.file;
 import std.process;
 import std.stdio;
+import std.array;
 import std.string;
 
 import std.c.stdlib;
@@ -42,19 +43,19 @@ import sss.conf;
 import sss.system;
 
 /** The entry function to the DSSS "build" command */
-int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
+int build(string[] buildElems, DSSSConf conf = null, string forceFlags = "") {
     // get the configuration
     if (conf is null)
         conf = readConfig(buildElems);
     
     // buildElems are by either soure or target, so we need one by source only
-    char[][] buildSources;
+    string[] buildSources;
     
     // get the sources
     buildSources = sourcesByElems(buildElems, conf);
     
     // also get a complete list, since some steps need it
-    char[][] allSources = sourcesByElems(null, conf);
+    string[] allSources = sourcesByElems(null, conf);
     
     /* building is fairly complicated, involves these steps:
      * 1) Make .di files
@@ -66,21 +67,21 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
      */
     
     // make the basic build line
-    char[] bl = dsss_build ~ forceFlags ~ " ";
+    string bl = dsss_build ~ forceFlags ~ " ";
     
     // add -oq if we don't have such a setting
-    if (find(forceFlags, "-o") == -1) {
+    if (indexOf(forceFlags, "-o") == -1) {
         mkdirP("dsss_objs" ~ std.path.sep ~ compilerShort());
         bl ~= "-oqdsss_objs" ~ std.path.sep ~ compilerShort() ~ " ";
     }
     
     // 1) Make .di files for everything
     foreach (build; allSources) {
-        char[][char[]] settings = conf.settings[build];
+        string[string] settings = conf.settings[build];
         
         // basic info
-        char[] type = settings["type"];
-        char[] target = settings["target"];
+        string type = settings["type"];
+        string target = settings["target"];
         
         if (type == "library" && libsSafe()) {
             writefln("Creating imports for %s", target);
@@ -91,11 +92,11 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
             }
             
             // this is a library, so make .di files
-            char[][] srcFiles = targetToFiles(build, conf);
+            string[] srcFiles = targetToFiles(build, conf);
             
             // generate .di files
             foreach (file; srcFiles) {
-                char[] ifile = "dsss_imports" ~ std.path.sep ~ file ~ "i";
+                string ifile = "dsss_imports" ~ std.path.sep ~ file ~ "i";
                 if (!exists(ifile) ||
                     fileNewer(file, ifile)) {
                     /* BIG FAT NOTE slash FIXME:
@@ -106,16 +107,16 @@ int build(char[][] buildElems, DSSSConf conf = null, char[] forceFlags = "") {
                     // now edit the .di file to reference the appropriate library
                     
                     // usname = name_with_underscores
-                    char[] usname = replace(build, std.path.sep, "_");
+                    string usname = replace(build, std.path.sep, "_");
 
                     // if we aren't building a debug library, the debug conditional will fall through
-                    char[] debugPrefix = null;
+                    string debugPrefix = null;
                     if (buildDebug)
                         debugPrefix = "debug-";
                     
                     /* generate the pragmas (FIXME: this should be done in a
                      * nicer way) */
-                    char[] defaultLibName = libraryName(build);
+                    string defaultLibName = libraryName(build);
                     if (defaultLibName == target) {
                         std.file.write(ifile, std.file.read(file) ~ `
 version (build) {
@@ -163,21 +164,22 @@ version (build) {
     }
     
     // 2) Make fake shared libraries
+    writeln("shared libs");
     if (shLibSupport()) {
         foreach (build; allSources) {
-            char[][char[]] settings = conf.settings[build];
+            string[string] settings = conf.settings[build];
             
             // ignore this if we're not building a shared library
             if (!("shared" in settings)) continue;
         
             // basic info
-            char[] type = settings["type"];
-            char[] target = settings["target"];
+            string type = settings["type"];
+            string target = settings["target"];
         
             if (type == "library" && libsSafe()) {
-                char[] shlibname = getShLibName(settings);
-                char[][] shortshlibnames = getShortShLibNames(settings);
-                char[] shlibflag = getShLibFlag(settings);
+                string shlibname = getShLibName(settings);
+                string[] shortshlibnames = getShortShLibNames(settings);
+                string shlibflag = getShLibFlag(settings);
 
                 if (exists(shlibname)) continue;
                 
@@ -185,7 +187,7 @@ version (build) {
                 
                 // make the stub
                 if (targetGNUOrPosix()) {
-                    char[] stubbl = bl ~ "-fPIC -shlib " ~ stubDLoc ~ " -of" ~ shlibname ~
+                    string stubbl = bl ~ "-fPIC -shlib " ~ stubDLoc ~ " -of" ~ shlibname ~
                         " " ~ shlibflag;
                     vSaySystemRDie(stubbl, "-rf", shlibname ~ "_stub.rf", deleteRFiles);
                     if (targetVersion("Posix")) {
@@ -202,18 +204,18 @@ version (build) {
         }
     }
 
-    char[] docbl = "";
+    string docbl = "";
     /// A function to prepare for creating documentation for this build
-    void prepareDocs(char[] build, bool doc) {
+    void prepareDocs(string build, bool doc) {
         // prepare for documentation
         docbl = "";
         if (doc) {
-            char[] docdir = "dsss_docs" ~ std.path.sep ~ build;
+            string docdir = "dsss_docs" ~ std.path.sep ~ build;
             mkdirP(docdir);
             docbl ~= "-full -Dq" ~ docdir ~ " -candydoc ";
         
             // now extract candydoc there
-            char[] origcwd = getcwd();
+            string origcwd = getcwd();
             chdir(docdir);
         
             version (Windows) {
@@ -227,21 +229,22 @@ version (build) {
     }
 
     // 3) Make real libraries and do special steps and subdirs
+    writeln("make real libraries");
     foreach (build; buildSources) {
-        char[][char[]] settings = conf.settings[build];
+        string[string] settings = conf.settings[build];
         
         // basic info
-        char[] type = settings["type"];
-        char[] target = settings["target"];
+        string type = settings["type"];
+        string target = settings["target"];
         
         if (type == "library" || type == "sourcelibrary") {
-            char[] dotname = std.string.replace(build, std.path.sep, ".");
+            string dotname = replace(build, std.path.sep, ".");
             
             // get the list of files
-            char[][] files = targetToFiles(build, conf);
+            string[] files = targetToFiles(build, conf);
             
             // and other necessary data
-            char[] bflags, debugflags, releaseflags;
+            string bflags, debugflags, releaseflags;
             if ("buildflags" in settings) {
                 bflags = settings["buildflags"] ~ " ";
             }
@@ -270,15 +273,19 @@ version (build) {
             }
             
             // get the file list
-            char[] fileList = std.string.join(targetToFiles(build, conf), " ");
+            string fileList = std.string.join(targetToFiles(build, conf), " ");
             
             // if we should, build the library
             if ((type == "library" && libsSafe()) ||
                 doDocs /* need to build the library to get docs */ ||
                 testLibs /* need to build the ilbrary to test it */) {
+
+                writeln("buildlibrary called");
                 
                 if (buildDebug)
+                {
                     buildLibrary("debug-" ~ target, bl, bflags ~ debugflags, docbl, fileList, settings);
+                }
                 buildLibrary(target, bl, bflags ~ releaseflags, docbl, fileList, settings);
             }
         
@@ -304,11 +311,11 @@ version (build) {
             
         } else if (type == "subdir") {
             // recurse
-            char[] origcwd = getcwd();
+            string origcwd = getcwd();
             chdir(build);
             
             // the one thing that's passed in is build flags
-            char[] orig_dsss_build = dsss_build.dup;
+            string orig_dsss_build = dsss_build;
             if ("buildflags" in settings) {
                 dsss_build ~= settings["buildflags"] ~ " ";
             }
@@ -322,21 +329,22 @@ version (build) {
     }
     
     // 4) Binaries
+    writeln("binaries");
     foreach (build; buildSources) {
-        char[][char[]] settings = conf.settings[build];
+        string[string] settings = conf.settings[build];
         
         // basic info
-        char[] bfile = build;
-        char[] type = settings["type"];
-        char[] target = settings["target"];
-        int bfileplus = std.string.find(bfile, '+');
+        string bfile = build;
+        string type = settings["type"];
+        string target = settings["target"];
+        sizediff_t bfileplus = indexOf(bfile, '+');
         if (bfileplus != -1) {
             bfile = bfile[0..bfileplus];
         }
         
         if (type == "binary") {
             // our binary build line
-            char[] bflags;
+            string bflags;
             if ("buildflags" in settings) {
                 bflags = settings["buildflags"];
             }
@@ -352,7 +360,7 @@ version (build) {
                 }
             }
             
-            char[] bbl = bl ~ bflags ~ " ";
+            string bbl = bl ~ bflags ~ " ";
             
             // output what we're building
             writefln("%s => %s", bfile, target);
@@ -367,7 +375,7 @@ version (build) {
             }
             
             // build a build line
-            char[] ext = std.string.tolower(getExt(bfile));
+            string ext = std.string.tolower(getExt(bfile));
             if (ext == "d") {
                 bbl ~= bfile ~ " -of" ~ target ~ " ";
             } else if (ext == "brf") {
@@ -389,6 +397,7 @@ version (build) {
             writefln("");
             
         }
+        writeln("binaries done");
     }
     
     return 0;
@@ -405,57 +414,57 @@ version (build) {
  *  fileList = list of files to be compiled into the library
  *  settings = settings for this section from DSSSConf
  */
-void buildLibrary(char[] target, char[] bl, char[] bflags, char[] docbl,
-                 char[] fileList, char[][char[]] settings)
+void buildLibrary(string target, string bl, string bflags, string docbl,
+                 string fileList, string[string] settings)
 {
-                char[] shlibname = getShLibName(settings);
-                char[][] shortshlibnames = getShortShLibNames(settings);
-                char[] shlibflag = getShLibFlag(settings);
+    string shlibname = getShLibName(settings);
+    string[] shortshlibnames = getShortShLibNames(settings);
+    string shlibflag = getShLibFlag(settings);
 
-                if (targetGNUOrPosix()) {
-                    // first do a static library
-                    if (exists("lib" ~ target ~ ".a")) std.file.remove("lib" ~ target ~ ".a");
-                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib " ~ fileList ~ " -oflib" ~ target ~ ".a";
-                    if (testLibs || (shLibSupport() && ("shared" in settings)))
-                        stbl ~= " -full";
-                    vSaySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
+    if (targetGNUOrPosix()) {
+        // first do a static library
+        if (exists("lib" ~ target ~ ".a")) std.file.remove("lib" ~ target ~ ".a");
+        string stbl = bl ~ docbl ~ bflags ~ " -explicit -lib " ~ fileList ~ " -oflib" ~ target ~ ".a";
+        if (testLibs || (shLibSupport() && ("shared" in settings)))
+            stbl ~= " -full";
+        vSaySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
 
-                    // perhaps test the static library
-                    if (testLibs) {
-                        writefln("Testing %s", target);
-                        char[] tbl = bl ~ bflags ~ " -unittest -full " ~ fileList ~ " " ~ dsssLibTestDPrefix ~ " -oftest_" ~ target;
-                        vSaySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
-                        vSaySystemDie("./test_" ~ target);
-                    }
-                    
-                    if (shLibSupport() &&
-                        ("shared" in settings)) {
-                        // then make the shared library
-                        if (exists(shlibname)) std.file.remove(shlibname);
-                        char[] shbl = bl ~ bflags ~ " -fPIC -explicit -shlib -full " ~ fileList ~ " -of" ~ shlibname ~
-                        " " ~ shlibflag;
-                        
-                        // finally, the shared compile
-                        vSaySystemRDie(shbl, "-rf", target ~ "_shared.rf", deleteRFiles);
-                    }
-                    
-                } else if (targetVersion("Windows")) {
-                    // for the moment, only do a static library
-                    if (exists(target ~ ".lib")) std.file.remove(target ~ ".lib");
-                    char[] stbl = bl ~ docbl ~ bflags ~ " -explicit -lib " ~ fileList ~ " -of" ~ target ~ ".lib";
-                    if (testLibs)
-                        stbl ~= " -full";
-                    vSaySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
+        // perhaps test the static library
+        if (testLibs) {
+            writefln("Testing %s", target);
+            string tbl = bl ~ bflags ~ " -unittest -full " ~ fileList ~ " " ~ dsssLibTestDPrefix ~ " -oftest_" ~ target;
+            vSaySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
+            vSaySystemDie("./test_" ~ target);
+        }
+        
+        if (shLibSupport() &&
+            ("shared" in settings)) {
+            // then make the shared library
+            if (exists(shlibname)) std.file.remove(shlibname);
+            string shbl = bl ~ bflags ~ " -fPIC -explicit -shlib -full " ~ fileList ~ " -of" ~ shlibname ~
+            " " ~ shlibflag;
+            
+            // finally, the shared compile
+            vSaySystemRDie(shbl, "-rf", target ~ "_shared.rf", deleteRFiles);
+        }
+        
+    } else if (targetVersion("Windows")) {
+        // for the moment, only do a static library
+        if (exists(target ~ ".lib")) std.file.remove(target ~ ".lib");
+        string stbl = bl ~ docbl ~ bflags ~ " -explicit -lib " ~ fileList ~ " -of" ~ target ~ ".lib";
+        if (testLibs)
+            stbl ~= " -full";
+        vSaySystemRDie(stbl, "-rf", target ~ "_static.rf", deleteRFiles);
 
-                    // perhaps test the static library
-                    if (testLibs) {
-                        writefln("Testing %s", target);
-                        char[] tbl = bl ~ bflags ~ " -unittest -full " ~ fileList ~ " " ~ dsssLibTestDPrefix ~ " -oftest_" ~ target ~ ".exe";
-                        vSaySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
-                        vSaySystemDie("test_" ~ target ~ ".exe");
-                    }
+        // perhaps test the static library
+        if (testLibs) {
+            writefln("Testing %s", target);
+            string tbl = bl ~ bflags ~ " -unittest -full " ~ fileList ~ " " ~ dsssLibTestDPrefix ~ " -oftest_" ~ target ~ ".exe";
+            vSaySystemRDie(tbl, "-rf", target ~ "_test.rf", deleteRFiles);
+            vSaySystemDie("test_" ~ target ~ ".exe");
+        }
 
-                } else {
-                    assert(0);
-                }
+    } else {
+        assert(0);
+    }
 }

@@ -34,6 +34,7 @@ import std.process;
 import std.stdio;
 import std.stream;
 import std.string;
+import std.array;
 
 import std.c.stdlib;
 
@@ -54,10 +55,10 @@ version (Windows) {
 }
 
 alias std.process.system system;
-alias std.string.find find;
+alias std.algorithm.find find;
 alias std.string.iswhite iswhite;
 
-extern (C) int access(char*, int);
+extern (C) int access(immutable(char)*, int);
 enum accessRights : int {
         F_OK = 0,
         X_OK,
@@ -66,52 +67,52 @@ enum accessRights : int {
 };
 
 /** The default config file name */
-const char[] configFName = "dsss.conf";
+const string configFName = "dsss.conf";
 
 /** The lastbuild config file name */
-const char[] configLBName = "dsss.last";
+const string configLBName = "dsss.last";
 
 /** The dsss_build line */
-char[] dsss_build;
+string dsss_build;
 
 /** Options added to dsss_build */
-char[] dsss_buildOptions;
+string dsss_buildOptions;
 
 /** Is DSSS installed, or is it being run out of the source directory? */
 bool inSourceDir;
 
 /** The prefix to which DSSS was installed */
-char[] installPrefix;
+string installPrefix;
 
 /** The provided prefix */
-char[] forcePrefix;
+string forcePrefix;
 
 /** The prefix to which other binaries should be installed */
-char[] binPrefix;
+string binPrefix;
 
 /** The prefix to which libraries are installed */
-char[] libPrefix;
+string libPrefix;
 
 /** The prefix to which includes are installed */
-char[] includePrefix;
+string includePrefix;
 
 /** The prefix to which documentation is installed */
-char[] docPrefix;
+string docPrefix;
 
 /** The prefix to which manifests are installed */
-char[] manifestPrefix;
+string manifestPrefix;
 
 /** The prefix to which configuration files are installed */
-char[] etcPrefix;
+string etcPrefix;
 
 /** The prefix to which the source list is downloaded */
-char[] srcListPrefix;
+string srcListPrefix;
 
 /** The location of candydoc.tar.gz */
-char[] candyDocPrefix;
+string candyDocPrefix;
 
 /** The location of dsss_lib_test.d */
-char[] dsssLibTestDPrefix;
+string dsssLibTestDPrefix;
 
 /** Are we doing documentation? */
 bool doDocs = false;
@@ -132,19 +133,19 @@ bool buildDebug = false;
 bool verboseMode = false;
 
 /** The prefix for scratch work */
-char[] scratchPrefix;
+string scratchPrefix;
 
 /** The location of stub.d (used to make stub D libraries) */
-char[] stubDLoc;
+string stubDLoc;
 
 /** The location of dsssdll.d (used to make DLLs from any library) */
-char[] dsssDllLoc;
+string dsssDllLoc;
 
 /** Usedirs (dirs to import both includes and libs from */
-char[][] useDirs;
+string[] useDirs;
 
 /** Tested versions (for the target) */
-bool[char[]] versions;
+bool[string] versions;
     
 /* It's often useful to know whether we're using GNU and/or Posix, as GNU on
  * Windows tends to do some things Posixly. */
@@ -157,9 +158,9 @@ version (build) {
 }
 
 /** Set prefixes automatically, given argv[0] */
-void getPrefix(char[] argvz)
+void getPrefix(string argvz)
 {
-    char[] bname;
+    string bname;
     if (!whereAmI(argvz, installPrefix, bname)) {
         writefln("Failed to determine DSSS' installed prefix.");
         exit(1);
@@ -170,7 +171,7 @@ void getPrefix(char[] argvz)
     // get some default usedirs
     useDirs ~= canonPath(installPrefix ~ std.path.sep ~ "..");
     version (Posix) {
-        char[] home = getEnvVar("HOME");
+        string home = getEnvVar("HOME");
         if (home != "") {
             useDirs ~= canonPath(home ~ std.path.sep ~ "d");
         }
@@ -189,7 +190,7 @@ void getPrefix(char[] argvz)
             forcePrefix = canonPath(forcePrefix);
         }
         
-        char[] sssBaseLoc = installPrefix ~ std.path.sep ~ "sss" ~ std.path.sep;
+        string sssBaseLoc = installPrefix ~ std.path.sep ~ "sss" ~ std.path.sep;
         stubDLoc = sssBaseLoc ~ "stub.d";
         dsssDllLoc = sssBaseLoc ~ "dssdll.d";
         
@@ -229,7 +230,7 @@ void getPrefix(char[] argvz)
                 if (access((forcePrefix ~ '\0').ptr, accessRights.W_OK) != 0) {
                     // choose $HOME/d
                     if (home != "") {
-                        char[] newPrefix = canonPath(home ~ "/d");
+                        string newPrefix = canonPath(home ~ "/d");
                         writefln("Default prefix %s is unwritable, using %s instead.",
                                  forcePrefix, newPrefix);
                         forcePrefix = newPrefix;
@@ -241,7 +242,7 @@ void getPrefix(char[] argvz)
             forcePrefix = canonPath(forcePrefix);
         }
         
-        char[] sssBaseLoc = forcePrefix ~ std.path.sep ~
+        string sssBaseLoc = forcePrefix ~ std.path.sep ~
             "include" ~ std.path.sep ~
             "d" ~ std.path.sep ~
             "sss" ~ std.path.sep;
@@ -336,7 +337,7 @@ void getPrefix(char[] argvz)
         
         // make sure components run with libraries, etc
         setEnvVar("PATH", binPrefix ~ ":" ~ getEnvVar("PATH"));
-        char[] ldlibp = getEnvVar("LD_LIBRARY_PATH");
+        string ldlibp = getEnvVar("LD_LIBRARY_PATH");
         if (ldlibp == "") {
             ldlibp = libPrefix;
         } else {
@@ -373,26 +374,26 @@ void getPrefix(char[] argvz)
  * of settings for those sections */
 class DSSSConf {
     /// Configurable sections
-    char[][] sections;
+    string[] sections;
     
     /// Settings per section
-    char[][char[]][char[]] settings;
+    string[string][string] settings;
 }
 
 /** Generate a DSSSConf from dsss.conf, or generate a dsss.conf from buildElems */
-DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF = configFName)
+DSSSConf readConfig(string[] buildElems, bool genconfig = false, string configF = configFName)
 {
     /* config file format: every line is precisely one section, setting, block
      * opener or block closer. The only valid block opener is 'version' */
     
     /** A function to tokenize a single config file line */
-    char[][] tokLine(char[] line)
+    string[] tokLine(string line)
     {
         /** All tokens read thusfar */
-        char[][] tokens;
+        string[] tokens;
         
         /** Current token */
-        char[] tok;
+        string tok;
         
         /** Add the current token */
         void addToken()
@@ -439,7 +440,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
     DSSSConf conf = new DSSSConf();
     
     /// The data from the config file
-    char[] confFile;
+    string confFile;
     
     if (exists(configFName)) {
         if (genconfig) {
@@ -462,7 +463,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
         }
         
         // Read the config file
-        confFile = cast(char[]) std.file.read(configFName);
+        confFile = cast(string) std.file.read(configFName);
     } else {
         if (!genconfig && buildElems.length == 0) {
             // this makes no sense
@@ -473,9 +474,9 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
         // Generate the config file
         if (buildElems.length == 0) {
             // from nothing - just make every directory into a library
-            char[][] dires = listdir(".");
+            string[] dires = listdir(".");
             foreach (dire; dires) {
-                if (isdir(dire) &&
+                if (dire.isDir &&
                     dire[0] != '.') {
                     confFile ~= "[" ~ dire ~ "]\n";
                 }
@@ -504,10 +505,10 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
     confFile = replace(confFile, "\r", "");
     
     // Split it by lines
-    char[][] lines = split(confFile, "\n");
+    string[] lines = split(confFile, "\n");
     
     /// Current section
-    char[] section;
+    string section;
     
     // set up the defaults for the top-level section
     conf.settings[""] = null;
@@ -516,14 +517,14 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
     
     // parse line-by-line
     for (int i = 0; i < lines.length; i++) {
-        char[] line = lines[i];
+        string line = lines[i];
             
         /** A function to close the current scope */
         void closeScope(bool ignoreElse = false)
         {
             int depth = 1;
             for (i++; i < lines.length; i++) {
-                char[][] ntokens = tokLine(lines[i]);
+                string[] ntokens = tokLine(lines[i]);
                 if (ntokens.length == 0) continue;
                     
                 // possibly change the depth
@@ -566,16 +567,16 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
         }
         
         // then parse it
-        char[][] tokens = tokLine(line);
+        string[] tokens = tokLine(line);
         if (tokens.length == 0) continue;
         
         // then do something with it
         if (tokens[0] == "[" &&
             tokens[$ - 1] == "]") {
             // a section header
-            char[] path = std.string.join(tokens[1 .. ($ - 1)], "");
+            string path = std.string.join(tokens[1 .. ($ - 1)], "");
             // allow \'s for badly-written conf files
-            path = std.string.replace(path, "\\", "/");
+            path = replace(path, "\\", "/");
             
             section = canonPath(path);
             conf.settings[section] = null;
@@ -592,8 +593,8 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
                 conf.settings[section]["type"] = "special";
                 conf.settings[section]["target"] = section[1..$];
 
-            } else if (find(section, '+') != -1) {
-                int ploc = find(section, '+'); // FIXME
+            } else if (indexOf(section, '+') != -1) {
+                sizediff_t ploc = indexOf(section, '+'); // FIXME
                 // auxiliary section
                 conf.sections ~= section;
                 conf.settings[section]["type"] = "binary";
@@ -604,11 +605,11 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
             } else {
                 conf.sections ~= section;
                 
-                if (isdir(section)) {
+                if (section.isDir) {
                     conf.settings[section]["type"] = "library";
                     
                     // target according to the library naming convention
-                    char[] pkg = std.string.replace(canonPath(section),
+                    string pkg = replace(canonPath(section),
                                                     "\\", "/");
                     
                     // name it
@@ -637,7 +638,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
                    tokens[1] == "+" &&
                    tokens[2] == "=") {
             // append to a setting
-            char[] setting = std.string.tolower(tokens[0]);
+            string setting = std.string.tolower(tokens[0]);
             if (setting in conf.settings[section]) {
                 conf.settings[section][setting] ~= " " ~ expandEnvVars(tokens[3]);
             } else {
@@ -665,7 +666,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
             
             // whether the comparison is valid
             bool valid = false;
-            char[] vertok;
+            string vertok;
             if (tokens[2] == "!") {
                 // assume valid
                 valid = true;
@@ -704,7 +705,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
     
     // now apply global settings to every other setting
     if ("*" in conf.settings) {
-        char[][char[]] gsettings = conf.settings["*"];
+        string[string] gsettings = conf.settings["*"];
         conf.settings.remove("*");
         
         // for each section ...
@@ -724,7 +725,7 @@ DSSSConf readConfig(char[][] buildElems, bool genconfig = false, char[] configF 
 }
 
 /** Test if a version is set in the target (put into versions array) */
-void testVersion(char[] vertok)
+void testVersion(string vertok)
 {
     if (!(vertok in versions)) {
         /* now check if this version is defined by making a .d file and
@@ -741,7 +742,7 @@ void testVersion(char[] vertok)
 }
 
 /** Check a target version */
-bool targetVersion(char[] vertok)
+bool targetVersion(string vertok)
 {
     testVersion(vertok);
     return versions[vertok];
@@ -756,29 +757,29 @@ bool targetGNUOrPosix()
 }
 
 /** Get a list of files from a target */
-char[][] targetToFiles(char[] target, DSSSConf conf, bool includeDi = false)
+string[] targetToFiles(string target, DSSSConf conf, bool includeDi = false)
 in {
     assert(target in conf.settings);
 }
 body {
-    char[][char[]] settings = conf.settings[target];
-    char[][] files;
+    string[string] settings = conf.settings[target];
+    string[] files;
     
     // 1) get the exclusion list
-    char[][] exclude;
+    string[] exclude;
     if ("exclude" in settings) {
         exclude = split(settings["exclude"]);
         
         // canonicalize and un-Windows-ize the paths
         for (int i = 0; i < exclude.length; i++) {
-            exclude[i] = std.string.replace(canonPath(exclude[i]),
+            exclude[i] = replace(canonPath(exclude[i]),
                                             "\\", "/");
         }
     }
-    bool excluded(char[] path)
+    bool excluded(string path)
     {
         for (int i = 0; i < exclude.length; i++) {
-            if (fnmatch(std.string.replace(path, "\\", "/"), exclude[i])) {
+            if (fnmatch(replace(path, "\\", "/"), exclude[i])) {
                 return true;
             }
         }
@@ -786,14 +787,14 @@ body {
     }
 
     // and inclusion list
-    char[][] include;
+    string[] include;
     if ("include" in settings) {
         // get the dependencies
         files = split(settings["include"]);
-        char[][] rawFiles;
+        string[] rawFiles;
         systemResponse(dsss_build ~ "-files -offiles.tmp " ~ settings["include"],
                        "-rf", "temp.rf", true);
-        rawFiles = split(cast(char[]) std.file.read("files.tmp"));
+        rawFiles = split(cast(string) std.file.read("files.tmp"));
         foreach (f; rawFiles) {
             while (f.length &&
                    (f[$-1] == '\r' ||
@@ -812,7 +813,7 @@ body {
     }
     
     // 2) stomp through the directory adding files
-    void addDir(char[] ndir, bool force = false)
+    void addDir(string ndir, bool force = false)
     {
         // make sure it's not excluded for any reason
         if (!force &&
@@ -822,7 +823,7 @@ body {
         }
         
         // not excluded, get the list of files
-        char[][] dirFiles = listdir(ndir);
+        string[] dirFiles = listdir(ndir);
         foreach (file; dirFiles) {
             if (!file.length) continue; // shouldn't happen
             
@@ -833,9 +834,9 @@ body {
             file = ndir ~ std.path.sep ~ file;
 
             // get the extension
-            char[] ext = std.string.tolower(getExt(file)).dup;
+            string ext = std.string.tolower(getExt(file));
             
-            if (isdir(file)) {
+            if (file.isDir) {
                 // perhaps recurse
                 addDir(file);
 
@@ -854,7 +855,7 @@ body {
         }
     }
     
-    if (isdir(target)) {
+    if (target.isDir) {
         addDir(target, true);
     } else {
         files ~= target;
@@ -865,7 +866,7 @@ body {
 
 /** Exception to be thrown when a scripted step fails */
 class HookException : Exception {
-    this(char[] smsg)
+    this(string smsg)
     {
         super(smsg);
     }
@@ -873,16 +874,16 @@ class HookException : Exception {
 
 /** Perform a pre- or post- script step. Returns a list of installed files (if
  * applicable) */
-char[][] dsssScriptedStep(DSSSConf conf, char[] step)
+string[] dsssScriptedStep(DSSSConf conf, string step)
 {
     // list of installed files
-    char[][] manifest;
+    string[] manifest;
     
     // since parts of the script can potentially change the directory, store it
-    char[] origcwd = getcwd();
+    string origcwd = getcwd();
     
     // split the steps by ;
-    char[][] cmds = std.string.split(step, ";");
+    string[] cmds = std.string.split(step, ";");
     
     foreach (cmd; cmds) {
         // clean cmd
@@ -891,8 +892,8 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
         if (verboseMode) writefln("Command: %s", cmd);
         
         // run it
-        char[] ext = std.string.tolower(getExt(cmd));
-        if (find(cmd, ' ') == -1 && ext == "d") {
+        string ext = std.string.tolower(getExt(cmd));
+        if (indexOf(cmd, ' ') == -1 && ext == "d") {
             // if it's a .d file, -exec it
             vSaySystemDie(dsss_build ~ "-full -exec " ~ cmd);
 
@@ -908,24 +909,24 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
         } else if (cmd.length > 8 &&
                    cmd[0..8] == "install ") {
             // doing an install
-            char[][] comps = std.string.split(cmd);
+            string[] comps = std.string.split(cmd);
             if (comps.length != 3) continue; // FIXME: not valid
             
             // do this install
             // check for / or \
-            int slloc = std.string.rfind(comps[1], '/');
+            sizediff_t slloc = std.string.lastIndexOf(comps[1], '/');
             if (slloc == -1)
-                slloc = std.string.rfind(comps[1], '\\');
+                slloc = std.string.lastIndexOf(comps[1], '\\');
             
             // strip off the prefix from our manifest path
-            char[] manifestPath = comps[2] ~ std.path.sep;
+            string manifestPath = comps[2] ~ std.path.sep;
             if (manifestPath.length > forcePrefix.length &&
                 manifestPath[0 .. forcePrefix.length] == forcePrefix)
                 manifestPath = manifestPath[forcePrefix.length + 1 .. $];
             
             if (slloc != -1) {
                 // path provided
-                char[] f = comps[1][(slloc + 1) .. $];
+                string f = comps[1][(slloc + 1) .. $];
                 copyInFile(f,
                            comps[2],
                            comps[1][0 .. (slloc + 1)]);
@@ -938,15 +939,15 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
         } else if (cmd.length > 11 &&
                    cmd[0..11] == "installdir ") {
             // crawl for files, installing each
-            char[][] comps = std.string.split(cmd);
+            string[] comps = std.string.split(cmd);
             if (comps.length != 3) continue; // FIXME: not valid
 
             /// install the files in this directory
-            void instDir(char[] ndir, char[] ipostfix = "") {
-                char[][] dirFiles = listdir(ndir);
+            void instDir(string ndir, string ipostfix = "") {
+                string[] dirFiles = listdir(ndir);
                 foreach (file; dirFiles) {
                     // either recurse,
-                    if (isdir(ndir ~ std.path.sep ~ file)) {
+                    if ((ndir ~ std.path.sep ~ file).isDir) {
                         instDir(ndir ~ std.path.sep ~ file, ipostfix ~ std.path.sep ~ file);
 
                     } else {
@@ -965,7 +966,7 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
         } else if (cmd.length > 3 &&
                    cmd[0..3] == "cd ") {
             // change directories
-            char[][] comps = std.string.split(cmd);
+            string[] comps = std.string.split(cmd);
             if (comps.length != 2) continue; // FIXME: not valid
             
             // change our directory
@@ -984,7 +985,7 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
             }
             
             // now catch its output
-            char[] readbuf;
+            string readbuf;
             char readc;
             while (true) {
                 try {
@@ -1011,7 +1012,7 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
             cmd = cmd[4..$];
             
             // 1) get the <section>:<setting>
-            char[] sset = cmd.dup;
+            string sset = cmd;
             for (i = 0; i < cmd.length; i++) {
                 if (cmd[i] == ' ') {
                     sset = sset[0 .. i];
@@ -1024,18 +1025,18 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
             if (i == cmd.length) cmd = "";
             
             // 2) divide <section>:<setting>
-            char[] section, setting;
-            int dotloc = find(sset, ':');
+            string section, setting;
+            sizediff_t dotloc = indexOf(sset, ':');
             if (dotloc == -1) {
                 section = "";
                 setting = sset;
             } else {
-                section = sset[0..dotloc].dup;
-                setting = sset[dotloc+1 .. $].dup;
+                section = sset[0..dotloc];
+                setting = sset[dotloc+1 .. $];
             }
             
             // 3) perhaps get a list of sections
-            char[][] useSections;
+            string[] useSections;
             if (section == "*") {
                 useSections = conf.sections;
             } else {
@@ -1051,7 +1052,7 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
                             cmd = conf.settings[sect][setting] ~ " " ~ cmd;
                         }
                     }
-                    conf.settings[sect][setting] = cmd.dup;
+                    conf.settings[sect][setting] = cmd;
                 }
             }
             
@@ -1067,9 +1068,9 @@ char[][] dsssScriptedStep(DSSSConf conf, char[] step)
 }
 
 /** Get sources from a list of elements (sources or targets) */
-char[][] sourcesByElems(char[][] buildElems, DSSSConf conf)
+string[] sourcesByElems(string[] buildElems, DSSSConf conf)
 {
-    char[][] buildSources;
+    string[] buildSources;
     
     if (buildElems.length == 0 && "defaulttargets" in conf.settings[""]) {
         buildElems = split(conf.settings[""]["defaulttargets"], " ");
@@ -1091,7 +1092,7 @@ char[][] sourcesByElems(char[][] buildElems, DSSSConf conf)
                 bool found = false;
                 
                 foreach (section; conf.sections) {
-                    if (fnmatch(std.string.replace(section, "\\", "/"), be)) {
+                    if (fnmatch(replace(section, "\\", "/"), be)) {
                         // build this
                         buildSources ~= section;
                         found = true;
@@ -1099,7 +1100,7 @@ char[][] sourcesByElems(char[][] buildElems, DSSSConf conf)
                     }
                     
                     // not the section name, so try "target"
-                    if (fnmatch(std.string.replace(conf.settings[section]["target"], "\\", "/"), be)) {
+                    if (fnmatch(replace(conf.settings[section]["target"], "\\", "/"), be)) {
                         
                         // build this (by section name)
                         buildSources ~= section;
@@ -1124,7 +1125,7 @@ char[][] sourcesByElems(char[][] buildElems, DSSSConf conf)
 }
 
 /** Get the soversion from a configuration */
-char[] getSoversion(char[][char[]] settings)
+string getSoversion(string[string] settings)
 {
     // get the soversion
     if ("soversion" in settings) {
@@ -1135,9 +1136,9 @@ char[] getSoversion(char[][char[]] settings)
 }
 
 /** Get a full shared library file name from configuration */
-char[] getShLibName(char[][char[]] settings)
+string getShLibName(string[string] settings)
 {
-    char[] target = settings["target"];
+    string target = settings["target"];
     
     if (targetVersion("Posix")) {
         // lib<target>.so.<soversion>
@@ -1151,18 +1152,18 @@ char[] getShLibName(char[][char[]] settings)
 }
 
 /** Get a short shared library file names */
-char[][] getShortShLibNames(char[][char[]] settings)
+string[] getShortShLibNames(string[string] settings)
 {
-    char[] target = settings["target"];
+    string target = settings["target"];
     
     if (targetVersion("Posix")) {
         // lib<target>.so.<first part of soversion>
-        char[] soversion = getSoversion(settings);
-        char[][] res;
-        int dotloc;
+        string soversion = getSoversion(settings);
+        string[] res;
+        sizediff_t dotloc;
         
         // cut off each dot one-by-one
-        while ((dotloc = rfind(soversion, '.')) != -1) {
+        while ((dotloc = lastIndexOf(soversion, '.')) != -1) {
             soversion = soversion[0..dotloc];
             res ~= ("lib" ~ target ~ ".so." ~ soversion);
         }
@@ -1176,12 +1177,12 @@ char[][] getShortShLibNames(char[][char[]] settings)
 }
 
 /** Get a necessary flag while building shared libraries */
-char[] getShLibFlag(char[][char[]] settings)
+string getShLibFlag(string[string] settings)
 {
     version (Posix) {
         // need a soname
-        char[][] shortshlibnames = getShortShLibNames(settings);
-        char[] sonver;
+        string[] shortshlibnames = getShortShLibNames(settings);
+        string sonver;
         if (shortshlibnames.length >= 2) {
             sonver = shortshlibnames[1];
         } else {
@@ -1226,7 +1227,7 @@ bool shLibSupport()
 }
 
 /** Is file a newer than file b? */
-bool fileNewer(char[] a, char[] b)
+bool fileNewer(string a, string b)
 {
     FileDateTime fdta = new FileDateTime(a);
     FileDateTime fdtb = new FileDateTime(b);
@@ -1234,7 +1235,7 @@ bool fileNewer(char[] a, char[] b)
 }
 
 /** Copy a file into a directory */
-void copyInFile(char[] file, char[] prefix, char[] from = "")
+void copyInFile(string file, string prefix, string from = "")
 {
     if (!exists(prefix)) {
         writefln("+ making directory %s", prefix);
@@ -1243,7 +1244,7 @@ void copyInFile(char[] file, char[] prefix, char[] from = "")
             
     writefln("+ copying %s", file);
     version (Posix) {
-        char[] target = prefix ~ std.path.sep ~ file;
+        string target = prefix ~ std.path.sep ~ file;
         
         // preserve permissions
         vSaySystemDie("cp -fpRL " ~ from ~ file ~ " " ~ target);
@@ -1257,9 +1258,9 @@ void copyInFile(char[] file, char[] prefix, char[] from = "")
 }
 
 /** Expand environment variables in the provided string */
-char[] expandEnvVars(char[] from)
+string expandEnvVars(string from)
 {
-    char[] ret = from ~ "";
+    string ret = from ~ "";
     
     // now expand
     for (int i = 0; i < ret.length; i++) {
@@ -1271,7 +1272,7 @@ char[] expandEnvVars(char[] from)
                  j++) {}
                     
             // expand
-            char[] envvar;
+            string envvar;
             envvar = getEnvVar(ret[(i + 1) .. j]);
             ret = ret[0 .. i] ~
             envvar ~
@@ -1283,30 +1284,30 @@ char[] expandEnvVars(char[] from)
 }
 
 /** Read .dsssrc file */
-char[][] readDSSSRC()
+string[] readDSSSRC()
 {
-    char[] dsssrc;
+    string dsssrc;
 
     version (Windows) {
         // on Windows, just look in bindir
-        char[] bindir, binname;
+        string bindir, binname;
         if (whereAmI("dsss", bindir, binname)) {
             if (exists(bindir ~ "\\dsss.rc")) {
-                dsssrc = cast(char[]) std.file.read(bindir ~ "\\dsss.rc");
+                dsssrc = cast(string) std.file.read(bindir ~ "\\dsss.rc");
             }
         }
 
     } else {
-        char[] home = getEnvVar("HOME");
+        string home = getEnvVar("HOME");
         if (exists(home ~ "/.dsssrc")) {
-            dsssrc = cast(char[]) std.file.read(home ~ "/.dsssrc");
+            dsssrc = cast(string) std.file.read(home ~ "/.dsssrc");
         }
 
     }
 
     // now split it up
-    char[][] rcsplit = split(dsssrc);
-    char[][] ret;
+    string[] rcsplit = split(dsssrc);
+    string[] ret;
     foreach (se; rcsplit) {
         if (se != "") {
             ret ~= se;
@@ -1316,7 +1317,7 @@ char[][] readDSSSRC()
 }
 
 /// Get the short name for the compiler
-char[] compilerShort()
+string compilerShort()
 {
     if (targetVersion("GNU")) {
         return DSSS_PLATFORM_GDC;
@@ -1328,16 +1329,16 @@ char[] compilerShort()
 }
 
 /// Generate a library name from a section
-char[] libraryName(char[] pkg)
+string libraryName(string pkg)
 {
-    pkg = std.string.replace(canonPath(pkg),
+    pkg = .replace(canonPath(pkg),
                              "\\", "/");
 
     // LNC:
     // D<compiler>-<package-with-hyphens>
 
     // D
-    char[] lname = "D";
+    string lname = "D";
 
     // <compiler>
     // FIXME: this should check with dsss_build
@@ -1345,7 +1346,6 @@ char[] libraryName(char[] pkg)
 
     // <package>
     // swap out /'s
-    lname ~=
-        std.string.replace(pkg, "/", "-");
+    lname ~= replace(pkg, "/", "-");
     return lname;
 }
